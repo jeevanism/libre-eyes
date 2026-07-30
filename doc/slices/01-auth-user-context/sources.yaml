@@ -1,0 +1,150 @@
+slice: 01-auth-user-context
+status: in_progress
+legacy_root: OpenEyes/openeyes
+project_relative_legacy_root: ../../OpenEyes/openeyes
+generated_from_scan: 2026-07-30
+
+source_groups:
+  - id: auth-core
+    purpose: Local authentication, password policy, identity, and RBAC evaluation
+    status: needs_verification
+    sources:
+      - path: OpenEyes/openeyes/protected/components/UserIdentity.php
+        observed_lines: 641
+        symbols: [UserIdentity]
+      - path: OpenEyes/openeyes/protected/models/UserAuthentication.php
+        observed_lines: 435
+        symbols: [UserAuthentication]
+      - path: OpenEyes/openeyes/protected/components/OEWebUser.php
+        observed_lines: 145
+        symbols: [OEWebUser]
+      - path: OpenEyes/openeyes/protected/components/AuthManager.php
+        observed_lines: 195
+        symbols: [AuthManager]
+      - path: OpenEyes/openeyes/protected/models/AuthItem.php
+        observed_lines: 24
+        symbols: [AuthItem]
+      - path: OpenEyes/openeyes/protected/models/User.php
+        observed_lines: 1230
+        symbols: [User]
+      - path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+        observed_lines: 226
+        symbols: [PasswordUtils]
+      - path: OpenEyes/openeyes/protected/models/LoginForm.php
+        symbols: [LoginForm]
+
+  - id: auth-entrypoints
+    purpose: Login, logout, profile, password, PIN, and user administration routes
+    status: needs_verification
+    sources:
+      - path: OpenEyes/openeyes/protected/controllers/SiteController.php
+        observed_lines: 625
+        symbols: [SiteController]
+      - path: OpenEyes/openeyes/protected/controllers/ProfileController.php
+        symbols: [ProfileController]
+      - path: OpenEyes/openeyes/protected/controllers/UserController.php
+        symbols: [UserController]
+
+  - id: session-and-context
+    purpose: Session lifecycle and institution, site, and firm context
+    status: needs_verification
+    sources:
+      - path: OpenEyes/openeyes/protected/components/OESession.php
+        symbols: [OESession]
+      - path: OpenEyes/openeyes/protected/models/Institution.php
+        symbols: [Institution]
+      - path: OpenEyes/openeyes/protected/models/Site.php
+        symbols: [Site]
+      - path: OpenEyes/openeyes/protected/models/Firm.php
+        symbols: [Firm]
+      - path: OpenEyes/openeyes/protected/models/UserSite.php
+        symbols: [UserSite]
+      - path: OpenEyes/openeyes/protected/models/UserFirm.php
+        symbols: [UserFirm]
+
+  - id: sso-and-auth-methods
+    purpose: Authentication method selection and SSO role mapping boundaries
+    status: needs_verification
+    sources:
+      - path: OpenEyes/openeyes/protected/models/UserAuthenticationMethod.php
+        symbols: [UserAuthenticationMethod]
+      - path: OpenEyes/openeyes/protected/models/InstitutionAuthentication.php
+        symbols: [InstitutionAuthentication]
+      - path: OpenEyes/openeyes/protected/models/SsoDefaultRoles.php
+        symbols: [SsoDefaultRoles]
+      - path: OpenEyes/openeyes/protected/models/SsoDefaultRights.php
+        symbols: [SsoDefaultRights]
+
+  - id: pincode
+    purpose: PIN lifecycle and electronic-signature authentication dependency
+    status: needs_verification
+    sources:
+      - path: OpenEyes/openeyes/protected/models/UserPincode.php
+        symbols: [UserPincode]
+      - path: OpenEyes/openeyes/protected/components/PasswordStaleWidgetReminder.php
+        symbols: [PasswordStaleWidgetReminder]
+
+  - id: tests
+    purpose: Executable evidence of legacy authentication and authorization behaviour
+    status: needs_verification
+    sources:
+      - path: OpenEyes/openeyes/protected/tests/unit/UserIdentityTest.php
+        observed_lines: 257
+      - path: OpenEyes/openeyes/protected/tests/unit/components/AuthManagerTest.php
+        observed_lines: 319
+      - path: OpenEyes/openeyes/protected/tests/unit/components/AuthRulesTest.php
+        observed_lines: 525
+      - path: OpenEyes/openeyes/protected/tests/unit/components/OESessionTest.php
+        observed_lines: 177
+      - path: OpenEyes/openeyes/protected/tests/unit/models/UserAuthenticationTest.php
+        observed_lines: 93
+      - path: OpenEyes/openeyes/protected/tests/unit/models/SsoDefaultRolesTest.php
+        observed_lines: 60
+      - path: OpenEyes/openeyes/protected/tests/unit/listeners/ClearSessionFilterDataOnSessionSiteChangeTest.php
+        observed_lines: 39
+
+  - id: schema-and-seed
+    purpose: Baseline RBAC, account, tenant-context, session, and PIN schema history
+    status: discovery_required
+    sources:
+      - path: OpenEyes/openeyes/protected/migrations/data/m130913_000000_consolidation/01_authitem.csv
+      - path: OpenEyes/openeyes/protected/migrations/data/m130913_000000_consolidation/01_authitemchild.csv
+      - path: OpenEyes/openeyes/protected/migrations/data/m130913_000000_consolidation/01_authassignment.csv
+      - path: OpenEyes/openeyes/protected/migrations/data/m130913_000000_consolidation/01_institution.csv
+      - path: OpenEyes/openeyes/protected/migrations/data/m130913_000000_consolidation/01_site.csv
+      - path: OpenEyes/openeyes/protected/migrations/data/m130913_000000_consolidation/01_firm.csv
+      - path: OpenEyes/openeyes/protected/migrations/data/m130913_000000_consolidation/01_firm_user_assignment.csv
+      - path: OpenEyes/openeyes/protected/migrations/m131104_112734_authitems.php
+      - path: OpenEyes/openeyes/protected/migrations/m180216_113647_non_local_users_passwords_reset.php
+      - path: OpenEyes/openeyes/protected/migrations/m200417_104344_add_password_date_and_tries_to_user.php
+      - path: OpenEyes/openeyes/protected/migrations/m200505_042308_expand_size_of_password_column.php
+      - path: OpenEyes/openeyes/protected/migrations/m200517_044325_add_multiple_LDAP_auth_to_institutions.php
+      - path: OpenEyes/openeyes/protected/migrations/m200706_041346_add_password_softlocked_time_to_user.php
+      - path: OpenEyes/openeyes/protected/migrations/m201029_060203_create_sso_roles_mapping_with_openeyes.php
+      - path: OpenEyes/openeyes/protected/migrations/m210106_054907_create_institution_level_roles.php
+      - path: OpenEyes/openeyes/protected/migrations/m210215_233608_add_institution_admin_role.php
+      - path: OpenEyes/openeyes/protected/migrations/m210326_095229_add_user_pincode.php
+      - path: OpenEyes/openeyes/protected/migrations/m220121_073608_add_sso_user_authentication_method.php
+
+  - id: configuration
+    purpose: Runtime authentication, session, LDAP, and SSO configuration surface
+    status: discovery_required
+    sources:
+      - path: OpenEyes/openeyes/protected/config/core/common.php
+      - path: OpenEyes/openeyes/protected/config/core/main.php
+      - path: OpenEyes/openeyes/protected/config/local.sample/common.sample.php
+      - path: OpenEyes/openeyes/protected/config/test.php
+
+discovery_queries:
+  - id: auth-migrations
+    command: >-
+      rg --files OpenEyes/openeyes/protected |
+      rg '/migrations?/.*(auth|role|permission|session|authentication|pincode|login|password|firm|site|institution)'
+  - id: auth-tests
+    command: >-
+      rg --files OpenEyes/openeyes/protected |
+      rg '/tests?/.*(Auth|Login|Password|Pincode|Permission|RBAC|Role|Session|UserIdentity|UserAuthentication)'
+  - id: auth-symbol-usage
+    command: >-
+      rg -n 'checkAccess|accessRules|authitem|authassignment|user_session|user_pincode'
+      OpenEyes/openeyes/protected

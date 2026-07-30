@@ -1,0 +1,98 @@
+slice: 01-auth-user-context
+status: in_progress
+
+tasks:
+  - id: AUTH-EXT-001
+    title: Verify local login and identity resolution
+    source_groups: [auth-core, auth-entrypoints]
+    status: not_started
+    deliverables:
+      - Evidence records for credential validation and identity resolution
+      - Login success and failure state transitions
+      - Candidate parity scenarios
+
+  - id: AUTH-EXT-002
+    title: Verify password status, expiry, failed tries, and lockout
+    source_groups: [auth-core, schema-and-seed, tests]
+    status: not_started
+    deliverables:
+      - Password and account state machine
+      - Verified configuration defaults and overrides
+      - Legacy account migration constraints
+
+  - id: AUTH-EXT-003
+    title: Verify session lifecycle and revocation
+    source_groups: [auth-entrypoints, session-and-context, tests, configuration]
+    status: not_started
+    deliverables:
+      - Session creation, regeneration, timeout, logout, and revocation evidence
+      - Concurrent-session findings
+      - Session parity scenarios
+
+  - id: AUTH-EXT-004
+    title: Verify institution, site, and firm context
+    source_groups: [session-and-context, schema-and-seed, tests]
+    status: not_started
+    deliverables:
+      - Context selection and switching rules
+      - Context persistence rules
+      - Context-dependent authorization evidence
+
+  - id: AUTH-EXT-005
+    title: Verify RBAC evaluation and inheritance
+    source_groups: [auth-core, schema-and-seed, tests]
+    status: not_started
+    deliverables:
+      - Role, task, and operation graph semantics
+      - Administrative restrictions and bypass evidence
+      - Walking-skeleton permission matrix
+
+  - id: AUTH-EXT-006
+    title: Verify PIN and electronic-signature dependencies
+    source_groups: [pincode, auth-entrypoints, schema-and-seed]
+    status: not_started
+    deliverables:
+      - PIN generation, validation, rate-limit, and lifecycle evidence
+      - Boundary between login authentication and future e-signature work
+
+  - id: AUTH-EXT-007
+    title: Complete authentication migration and seed inventory
+    source_groups: [schema-and-seed]
+    status: not_started
+    deliverables:
+      - Complete relevant migration list
+      - Legacy table and column catalog
+      - Seed and permission reconciliation strategy
+
+  - id: AUTH-EXT-008
+    title: Establish LDAP and SSO boundary
+    source_groups: [sso-and-auth-methods, configuration, schema-and-seed, tests]
+    status: not_started
+    deliverables:
+      - Verified common legacy behaviour
+      - Deployment-specific unknowns
+      - Explicitly deferred modern integration scope
+
+  - id: AUTH-VER-001
+    title: Independently verify all accepted authentication claims
+    depends_on:
+      - AUTH-EXT-001
+      - AUTH-EXT-002
+      - AUTH-EXT-003
+      - AUTH-EXT-004
+      - AUTH-EXT-005
+      - AUTH-EXT-006
+      - AUTH-EXT-007
+      - AUTH-EXT-008
+    status: not_started
+    deliverables:
+      - Accepted, rejected, or uncertain record for every extracted claim
+      - Rechecked source paths, symbols, and line ranges
+
+  - id: AUTH-SPEC-001
+    title: Produce implementation-ready authentication specification
+    depends_on: [AUTH-VER-001]
+    status: not_started
+    deliverables:
+      - Completed workspace documents
+      - Satisfied Definition of Ready

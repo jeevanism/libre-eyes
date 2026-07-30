@@ -1,0 +1,8 @@
+openapi: 3.1.0
+info:
+  title: Authentication and User Context API
+  version: 0.0.0
+  description: >-
+    Placeholder contract. Paths must not be designed until verified behaviour,
+    security decisions, and walking-skeleton acceptance scenarios are approved.
+paths: {}

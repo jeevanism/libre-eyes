@@ -1,0 +1,32 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Go
+/bin/
+/dist/
+/vendor/
+*.test
+*.out
+coverage.*
+
+# Frontend
+/web/node_modules/
+/web/dist/
+/web/coverage/
+
+# Test and development artifacts
+/tmp/
+/test-results/
+/playwright-report/
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# AI tool local state
+.claude/settings.local.json
+.gemini/
