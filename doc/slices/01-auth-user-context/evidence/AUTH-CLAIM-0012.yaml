@@ -1,0 +1,20 @@
+id: AUTH-CLAIM-0012
+task: AUTH-EXT-001
+claim: >-
+  The current UserIdentityTest boolean assertions for authenticate() do not
+  match the current implementation, which returns a two-item result array; the
+  affected tests cannot be accepted as current parity evidence without being
+  executed and reconciled.
+source:
+  path: OpenEyes/openeyes/protected/tests/unit/UserIdentityTest.php
+  symbol: UserIdentityTest::testInvalidUser and related authentication tests
+  lines: 56-69,75-88,94-107,113-145
+contradicting_source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticate
+  lines: 61-80
+evidence_type: test
+confidence: needs_independent_verification
+open_questions:
+  - Does the configured PHPUnit version or a legacy compatibility layer alter these assertions?
+  - When did the authenticate return contract change relative to this test?

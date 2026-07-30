@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0011
+task: AUTH-EXT-001
+claim: >-
+  LoginForm adds the same authentication failure message to both username and
+  password fields, and only calls the web-user login method when UserIdentity
+  reports an authenticated state.
+source:
+  path: OpenEyes/openeyes/protected/models/LoginForm.php
+  symbol: LoginForm::authenticate and LoginForm::login
+  lines: 126-161
+evidence_type: model
+confidence: needs_independent_verification
+open_questions:
+  - The modern API should return one generic client-facing authentication error.

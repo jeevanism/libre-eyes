@@ -31,6 +31,7 @@ source_groups:
         observed_lines: 226
         symbols: [PasswordUtils]
       - path: OpenEyes/openeyes/protected/models/LoginForm.php
+        observed_lines: 163
         symbols: [LoginForm]
 
   - id: auth-entrypoints
@@ -90,6 +91,8 @@ source_groups:
     sources:
       - path: OpenEyes/openeyes/protected/tests/unit/UserIdentityTest.php
         observed_lines: 257
+      - path: OpenEyes/openeyes/protected/tests/fixtures/user.php
+        observed_lines: 70
       - path: OpenEyes/openeyes/protected/tests/unit/components/AuthManagerTest.php
         observed_lines: 319
       - path: OpenEyes/openeyes/protected/tests/unit/components/AuthRulesTest.php

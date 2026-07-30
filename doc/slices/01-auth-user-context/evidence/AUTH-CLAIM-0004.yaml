@@ -1,0 +1,16 @@
+id: AUTH-CLAIM-0004
+task: AUTH-EXT-001
+claim: >-
+  Available credential resolution queries active UserAuthentication rows by
+  username, classifies institution/site matches, and returns either an exact or
+  permissive match collection; when no active row matches, it distinguishes a
+  matching deactivated credential from a generic invalid login in its returned
+  message.
+source:
+  path: OpenEyes/openeyes/protected/models/UserAuthentication.php
+  symbol: UserAuthentication::findAvailableAuthentications
+  lines: 334-374
+evidence_type: model
+confidence: needs_independent_verification
+open_questions:
+  - Should the modern response hide deactivated-account existence from the login client?

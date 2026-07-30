@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0005
+task: AUTH-EXT-001
+claim: >-
+  Authentication fails and writes a login-failed audit record when no available
+  credentials exist or when more than one credential exists in the selected
+  exact or permissive match class.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticate and UserIdentity::authenticateUserAuthenticationType
+  lines: 61-70,83-89
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Which internal failure reason may be returned to the client versus audit logs only?

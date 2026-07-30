@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0006
+task: AUTH-EXT-001
+claim: >-
+  Before checking a local password, UserIdentity rejects an inactive
+  UserAuthentication and rejects a user who does not have the OprnLogin
+  permission; both paths write login-failed audit records.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateUser
+  lines: 344-363
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Does any supported special-user path intentionally bypass OprnLogin?

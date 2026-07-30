@@ -1,0 +1,18 @@
+id: AUTH-CLAIM-0003
+task: AUTH-EXT-001
+claim: >-
+  LoginForm validation constructs UserIdentity with username, password,
+  institution_id, and site_id; UserIdentity resolves available credentials at
+  construction time and attempts exact institution-authentication matches
+  before permissive matches.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::__construct and UserIdentity::authenticate
+  lines: 47-80
+supporting_sources:
+  - path: OpenEyes/openeyes/protected/models/LoginForm.php
+    symbol: LoginForm::authenticate
+    lines: 126-140
+evidence_type: component
+confidence: needs_independent_verification
+open_questions: []

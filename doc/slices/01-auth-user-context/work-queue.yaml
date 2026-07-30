@@ -5,7 +5,22 @@ tasks:
   - id: AUTH-EXT-001
     title: Verify local login and identity resolution
     source_groups: [auth-core, auth-entrypoints]
-    status: not_started
+    status: in_progress
+    progress: evidence_extracted
+    verification: pending_independent_reviewer
+    evidence_claims:
+      - AUTH-CLAIM-0001
+      - AUTH-CLAIM-0002
+      - AUTH-CLAIM-0003
+      - AUTH-CLAIM-0004
+      - AUTH-CLAIM-0005
+      - AUTH-CLAIM-0006
+      - AUTH-CLAIM-0007
+      - AUTH-CLAIM-0008
+      - AUTH-CLAIM-0009
+      - AUTH-CLAIM-0010
+      - AUTH-CLAIM-0011
+      - AUTH-CLAIM-0012
     deliverables:
       - Evidence records for credential validation and identity resolution
       - Login success and failure state transitions

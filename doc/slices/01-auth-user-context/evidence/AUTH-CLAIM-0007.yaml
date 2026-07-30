@@ -1,0 +1,16 @@
+id: AUTH-CLAIM-0007
+task: AUTH-EXT-001
+claim: >-
+  Local credential verification uses password_verify for unsalted hashes; when
+  a legacy salted hash matches, it replaces that hash with the current
+  PasswordUtils hash, clears password_salt, audits the conversion, and verifies
+  the replacement before returning success.
+source:
+  path: OpenEyes/openeyes/protected/models/UserAuthentication.php
+  symbol: UserAuthentication::verifyPassword
+  lines: 244-274
+evidence_type: model
+confidence: needs_independent_verification
+open_questions:
+  - Which legacy hash formats exist in production data?
+  - Will the modern migration permit transitional login or require password reset?

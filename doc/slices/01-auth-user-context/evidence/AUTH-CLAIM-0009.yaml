@@ -1,0 +1,18 @@
+id: AUTH-CLAIM-0009
+task: AUTH-EXT-001
+claim: >-
+  Successful non-special authentication populates session institution, firm,
+  site, user, and user_auth values. Session setup throws an exception when the
+  user has no available firms; otherwise it chooses a firm from the user's last
+  or available firms, and a site from the requested site, last compatible site,
+  or default site.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::setSessionDataForUser
+  lines: 500-547,565-600
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - The exact firm-selection fallback requires dedicated verification in AUTH-EXT-004.
+  - The legacy exception is not converted into a normal login failure in this call path.
+  - The modern system must define behavior when a default site cannot be found.

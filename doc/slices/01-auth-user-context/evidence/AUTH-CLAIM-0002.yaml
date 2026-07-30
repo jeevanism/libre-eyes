@@ -1,0 +1,17 @@
+id: AUTH-CLAIM-0002
+task: AUTH-EXT-001
+claim: >-
+  For a standard local login POST, SiteController binds LoginForm input and
+  enters the local validation path when SSO is disabled or the username is in
+  the configured local_users list. It creates a logged-in web session only when
+  LoginForm validation and login both succeed, then marks site/firm confirmation
+  and version-reminder session flags before redirecting to the return URL.
+source:
+  path: OpenEyes/openeyes/protected/controllers/SiteController.php
+  symbol: SiteController::actionLogin
+  lines: 160-168,188-230
+evidence_type: controller
+confidence: needs_independent_verification
+open_questions:
+  - How will emergency or service-account local login coexist with modern SSO?
+  - Which post-login redirect targets are permitted in the modern application?

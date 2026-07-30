@@ -11,6 +11,8 @@
 | AUTH-Q-005 | Which institution, site, and firm context must be selected before patient search? | Clinical/product | Verify legacy workflow and validate with users | Open |
 | AUTH-Q-006 | Which audit events and attributes are mandatory for authentication and authorization? | Governance/security | Review legacy audit calls and compliance requirements | Open |
 | AUTH-Q-007 | Is PIN material part of authentication migration or a later e-signature migration? | Governance/security | Verify cryptographic dependencies and approve boundary | Open |
+| AUTH-Q-008 | Does one successful local login currently create more than one login-successful audit record? | Extraction/governance | Trace or execute the current login flow and inspect audit output | Open |
+| AUTH-Q-009 | Why do current `UserIdentityTest` assertions expect booleans while `authenticate()` returns a result array? | Extraction/legacy maintainers | Execute the supported test suite and inspect version history | Open |
 
 ## Deferred Questions
 

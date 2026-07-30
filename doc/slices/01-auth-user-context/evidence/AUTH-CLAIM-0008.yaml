@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0008
+task: AUTH-EXT-001
+claim: >-
+  A successful local password check is still rejected when the password status
+  is inactive or the credential is currently soft-locked; an invalid password
+  or active soft lock may increment failed tries, and the failure is audited.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateUser
+  lines: 415-429
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - PasswordUtils status and failed-try rules must be extracted in AUTH-EXT-002.

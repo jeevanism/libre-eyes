@@ -4,6 +4,20 @@
 
 State names below are investigation areas, not accepted legacy facts.
 
+The local-login transitions in this file are provisional extractions from
+`AUTH-EXT-001`. They must not be implemented as requirements until the cited
+claims receive independent verification.
+
+## Candidate Local Login Flow
+
+| From state | Trigger | Preconditions and checks | To state | Failure result | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| Unauthenticated | Submit standard login form | Local path is available; required fields and supplied institution/site IDs validate | Credentials pending | Form errors or SSO routing; remains unauthenticated | AUTH-CLAIM-0001, AUTH-CLAIM-0002 |
+| Credentials pending | Resolve username in institution/site context | One active exact match, otherwise one active permissive match | Credential selected | Failed audit; remains unauthenticated | AUTH-CLAIM-0003-0005 |
+| Credential selected | Authenticate selected local user | Active authentication, `OprnLogin`, valid password, allowed password and lock status | Identity authenticated | Failed audit and possible failed-try update; remains unauthenticated | AUTH-CLAIM-0006-0008 |
+| Identity authenticated | Establish web session | At least one firm and a resolvable institution/site/firm context | Authenticated with context | Session setup throws if firm or default-site context cannot be established | AUTH-CLAIM-0009, AUTH-CLAIM-0011 |
+| Authenticated with context | Complete successful login | Update last login, audit success, set confirmation/reminder flags, redirect | Authenticated destination | Runtime audit count remains unresolved | AUTH-CLAIM-0002, AUTH-CLAIM-0010 |
+
 ## Account State Investigation
 
 Determine and verify:

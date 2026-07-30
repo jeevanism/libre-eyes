@@ -1,0 +1,19 @@
+id: AUTH-CLAIM-0010
+task: AUTH-EXT-001
+claim: >-
+  After successful authentication, the selected UserAuthentication receives a
+  last_successful_login_date update, the identity is marked successful, and the
+  login path writes login-successful audit records containing institution and
+  site context.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateUserAuthenticationType and UserIdentity::authenticateUser
+  lines: 101-108,441-453
+supporting_sources:
+  - path: OpenEyes/openeyes/protected/components/UserIdentity.php
+    symbol: UserIdentity::setSessionDataForUser
+    lines: 594-608
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - The source appears to write contextual login-successful audits in two methods; verify resulting audit count at runtime.

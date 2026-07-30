@@ -1,0 +1,15 @@
+id: AUTH-CLAIM-0001
+task: AUTH-EXT-001
+claim: >-
+  The standard login form requires username, password, and site_id; it requires
+  institution_id only when the institution_required setting is on, and it
+  validates supplied institution and site IDs against their models before
+  authenticating the password.
+source:
+  path: OpenEyes/openeyes/protected/models/LoginForm.php
+  symbol: LoginForm::rules and LoginForm::requiredIfInstitutionRequired
+  lines: 39-51,96-107
+evidence_type: model
+confidence: needs_independent_verification
+open_questions:
+  - Should the modern login require institution and site before credentials are checked?
