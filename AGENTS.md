@@ -2,6 +2,14 @@
 
 These instructions apply to the entire repository.
 
+## Governing Policy
+
+`doc/constitution.md` is the canonical engineering constitution and takes
+precedence over other repository guidance. `doc/slice-risk-policy.md` defines
+risk tiers, lifecycle gates, and required human approval metadata. Agents must
+read both before changing specifications, architecture, migrations, security
+boundaries, clinical behaviour, or CI governance.
+
 ## Current Phase
 
 The project is in targeted reverse-engineering and repository preparation.
@@ -49,6 +57,7 @@ Work one vertical slice at a time under `doc/slices/`.
 
 Before implementation, a slice must document:
 
+- Risk tier, decision domains, owners, and approvals in `slice.yaml`.
 - Source manifest and completed work queue.
 - Verified behaviour.
 - Permission matrix.
@@ -57,6 +66,11 @@ Before implementation, a slice must document:
 - Testable acceptance scenarios.
 - Parity strategy.
 - Open questions with owners or next actions.
+
+Run `./scripts/validate-slices` after modifying any slice. Structural errors
+must be fixed at every lifecycle stage. A slice marked `ready`,
+`implementation`, or `complete` must also pass every readiness gate without
+warnings.
 
 ## Engineering Rules
 
@@ -138,6 +152,7 @@ references.
 - Use synthetic or properly de-identified development data.
 - Clinical, prescribing, consent, retention, and security decisions require
   appropriate human review.
+- Migration decisions require appropriate human review.
 - Preserve applicable OpenEyes copyright and attribution when translating or
   closely adapting legacy material.
 - Treat AGPL-3.0-only as the provisional licensing baseline pending maintainer

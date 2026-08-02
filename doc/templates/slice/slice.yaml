@@ -1,0 +1,21 @@
+schema_version: 1
+slice: "{{SLICE_ID}}"
+title: "{{SLICE_TITLE}}"
+status: discovery
+risk:
+  tier: "{{RISK_TIER}}"
+  domains:
+    - "{{DECISION_DOMAIN}}"
+  reasons:
+    - "{{RISK_REASON}}"
+owners:
+  engineering: "{{ENGINEERING_OWNER}}"
+  product: "{{PRODUCT_OWNER_OR_UNASSIGNED}}"
+approvals:
+  - area: "{{REQUIRED_APPROVAL_AREA}}"
+    status: pending
+    approver_kind: null
+    approver: null
+    approved_at: null
+    evidence: null
+    notes: "{{APPROVAL_SCOPE}}"

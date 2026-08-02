@@ -1,0 +1,14 @@
+slice: "{{SLICE_ID}}"
+status: discovery
+
+tasks:
+  - id: "{{TASK_ID}}"
+    title: "{{TASK_TITLE}}"
+    source_groups:
+      - "{{SOURCE_GROUP_ID}}"
+    status: not_started
+    progress: not_started
+    verification: pending
+    evidence_claims: []
+    deliverables:
+      - "{{DELIVERABLE}}"

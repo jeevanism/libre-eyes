@@ -1,0 +1,30 @@
+schema_version: 1
+slice: 01-auth-user-context
+title: Authentication And User Context
+status: specification
+risk:
+  tier: high
+  domains:
+    - security
+    - migration
+  reasons:
+    - Authentication and RBAC failures could expose regulated patient data.
+    - Legacy account, credential, session, and authorization data require migration decisions.
+owners:
+  engineering: project-maintainer
+  product: unassigned
+approvals:
+  - area: security
+    status: pending
+    approver_kind: null
+    approver: null
+    approved_at: null
+    evidence: null
+    notes: Required before the authentication slice may be marked ready.
+  - area: migration
+    status: pending
+    approver_kind: null
+    approver: null
+    approved_at: null
+    evidence: null
+    notes: Required before legacy authentication data migration is approved.

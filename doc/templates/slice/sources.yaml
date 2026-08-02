@@ -1,0 +1,19 @@
+slice: "{{SLICE_ID}}"
+status: discovery
+legacy_root: OpenEyes/openeyes
+project_relative_legacy_root: ../../OpenEyes/openeyes
+legacy_revision: "{{LEGACY_GIT_COMMIT}}"
+generated_from_scan: "{{YYYY-MM-DD}}"
+
+source_groups:
+  - id: "{{SOURCE_GROUP_ID}}"
+    purpose: "{{SOURCE_GROUP_PURPOSE}}"
+    status: discovery_required
+    sources:
+      - path: "{{LEGACY_SOURCE_PATH}}"
+        symbol: "{{SYMBOL_OR_DATABASE_OBJECT}}"
+        lines: "{{LINE_RANGE_OR_EQUIVALENT_LOCATOR}}"
+
+discovery_queries:
+  - id: "{{QUERY_ID}}"
+    command: "{{REPRODUCIBLE_DISCOVERY_COMMAND}}"

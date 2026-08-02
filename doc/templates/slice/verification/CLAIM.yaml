@@ -1,0 +1,13 @@
+id: "{{CLAIM_ID}}"
+status: "{{ACCEPTED_REJECTED_OR_UNCERTAIN}}"
+verified_by: "{{INDEPENDENT_REVIEWER_ID}}"
+verified_at: "{{YYYY-MM-DD}}"
+reviewer_kind: "{{HUMAN_OR_AGENT}}"
+independent_of_author: true
+legacy_revision: "{{LEGACY_GIT_COMMIT}}"
+source_checked:
+  path: "{{LEGACY_SOURCE_PATH}}"
+  symbol: "{{SYMBOL_OR_DATABASE_OBJECT}}"
+  lines: "{{LINE_RANGE_OR_EQUIVALENT_LOCATOR}}"
+supporting_sources_checked: []
+notes: "{{VERIFICATION_RESULT_AND_LIMITATIONS}}"

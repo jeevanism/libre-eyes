@@ -1,5 +1,5 @@
 slice: 01-auth-user-context
-status: in_progress
+status: specification
 
 tasks:
   - id: AUTH-EXT-001

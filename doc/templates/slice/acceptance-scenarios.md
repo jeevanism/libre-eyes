@@ -1,0 +1,13 @@
+# Acceptance Scenarios
+
+## {{SCENARIO_ID}}: {{SCENARIO_TITLE}}
+
+Given {{PRECONDITION}}
+
+When {{ACTION}}
+
+Then {{EXPECTED_RESULT}}
+
+And {{AUTHORIZATION_AUDIT_OR_FAILURE_RESULT}}
+
+Evidence: `{{CLAIM_ID}}`
