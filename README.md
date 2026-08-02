@@ -22,10 +22,18 @@ local authentication
 
 ## Documentation
 
+- [Engineering constitution](doc/constitution.md)
+- [Slice risk and approval policy](doc/slice-risk-policy.md)
 - [Modernization strategy](doc/modernization-strategy.md)
 - [Documentation index](doc/README.md)
 - [React and TanStack Router decision](doc/decisions/0001-react-tanstack-router.md)
 - [Authentication extraction workspace](doc/slices/01-auth-user-context/README.md)
+
+Validate slice structure and readiness gates with:
+
+```bash
+./scripts/validate-slices
+```
 
 ## Source Authority
 
