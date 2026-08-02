@@ -1,10 +1,8 @@
-# Go OpenEyes Rebuild
+# VisionOpus
 
-This repository is the working home for a Go, React, and PostgreSQL rebuild of
-the legacy OpenEyes ophthalmology EMR.
-
-The permanent product name has not been selected. `go-openeyes` is a temporary
-working name.
+VisionOpus is the Go, React, and PostgreSQL replacement for the legacy OpenEyes
+ophthalmology EMR. The repository directory may retain the temporary
+`go-openeyes` name until a coordinated repository rename is approved.
 
 ## Current Status
 
@@ -26,6 +24,7 @@ local authentication
 
 - [Modernization strategy](doc/modernization-strategy.md)
 - [Documentation index](doc/README.md)
+- [React and TanStack Router decision](doc/decisions/0001-react-tanstack-router.md)
 - [Authentication extraction workspace](doc/slices/01-auth-user-context/README.md)
 
 ## Source Authority
@@ -43,7 +42,8 @@ the authority.
 ## Technology Direction
 
 - Go modular monolith for the primary backend.
-- React and TypeScript for the web application.
+- React 19, strict TypeScript, Vite, TanStack Router, and TanStack Query for the
+  web application.
 - PostgreSQL for persistence.
 - REST JSON with an OpenAPI contract.
 - A separate FastAPI service may be considered later for AI-specific

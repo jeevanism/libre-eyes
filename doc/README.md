@@ -4,6 +4,10 @@
 
 - [Modernization strategy](modernization-strategy.md)
 
+## Architecture Decisions
+
+- [ADR-0001: React and TanStack Router frontend](decisions/0001-react-tanstack-router.md)
+
 ## Active Slice
 
 - [01 - Authentication and user context](slices/01-auth-user-context/README.md)

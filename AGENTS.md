@@ -1,4 +1,4 @@
-# Go OpenEyes Agent Rules
+# VisionOpus Agent Rules
 
 These instructions apply to the entire repository.
 
@@ -12,15 +12,24 @@ foundation task.
 ## Target Stack
 
 - Go for the primary backend.
-- React and TypeScript for the frontend.
+- React 19, strict TypeScript, and Vite for the frontend.
+- TanStack Router with generated file-based routes.
+- TanStack Query for remote server state.
 - PostgreSQL for persistence.
 - REST JSON described by OpenAPI.
 - No FastAPI service during the current milestone.
+- No Vue implementation during the current milestone. A Vue port may be
+  reconsidered only after the Go, React, and PostgreSQL application is complete,
+  stable, and fully verified.
 
 Use a modular monolith with explicit domain boundaries. Prefer manual
 constructor injection and explicit wiring. Do not add a dependency injection
 framework, microservices, gRPC, Redis, WebSockets, or Kubernetes without an
 approved architecture decision.
+
+The current frontend is a client-rendered application backed by the Go API. Do
+not add Next.js, TanStack Start, React Router, Redux, server actions, or a
+React-specific backend-for-frontend without an approved architecture decision.
 
 ## Source Authority
 
@@ -86,6 +95,27 @@ Then load all task-specific skills selected by the routing table in
 `SKILLS.md`. Loading a library-specific skill does not approve adding that
 library. Do not infer the target Go language version from the installed
 compiler; the repository's `go.mod` is authoritative once it exists.
+
+## Required Frontend Skills
+
+Read and follow `FRONTEND-SKILLS.md` and the project-local `visionopus-react`
+skill for every React, TypeScript, routing, browser, accessibility, or frontend
+testing task. Use current official React, TanStack Router, TanStack Query, and
+Vite documentation for version-sensitive behaviour.
+
+Frontend implementation must preserve these boundaries:
+
+- The Go API and OpenAPI contract are authoritative for clinical behaviour and
+  validation.
+- TanStack Router owns URL, route, path, and validated search state.
+- TanStack Query owns remote server state. Do not mirror query data into a
+  global client store.
+- Form state remains local to the form unless a verified workflow requires
+  persistence across routes.
+- React components render and coordinate UI; they do not contain authoritative
+  clinical calculations.
+- The EyeDraw runtime stays behind a dedicated React adapter with explicit
+  lifecycle, serialization, and cleanup tests.
 
 ## Required Agent Report
 

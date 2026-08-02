@@ -4,6 +4,9 @@ This file defines how AI coding agents select and apply Go skills in this
 repository. It is a routing policy, not a substitute for reading the relevant
 skill files.
 
+Frontend work is governed separately by `FRONTEND-SKILLS.md` and the
+project-local `.agents/skills/visionopus-react/SKILL.md` skill.
+
 ## Authority And Provenance
 
 The reviewed skill bundle is:

@@ -1,11 +1,12 @@
-# Modern Go OpenEyes: Modernization Strategy
+# VisionOpus Modernization Strategy
 
 ## 1. Purpose
 
 This document defines how to rebuild the legacy OpenEyes EMR using:
 
 - Go for the main backend.
-- React and TypeScript for the web application.
+- React 19, strict TypeScript, Vite, TanStack Router, and TanStack Query for the
+  web application.
 - PostgreSQL for persistence.
 - A possible FastAPI service for future AI-related capabilities only.
 
@@ -199,7 +200,9 @@ Cross-domain actions should go through explicit application interfaces.
 - `pgx` for PostgreSQL access.
 - `sqlc` for type-safe query generation.
 - Versioned SQL migrations.
-- React, TypeScript, and Vite.
+- React 19, strict TypeScript, and Vite.
+- TanStack Router with generated file-based routes.
+- TanStack Query for remote server state.
 - A generated TypeScript API client.
 - PostgreSQL-backed integration tests.
 - Playwright for critical browser workflows.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "VisionOpus React"
+  short_description: "Build modern VisionOpus React and TanStack Router features"
+  default_prompt: "Apply the VisionOpus React architecture and TanStack Router patterns to this frontend task."
