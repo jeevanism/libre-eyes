@@ -1,5 +1,19 @@
 # Documentation
 
+## Governance
+
+- `constitution.md`: Canonical engineering and governance principles.
+- `slice-risk-policy.md`: Risk tiers, lifecycle gates, and human approvals.
+- `templates/slice/`: Required starting structure for new vertical slices.
+- `modernization-strategy.md`: Delivery, extraction, architecture, and migration
+  strategy.
+
+Validate all slice documentation with:
+
+```bash
+./scripts/validate-slices
+```
+
 ## Strategy
 
 - [Modernization strategy](modernization-strategy.md)
@@ -14,11 +28,12 @@
 
 ## Status Vocabulary
 
-- `not_started`: The work has not begun.
-- `in_progress`: Evidence is being gathered or verified.
-- `blocked`: A named unresolved dependency prevents progress.
-- `verified`: Evidence has been independently checked.
-- `deferred`: The item is intentionally outside the current milestone.
+- `discovery`: Legacy sources and scope are being identified.
+- `specification`: Evidence is being verified and contracts are being prepared.
+- `ready`: The Definition of Ready and required approvals have passed.
+- `implementation`: Approved implementation is underway.
+- `complete`: Implementation and the Definition of Done have passed.
+- `deferred`: The slice is intentionally outside the current milestone.
 
 Documentation must not use percentage-based completeness claims. A slice becomes
 implementation-ready only by satisfying its explicit Definition of Ready.

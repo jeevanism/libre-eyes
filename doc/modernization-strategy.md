@@ -96,7 +96,10 @@ Each slice should have the following documentation:
 
 ```text
 doc/slices/<slice-name>/
+├── slice.yaml
+├── README.md
 ├── sources.yaml
+├── work-queue.yaml
 ├── verified-behaviour.md
 ├── permission-matrix.md
 ├── state-transitions.md
@@ -104,8 +107,13 @@ doc/slices/<slice-name>/
 ├── acceptance-scenarios.md
 ├── api-contract.yaml
 ├── parity-tests.md
-└── open-questions.md
+├── open-questions.md
+├── evidence/
+└── verification/
 ```
+
+Create new slices from `doc/templates/slice/`. `slice.yaml` records lifecycle
+status, risk tier, decision domains, owners, and durable approval metadata.
 
 ### 5.3 Evidence Rules
 
@@ -146,6 +154,11 @@ A slice is ready for implementation only when the team can answer:
 13. Which questions require clinical, product, governance, or legal decisions?
 
 Do not use a percentage such as "95% complete" as the readiness gate.
+
+The deterministic readiness gate is `./scripts/validate-slices`. Risk tiers and
+human approval requirements are defined in `doc/slice-risk-policy.md`. Pending
+clinical, prescribing, consent, migration, or security approval prevents a
+slice from being marked `ready`.
 
 ## 7. Target Architecture
 
@@ -424,6 +437,7 @@ Coverage percentage alone is not a completion criterion.
 
 CI should eventually enforce:
 
+- Slice structure, evidence linkage, blocking-question, and approval validation.
 - Go formatting and static analysis.
 - Go unit tests.
 - Go race detection.
@@ -471,6 +485,10 @@ Every legacy behaviour must be classified as:
 Security weaknesses must not be reproduced merely for parity.
 
 ## 14. Security, Privacy, And Clinical Governance
+
+`doc/constitution.md` is the canonical authority for engineering and governance
+principles. This section summarizes operational obligations and does not replace
+the constitution.
 
 - Never provide live patient data to consumer AI tools.
 - Use synthetic or properly de-identified fixtures for AI-assisted work.

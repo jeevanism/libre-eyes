@@ -1,0 +1,13 @@
+id: "{{CLAIM_ID}}"
+task: "{{TASK_ID}}"
+claim: "{{LEGACY_BEHAVIOUR_CLAIM}}"
+authored_by: "{{AUTHOR_ID}}"
+authored_at: "{{YYYY-MM-DD}}"
+legacy_revision: "{{LEGACY_GIT_COMMIT}}"
+source:
+  path: "{{LEGACY_SOURCE_PATH}}"
+  symbol: "{{SYMBOL_OR_DATABASE_OBJECT}}"
+  lines: "{{LINE_RANGE_OR_EQUIVALENT_LOCATOR}}"
+evidence_type: "{{SOURCE_TEST_MIGRATION_RUNTIME_OR_DATABASE}}"
+confidence: needs_independent_verification
+open_questions: []

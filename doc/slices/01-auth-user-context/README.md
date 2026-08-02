@@ -2,7 +2,7 @@
 
 ## Status
 
-`in_progress`
+`specification`
 
 This workspace prepares the verified specification for the authentication,
 session, RBAC, and user-context portion of the first walking skeleton.

@@ -4,5 +4,9 @@ verified_by: antigravity-agent
 source_checked:
   path: OpenEyes/openeyes/protected/components/UserIdentity.php
   symbol: UserIdentity::authenticateUserAuthenticationType and UserIdentity::authenticateUser
-  lines: 101-108,441-453,594-608
+  lines: 101-108,441-453
+supporting_sources_checked:
+  - path: OpenEyes/openeyes/protected/components/UserIdentity.php
+    symbol: UserIdentity::setSessionDataForUser
+    lines: 594-608
 notes: Source code verified. Lines 103-107 update last_successful_login_date on UserAuthentication. Lines 447-451 and 605-608 audit login-successful containing username, institution, and site.

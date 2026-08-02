@@ -1,0 +1,6 @@
+openapi: 3.1.0
+info:
+  title: "{{SLICE_TITLE}} API"
+  version: 0.0.0
+  description: Draft contract; not approved for implementation.
+paths: {}
