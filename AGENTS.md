@@ -65,6 +65,28 @@ Before implementation, a slice must document:
 - Add tests proportional to clinical, security, concurrency, and migration
   risk.
 
+## Required Go Skills
+
+Read and follow `SKILLS.md` for every Go-related design, implementation,
+review, debugging, or setup task. Project rules in this file take precedence
+over generic skill guidance.
+
+At the start of every Go-related task, load these skills from
+`samber/cc-skills-golang` using the equivalent identifier exposed by the
+current agent tool:
+
+- `golang-how-to`
+- `golang-error-handling`
+- `golang-safety`
+- `golang-security`
+- `golang-testing`
+- `golang-context`
+
+Then load all task-specific skills selected by the routing table in
+`SKILLS.md`. Loading a library-specific skill does not approve adding that
+library. Do not infer the target Go language version from the installed
+compiler; the repository's `go.mod` is authoritative once it exists.
+
 ## Required Agent Report
 
 Every implementation report must include:
