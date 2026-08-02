@@ -21,6 +21,7 @@ Validate all slice documentation with:
 ## Architecture Decisions
 
 - [ADR-0001: React and TanStack Router frontend](decisions/0001-react-tanstack-router.md)
+- [ADR-0002: Defer Spec Kit adoption](decisions/0002-defer-spec-kit.md)
 
 ## Active Slice
 
