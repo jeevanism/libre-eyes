@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0035
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/migrations/m200517_044325_add_multiple_LDAP_auth_to_institutions.php
+  symbol: m200517_044325_add_multiple_LDAP_auth_to_institutions::safeUp
+  lines: 48-67
+notes: Source code verified. Lines 48-67 define all user_authentication credential, lock, failed tries, status, and activity tracking columns.

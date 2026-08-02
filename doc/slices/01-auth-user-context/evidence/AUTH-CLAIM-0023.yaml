@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0023
+task: AUTH-EXT-004
+claim: >-
+  Firm context resolution defaults in priority order to (1) last_firm_id if valid
+  for institution, (2) first assigned firm in userFirms[0], or (3) key(firms); if
+  no firm rights exist, session setup throws an Exception.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::setSessionDataForUser
+  lines: 525-548
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Should missing firm assignments trigger a clean HTTP 403 error instead of an uncaught Exception?

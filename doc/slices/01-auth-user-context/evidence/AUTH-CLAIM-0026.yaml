@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0026
+task: AUTH-EXT-005
+claim: >-
+  RBAC evaluation supports namespaced business rules ('core' or module namespaces)
+  via AuthManager::executeBizRule, dynamically invoking rule methods on registered
+  ruleset instances.
+source:
+  path: OpenEyes/openeyes/protected/components/AuthManager.php
+  symbol: AuthManager::executeBizRule
+  lines: 52-84
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - How will complex business rules be represented in modern Go authorization policies?

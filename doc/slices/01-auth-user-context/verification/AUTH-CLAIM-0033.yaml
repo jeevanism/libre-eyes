@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0033
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/controllers/ProfileController.php
+  symbol: ProfileController::actionUploadSignature and User::getDecryptedSignature
+  lines: 471-500
+notes: Source code verified. Lines 484-492 upload signatures to ProtectedFile assets (signature_file_id), and User::getDecryptedSignature requires valid PIN authentication.

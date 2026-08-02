@@ -1,0 +1,13 @@
+id: AUTH-CLAIM-0030
+task: AUTH-EXT-006
+claim: >-
+  PIN code generation enforces 6-digit zero-padded numbers, rejecting sequential
+  digits, 6-digit repeated numbers, previously used PINs, or the global secretary_pin.
+source:
+  path: OpenEyes/openeyes/protected/components/PincodeHelper.php
+  symbol: PincodeHelper::validatePincode
+  lines: 5-52
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - How will PIN code generation and validation rules be enforced in Go microservices?

@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0007
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/models/UserAuthentication.php
+  symbol: UserAuthentication::verifyPassword
+  lines: 244-274
+notes: Source code verified. Lines 246-253 verify unsalted hashes via password_verify. Lines 255-273 verify legacy salted hashes, clear salt, re-encrypt hash, save attributes, audit auto-encrypt-password, and verify with password_verify.

@@ -1,0 +1,13 @@
+id: AUTH-CLAIM-0041
+task: AUTH-EXT-008
+claim: >-
+  Multi-tenant LDAP configurations persist JSON settings in ldap_config (ldap_json)
+  linked to institution_authentication to support per-institution directory integration.
+source:
+  path: OpenEyes/openeyes/protected/migrations/m200517_044325_add_multiple_LDAP_auth_to_institutions.php
+  symbol: m200517_044325_add_multiple_LDAP_auth_to_institutions::safeUp
+  lines: 19-46,124-165
+evidence_type: migration
+confidence: needs_independent_verification
+open_questions:
+  - How will tenant-specific LDAP configs be encrypted at rest in PostgreSQL?

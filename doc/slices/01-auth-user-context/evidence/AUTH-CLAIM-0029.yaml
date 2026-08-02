@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0029
+task: AUTH-EXT-005
+claim: >-
+  User role updates (saveRoles) compute added and removed roles, calling assign
+  and revoke, while triggering secondary module assignment handlers (e.g. OETrial
+  permission sync).
+source:
+  path: OpenEyes/openeyes/protected/models/User.php
+  symbol: User::saveRoles
+  lines: 549-598
+evidence_type: model
+confidence: needs_independent_verification
+open_questions:
+  - How will domain event handlers (e.g. RoleAssignedEvent) replace legacy synchronous module hooks?

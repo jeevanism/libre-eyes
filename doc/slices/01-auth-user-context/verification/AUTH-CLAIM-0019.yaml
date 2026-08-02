@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0019
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/OEWebUser.php
+  symbol: OEWebUser::init and OEWebUser::isValidSession
+  lines: 37-44,50-60
+notes: Source code verified. Lines 40-43 check !getIsGuest() and !isValidSession(), triggering logout(false) if blacklisted session ID is found in DB session table.

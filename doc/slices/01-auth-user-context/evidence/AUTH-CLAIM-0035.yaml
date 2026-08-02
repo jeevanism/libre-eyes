@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0035
+task: AUTH-EXT-007
+claim: >-
+  The user_authentication schema encapsulates credential state fields including
+  password_hash, password_salt, password_softlocked_until, password_last_changed_date,
+  password_failed_tries, password_status, last_successful_login_date, and active flag.
+source:
+  path: OpenEyes/openeyes/protected/migrations/m200517_044325_add_multiple_LDAP_auth_to_institutions.php
+  symbol: m200517_044325_add_multiple_LDAP_auth_to_institutions::safeUp
+  lines: 48-67
+evidence_type: migration
+confidence: needs_independent_verification
+open_questions:
+  - Should password_salt be retained only for legacy hash migration or dropped entirely in PostgreSQL?

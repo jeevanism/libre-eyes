@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0038
+task: AUTH-EXT-008
+claim: >-
+  Native LDAP authentication (authenticateNativeLDAP) connects via server and port,
+  performs an admin bind with ldap_admin_dn, searches for (sAMAccountName=$username),
+  and verifies credentials with a user DN bind.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateNativeLDAP
+  lines: 181-268
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - How will LDAP/Active Directory authentication be modularized in Go (e.g. go-ldap package)?

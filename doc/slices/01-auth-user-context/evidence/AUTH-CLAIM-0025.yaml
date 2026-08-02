@@ -1,0 +1,13 @@
+id: AUTH-CLAIM-0025
+task: AUTH-EXT-004
+claim: >-
+  Changing active firm (User::changeFirm) updates last_firm_id and increments
+  UserFirmPreference position order to maintain recent context firm limit rankings.
+source:
+  path: OpenEyes/openeyes/protected/models/User.php
+  symbol: User::changeFirm
+  lines: 209-234
+evidence_type: model
+confidence: needs_independent_verification
+open_questions:
+  - Should recent firm preferences be stored in user settings JSON or relational preference tables?

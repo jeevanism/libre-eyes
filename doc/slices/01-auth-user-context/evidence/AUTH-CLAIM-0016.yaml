@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0016
+task: AUTH-EXT-002
+claim: >-
+  Transitioning to softlocked status automatically calculates and sets
+  password_softlocked_until using pw_softlock_timeout (default '10 mins') added
+  to current timestamp.
+source:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::setHarsherStatus
+  lines: 127-132
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Should softlock unlock automatically upon time expiry without admin intervention?

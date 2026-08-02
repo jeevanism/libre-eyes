@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0030
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/PincodeHelper.php
+  symbol: PincodeHelper::validatePincode
+  lines: 5-52
+notes: Source code verified. Lines 5-52 generate 6-digit zero-padded numbers and validate against previously used PINs, sequential numbers, repeat digits (/(\d)\1{5}/), and global secretary_pin.

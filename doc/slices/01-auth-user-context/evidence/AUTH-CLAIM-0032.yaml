@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0032
+task: AUTH-EXT-006
+claim: >-
+  Revealing PIN codes requires password re-verification for local accounts,
+  external identity verification for LDAP accounts, and bypasses password check
+  for SSO authenticated sessions.
+source:
+  path: OpenEyes/openeyes/protected/controllers/ProfileController.php
+  symbol: ProfileController::actionViewPincode
+  lines: 225-248
+evidence_type: controller
+confidence: needs_independent_verification
+open_questions:
+  - How will re-authentication step-up verification be implemented in the React frontend?

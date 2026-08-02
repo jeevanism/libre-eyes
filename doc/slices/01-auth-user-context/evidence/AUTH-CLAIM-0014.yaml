@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0014
+task: AUTH-EXT-002
+claim: >-
+  Password status hierarchy ranks severity as locked (0), softlocked (1),
+  expired (2), current (3), and stale (4). setHarsherStatus only applies a new
+  status if its rank is equal to or harsher than the current status.
+source:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::setHarsherStatus
+  lines: 19-25,117-139
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - How are unlocked or reset transitions handled when administrative override occurs?

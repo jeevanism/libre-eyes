@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0032
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/controllers/ProfileController.php
+  symbol: ProfileController::actionViewPincode
+  lines: 225-248
+notes: Source code verified. Lines 232-247 verify password for local accounts via verifyPassword, external credentials for LDAP, and bypass password check for SSO sessions.

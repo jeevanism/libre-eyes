@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0027
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/AuthManager.php
+  symbol: AuthManager::getAuthAssignments
+  lines: 104-111
+notes: Source code verified. Lines 106-108 check and populate internal $user_assignments array cache for the request.

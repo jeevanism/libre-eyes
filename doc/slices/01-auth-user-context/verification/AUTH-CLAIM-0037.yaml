@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0037
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/migrations/m200517_044325_add_multiple_LDAP_auth_to_institutions.php
+  symbol: m200517_044325_add_multiple_LDAP_auth_to_institutions::safeUp
+  lines: 173-195
+notes: Source code verified. Lines 173-195 insert special_usernames into user and user_authentication with NULL institution_authentication_id and global_firm_rights = 1.

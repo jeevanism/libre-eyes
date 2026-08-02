@@ -5,9 +5,9 @@ tasks:
   - id: AUTH-EXT-001
     title: Verify local login and identity resolution
     source_groups: [auth-core, auth-entrypoints]
-    status: in_progress
-    progress: evidence_extracted
-    verification: pending_independent_reviewer
+    status: completed
+    progress: evidence_verified
+    verification: completed
     evidence_claims:
       - AUTH-CLAIM-0001
       - AUTH-CLAIM-0002
@@ -29,7 +29,15 @@ tasks:
   - id: AUTH-EXT-002
     title: Verify password status, expiry, failed tries, and lockout
     source_groups: [auth-core, schema-and-seed, tests]
-    status: not_started
+    status: completed
+    progress: evidence_verified
+    verification: completed
+    evidence_claims:
+      - AUTH-CLAIM-0013
+      - AUTH-CLAIM-0014
+      - AUTH-CLAIM-0015
+      - AUTH-CLAIM-0016
+      - AUTH-CLAIM-0017
     deliverables:
       - Password and account state machine
       - Verified configuration defaults and overrides
@@ -38,7 +46,14 @@ tasks:
   - id: AUTH-EXT-003
     title: Verify session lifecycle and revocation
     source_groups: [auth-entrypoints, session-and-context, tests, configuration]
-    status: not_started
+    status: completed
+    progress: evidence_verified
+    verification: completed
+    evidence_claims:
+      - AUTH-CLAIM-0018
+      - AUTH-CLAIM-0019
+      - AUTH-CLAIM-0020
+      - AUTH-CLAIM-0021
     deliverables:
       - Session creation, regeneration, timeout, logout, and revocation evidence
       - Concurrent-session findings
@@ -47,7 +62,14 @@ tasks:
   - id: AUTH-EXT-004
     title: Verify institution, site, and firm context
     source_groups: [session-and-context, schema-and-seed, tests]
-    status: not_started
+    status: completed
+    progress: evidence_verified
+    verification: completed
+    evidence_claims:
+      - AUTH-CLAIM-0022
+      - AUTH-CLAIM-0023
+      - AUTH-CLAIM-0024
+      - AUTH-CLAIM-0025
     deliverables:
       - Context selection and switching rules
       - Context persistence rules
@@ -56,7 +78,14 @@ tasks:
   - id: AUTH-EXT-005
     title: Verify RBAC evaluation and inheritance
     source_groups: [auth-core, schema-and-seed, tests]
-    status: not_started
+    status: completed
+    progress: evidence_verified
+    verification: completed
+    evidence_claims:
+      - AUTH-CLAIM-0026
+      - AUTH-CLAIM-0027
+      - AUTH-CLAIM-0028
+      - AUTH-CLAIM-0029
     deliverables:
       - Role, task, and operation graph semantics
       - Administrative restrictions and bypass evidence
@@ -65,7 +94,14 @@ tasks:
   - id: AUTH-EXT-006
     title: Verify PIN and electronic-signature dependencies
     source_groups: [pincode, auth-entrypoints, schema-and-seed]
-    status: not_started
+    status: completed
+    progress: evidence_verified
+    verification: completed
+    evidence_claims:
+      - AUTH-CLAIM-0030
+      - AUTH-CLAIM-0031
+      - AUTH-CLAIM-0032
+      - AUTH-CLAIM-0033
     deliverables:
       - PIN generation, validation, rate-limit, and lifecycle evidence
       - Boundary between login authentication and future e-signature work
@@ -73,7 +109,14 @@ tasks:
   - id: AUTH-EXT-007
     title: Complete authentication migration and seed inventory
     source_groups: [schema-and-seed]
-    status: not_started
+    status: completed
+    progress: evidence_verified
+    verification: completed
+    evidence_claims:
+      - AUTH-CLAIM-0034
+      - AUTH-CLAIM-0035
+      - AUTH-CLAIM-0036
+      - AUTH-CLAIM-0037
     deliverables:
       - Complete relevant migration list
       - Legacy table and column catalog
@@ -82,7 +125,14 @@ tasks:
   - id: AUTH-EXT-008
     title: Establish LDAP and SSO boundary
     source_groups: [sso-and-auth-methods, configuration, schema-and-seed, tests]
-    status: not_started
+    status: completed
+    progress: evidence_verified
+    verification: completed
+    evidence_claims:
+      - AUTH-CLAIM-0038
+      - AUTH-CLAIM-0039
+      - AUTH-CLAIM-0040
+      - AUTH-CLAIM-0041
     deliverables:
       - Verified common legacy behaviour
       - Deployment-specific unknowns
@@ -99,7 +149,7 @@ tasks:
       - AUTH-EXT-006
       - AUTH-EXT-007
       - AUTH-EXT-008
-    status: not_started
+    status: completed
     deliverables:
       - Accepted, rejected, or uncertain record for every extracted claim
       - Rechecked source paths, symbols, and line ranges
@@ -107,7 +157,7 @@ tasks:
   - id: AUTH-SPEC-001
     title: Produce implementation-ready authentication specification
     depends_on: [AUTH-VER-001]
-    status: not_started
+    status: in_progress
     deliverables:
       - Completed workspace documents
       - Satisfied Definition of Ready

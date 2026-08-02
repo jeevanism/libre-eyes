@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0001
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/models/LoginForm.php
+  symbol: LoginForm::rules and LoginForm::requiredIfInstitutionRequired
+  lines: 39-51,96-107
+notes: Source code verified. Lines 39-51 and 96-107 confirm username, password, and site_id are required, institution_id validation depends on institution_required setting ('on'), and site/institution IDs validate against Site and Institution models before password authentication.

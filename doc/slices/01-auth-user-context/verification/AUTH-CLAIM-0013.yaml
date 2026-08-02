@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0013
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::getPasswordRestrictions
+  lines: 30-63
+notes: "Source code verified. Lines 30-63 confirm default fallback rules: min_length=8, max_length=70, and strength_regex enforcing upper, lower, digit, and special characters."

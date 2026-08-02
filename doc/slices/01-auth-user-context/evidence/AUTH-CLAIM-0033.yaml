@@ -1,0 +1,13 @@
+id: AUTH-CLAIM-0033
+task: AUTH-EXT-006
+claim: >-
+  User electronic signatures are stored as protected file assets (signature_file_id),
+  and signature decryption or verification requires valid PIN authentication.
+source:
+  path: OpenEyes/openeyes/protected/controllers/ProfileController.php
+  symbol: ProfileController::actionUploadSignature and User::getDecryptedSignature
+  lines: 471-500
+evidence_type: controller
+confidence: needs_independent_verification
+open_questions:
+  - Will electronic signatures be stored in S3/PostgreSQL BYTEA with envelope encryption?

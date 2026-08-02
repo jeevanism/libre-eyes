@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0026
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/AuthManager.php
+  symbol: AuthManager::executeBizRule
+  lines: 52-84
+notes: Source code verified. Lines 58-83 parse bizRule namespace, locate registered ruleset instance, unshift data parameter, and call business rule dynamically.

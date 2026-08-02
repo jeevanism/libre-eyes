@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0023
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::setSessionDataForUser
+  lines: 525-548
+notes: Source code verified. Lines 525-548 throw Exception if count(firms) is 0, otherwise check last_firm_id, userFirms[0], or key(firms) in order.

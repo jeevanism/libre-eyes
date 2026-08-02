@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0021
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/OEWebUser.php
+  symbol: OEWebUser::loginRequired
+  lines: 93-104
+notes: Source code verified. Line 99 checks if URL contains '/eventImage' and throws HTTP 403 exception to avoid altering the session returnUrl.

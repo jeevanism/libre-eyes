@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0006
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateUser
+  lines: 344-363
+notes: Source code verified. Lines 353-357 reject inactive user authentications (active != 1) with login-failed audit. Lines 358-363 reject users lacking OprnLogin permission with login-failed audit.

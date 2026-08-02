@@ -1,0 +1,13 @@
+id: AUTH-CLAIM-0028
+task: AUTH-EXT-005
+claim: >-
+  Role assignment privileges (getAssignableRoles) restrict non-admin users from
+  assigning the 'admin' role to other users.
+source:
+  path: OpenEyes/openeyes/protected/components/AuthManager.php
+  symbol: AuthManager::getAssignableRoles
+  lines: 183-194
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Are there additional administrative roles beyond 'admin' that require assignment restrictions?

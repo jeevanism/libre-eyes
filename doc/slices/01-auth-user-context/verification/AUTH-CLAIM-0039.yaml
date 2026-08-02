@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0039
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateOtherLDAP
+  lines: 270-331
+notes: Source code verified. Lines 270-331 bind directly with user prefix and DN, using retry logic configured by ldap_info_retries.

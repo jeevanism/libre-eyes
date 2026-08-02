@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0040
+task: AUTH-EXT-008
+claim: >-
+  SSO / SAML / OIDC authentication delegates identity validation to external identity
+  providers, provisioning user attributes (givenname, sn, mail) and bypassing local
+  password checks.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticate
+  lines: 170-179
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Will OpenID Connect (OIDC) with OAuth2 / Dex / Keycloak be standard for NHS SSO in Go?

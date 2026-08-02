@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0019
+task: AUTH-EXT-003
+claim: >-
+  Application initialization checks active non-guest sessions against the session
+  database table via isValidSession(), forcing immediate logout if a blacklisted
+  session ID entry is matched.
+source:
+  path: OpenEyes/openeyes/protected/components/OEWebUser.php
+  symbol: OEWebUser::init and OEWebUser::isValidSession
+  lines: 37-44,50-60
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Should blacklisted sessions be stored in Redis rather than PostgreSQL in the modern system?

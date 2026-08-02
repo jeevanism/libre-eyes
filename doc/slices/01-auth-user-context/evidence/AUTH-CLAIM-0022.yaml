@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0022
+task: AUTH-EXT-004
+claim: >-
+  Global firm rights (global_firm_rights == 1) grant access to all active
+  institution firms, whereas global_firm_rights == 0 restricts available firms to
+  explicit assignments in firm_user_assignment, user_firm_rights, or user_service_rights.
+source:
+  path: OpenEyes/openeyes/protected/models/User.php
+  symbol: User::getAvailableFirms
+  lines: 636-657
+evidence_type: model
+confidence: needs_independent_verification
+open_questions:
+  - How will global vs restricted firm assignments be modeled in Go JWT/session claims?

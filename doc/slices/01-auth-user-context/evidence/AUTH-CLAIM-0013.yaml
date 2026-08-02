@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0013
+task: AUTH-EXT-002
+claim: >-
+  Password policy enforces configurable constraints defaulting to min length 8,
+  max length 70, and a complexity regex requiring uppercase, lowercase, numeric,
+  and special characters.
+source:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::getPasswordRestrictions
+  lines: 30-63
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - How will complex password policies be enforced in modern user registration or password reset forms?

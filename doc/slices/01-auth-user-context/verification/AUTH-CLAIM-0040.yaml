@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0040
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticate
+  lines: 170-179
+notes: Source code verified. Lines 170-179 query givenname, sn, and mail attributes from identity provider claims.

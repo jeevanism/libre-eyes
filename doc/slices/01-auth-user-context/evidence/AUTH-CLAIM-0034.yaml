@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0034
+task: AUTH-EXT-007
+claim: >-
+  Authentication schema migration (m200517_044325) decoupled user credentials from
+  the legacy user table into normalized institution_authentication and user_authentication
+  tables supporting LOCAL, LDAP, and SSO authentication methods.
+source:
+  path: OpenEyes/openeyes/protected/migrations/m200517_044325_add_multiple_LDAP_auth_to_institutions.php
+  symbol: m200517_044325_add_multiple_LDAP_auth_to_institutions::safeUp
+  lines: 12-67
+evidence_type: migration
+confidence: needs_independent_verification
+open_questions:
+  - How will PostgreSQL foreign key constraints map to modern GORM/Ent Go database schemas?

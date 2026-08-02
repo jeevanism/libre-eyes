@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0029
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/models/User.php
+  symbol: User::saveRoles
+  lines: 549-598
+notes: Source code verified. Lines 555-597 diff added and removed roles, calling authManager->assign / revoke, and updating OETrial permissions when admin role is changed.

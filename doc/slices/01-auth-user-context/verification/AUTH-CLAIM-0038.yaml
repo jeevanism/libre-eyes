@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0038
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateNativeLDAP
+  lines: 181-268
+notes: Source code verified. Lines 181-268 perform admin bind, search sAMAccountName, and verify password via user DN bind.

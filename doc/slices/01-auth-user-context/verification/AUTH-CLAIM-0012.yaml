@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0012
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/tests/unit/UserIdentityTest.php
+  symbol: UserIdentityTest::testInvalidUser and related authentication tests
+  lines: 56-69,75-88,94-107,113-145
+notes: Source code verified. UserIdentityTest uses boolean assertions (assertTrue/assertFalse on UserIdentity::authenticate()), whereas UserIdentity::authenticate() returns a two-item result array [bool, string]. A non-empty array evaluates to truthy in PHP, confirming the legacy unit test contract mismatch.

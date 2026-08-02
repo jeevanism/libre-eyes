@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0018
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/OEWebUser.php
+  symbol: OEWebUser::changeIdentity
+  lines: 24-29
+notes: Source code verified. Line 27 explicitly invokes session_regenerate_id(true) to force session ID regeneration upon identity change.

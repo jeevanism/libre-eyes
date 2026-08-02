@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0015
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::incrementFailedTries
+  lines: 141-159
+notes: Source code verified. Lines 141-159 increment password_failed_tries, check against pw_tries (default 3), trigger setHarsherStatus('locked'), and persist attributes.

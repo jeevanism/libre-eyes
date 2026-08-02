@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0020
+task: AUTH-EXT-003
+claim: >-
+  Logout invalidates session IDs by saving an underscore-prefixed session ID
+  key ('_' + session_id[1:]) into the session table with a 48-hour expiration
+  timestamp and 'Logged out.' data payload.
+source:
+  path: OpenEyes/openeyes/protected/components/OEWebUser.php
+  symbol: OEWebUser::beforeLogout, OEWebUser::afterLogout, OEWebUser::invalidateSession
+  lines: 46-48,62-76,82-86,111-114
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Is a 48-hour session revocation window sufficient for token revocation lists?

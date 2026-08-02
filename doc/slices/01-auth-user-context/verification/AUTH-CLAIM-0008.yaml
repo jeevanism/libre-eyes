@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0008
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateUser
+  lines: 415-429
+notes: Source code verified. Lines 416-429 test password validity and softlock status, increment failed tries via PasswordUtils::incrementFailedTries, log login-failed audit, and return failure message.

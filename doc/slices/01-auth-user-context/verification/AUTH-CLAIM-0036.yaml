@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0036
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/AuthManager.php
+  symbol: AuthManager
+  lines: 20-40,130-172
+notes: Source code verified. CDbAuthManager uses authitem, authitemchild, and authassignment tables for role hierarchy and user assignments.

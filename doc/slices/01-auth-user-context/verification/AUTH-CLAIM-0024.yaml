@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0024
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::setSessionDataForUser
+  lines: 580-593
+notes: Source code verified. Lines 580-593 check explicitly passed site_id, fallback to last_site_id if matching current institution, or Site::getDefaultSite(), throwing CException if unresolved.

@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0020
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/OEWebUser.php
+  symbol: OEWebUser::beforeLogout, OEWebUser::afterLogout, OEWebUser::invalidateSession
+  lines: 46-48,62-76,82-86,111-114
+notes: Source code verified. Lines 84 and 113 save session ID at beforeLogout and invalidate it at afterLogout by storing '_' + id[1:] with expire = time() + 172800 (48 hours) and 'Logged out.' payload in session table.

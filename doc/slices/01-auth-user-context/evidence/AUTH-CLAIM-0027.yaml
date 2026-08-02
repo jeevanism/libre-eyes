@@ -1,0 +1,13 @@
+id: AUTH-CLAIM-0027
+task: AUTH-EXT-005
+claim: >-
+  AuthManager caches user auth assignments locally per request ($user_assignments[$user_id])
+  to minimize repetitive database assignment lookups.
+source:
+  path: OpenEyes/openeyes/protected/components/AuthManager.php
+  symbol: AuthManager::getAuthAssignments
+  lines: 104-111
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Should role/permission assignments be cached in Redis in the Go microservice architecture?

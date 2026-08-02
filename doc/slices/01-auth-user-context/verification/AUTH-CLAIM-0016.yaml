@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0016
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::setHarsherStatus
+  lines: 127-132
+notes: Source code verified. Lines 127-132 check if status is softlocked, parse pw_softlock_timeout (default '10 mins'), and update password_softlocked_until.

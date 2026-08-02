@@ -1,0 +1,13 @@
+id: AUTH-CLAIM-0031
+task: AUTH-EXT-006
+claim: >-
+  PIN code regeneration is rate-limited to a maximum threshold (PIN_REGEN_LIMIT = 5),
+  preventing further user PIN regeneration once the limit is reached.
+source:
+  path: OpenEyes/openeyes/protected/controllers/ProfileController.php
+  symbol: ProfileController::actionGeneratePincode
+  lines: 282-327
+evidence_type: controller
+confidence: needs_independent_verification
+open_questions:
+  - Should administrative PIN reset bypass the user regeneration limit?

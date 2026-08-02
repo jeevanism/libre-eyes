@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0003
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::__construct and UserIdentity::authenticate
+  lines: 47-80
+notes: Source code verified. Lines 47-60 construct UserIdentity and resolve available credentials via UserAuthentication::findAvailableAuthentications. Lines 73-78 iterate over EXACT_MATCH then PERMISSIVE_MATCH in sequence.

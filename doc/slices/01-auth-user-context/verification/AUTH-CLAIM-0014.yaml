@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0014
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::setHarsherStatus
+  lines: 19-25,117-139
+notes: Source code verified. Lines 19-25 define password status integer ranks (locked=0, softlocked=1, expired=2, current=3, stale=4). Lines 124-137 verify that status only changes if target rank <= current rank.

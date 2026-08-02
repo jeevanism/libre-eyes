@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0009
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::setSessionDataForUser
+  lines: 500-547,565-600
+notes: Source code verified. Lines 500-547 and 565-600 populate session selected_institution_id, firms, selected_firm_id, selected_site_id, user, and user_auth. Throws Exception if user has no firm rights for institution. Selects site using last_site_id or Site::model()->getDefaultSite().

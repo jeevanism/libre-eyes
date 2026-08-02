@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0002
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/controllers/SiteController.php
+  symbol: SiteController::actionLogin
+  lines: 160-168,188-230
+notes: Source code verified. Lines 215-231 confirm binding LoginForm POST data, entering local validation if SSO is off or username is in local_users, logging in via $model->login(), setting confirm_site_and_firm and shown_version_reminder session flags, and redirecting.

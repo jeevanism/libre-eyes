@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0017
+task: AUTH-EXT-002
+claim: >-
+  Password expiry evaluation compares age from password_last_changed_date
+  against pw_days_stale, pw_days_expire, and pw_days_lock parameters, while
+  users listed in local_users bypass expiry checks completely.
+source:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::testPasswordExpiry
+  lines: 161-191
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - How will service accounts be configured in the modern system to avoid password expiration?

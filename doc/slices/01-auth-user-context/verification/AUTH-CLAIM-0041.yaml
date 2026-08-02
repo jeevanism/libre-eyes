@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0041
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/migrations/m200517_044325_add_multiple_LDAP_auth_to_institutions.php
+  symbol: m200517_044325_add_multiple_LDAP_auth_to_institutions::safeUp
+  lines: 19-46,124-165
+notes: Source code verified. Lines 19-46 create ldap_config storing ldap_json, linked to institution_authentication via ldap_config_id.

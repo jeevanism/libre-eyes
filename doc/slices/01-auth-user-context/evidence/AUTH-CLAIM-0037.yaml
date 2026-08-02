@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0037
+task: AUTH-EXT-007
+claim: >-
+  System service accounts (special_usernames such as docman_user, api, portal_user)
+  bypass institution authentication by setting institution_authentication_id to NULL
+  and having global firm rights.
+source:
+  path: OpenEyes/openeyes/protected/migrations/m200517_044325_add_multiple_LDAP_auth_to_institutions.php
+  symbol: m200517_044325_add_multiple_LDAP_auth_to_institutions::safeUp
+  lines: 173-195
+evidence_type: migration
+confidence: needs_independent_verification
+open_questions:
+  - How will automated service accounts authenticate in Go (e.g. mTLS, API keys, service tokens)?

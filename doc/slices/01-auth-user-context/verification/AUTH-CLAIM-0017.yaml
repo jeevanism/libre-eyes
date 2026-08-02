@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0017
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::testPasswordExpiry
+  lines: 161-191
+notes: Source code verified. Lines 169-172 check local_users list for early return true (bypass expiry). Lines 181-190 compare current time to password_last_changed_date + pw_days_* interval and call setHarsherStatus.

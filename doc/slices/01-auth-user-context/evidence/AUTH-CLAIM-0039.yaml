@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0039
+task: AUTH-EXT-008
+claim: >-
+  Other LDAP authentication (authenticateOtherLDAP) binds directly using
+  $ldap_user_prefix=$username,$ldap_dn and supports configurable search retries
+  (ldap_info_retries) and delay (ldap_info_retry_delay).
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::authenticateOtherLDAP
+  lines: 270-331
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Should direct LDAP bind timeouts be configurable via environment variables in Go?

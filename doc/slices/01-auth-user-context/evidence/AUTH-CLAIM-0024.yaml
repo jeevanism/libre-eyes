@@ -1,0 +1,15 @@
+id: AUTH-CLAIM-0024
+task: AUTH-EXT-004
+claim: >-
+  Site context resolution defaults in priority order to (1) explicit site_id
+  passed at login, (2) last_site_id if matching current institution, or (3)
+  Site::getDefaultSite(); if no site can be resolved, session setup throws an
+  exception.
+source:
+  path: OpenEyes/openeyes/protected/components/UserIdentity.php
+  symbol: UserIdentity::setSessionDataForUser
+  lines: 580-593
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - How will site context be passed in stateless API headers (e.g. X-Site-ID)?

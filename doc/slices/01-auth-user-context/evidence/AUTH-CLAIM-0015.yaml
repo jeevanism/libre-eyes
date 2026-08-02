@@ -1,0 +1,14 @@
+id: AUTH-CLAIM-0015
+task: AUTH-EXT-002
+claim: >-
+  Failed password attempts increment password_failed_tries; when attempts reach
+  pw_tries (default 3), status transitions to pw_tries_failed (default locked),
+  and max_reached flag returns true.
+source:
+  path: OpenEyes/openeyes/protected/components/PasswordUtils.php
+  symbol: PasswordUtils::incrementFailedTries
+  lines: 141-159
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - Should failed login attempts be rate-limited per IP in addition to per-user?

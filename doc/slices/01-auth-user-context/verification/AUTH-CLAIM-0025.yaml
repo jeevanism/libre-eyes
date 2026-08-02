@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0025
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/models/User.php
+  symbol: User::changeFirm
+  lines: 209-234
+notes: Source code verified. Lines 209-234 update last_firm_id, create or retrieve UserFirmPreference, and increment position order for preference tracking.

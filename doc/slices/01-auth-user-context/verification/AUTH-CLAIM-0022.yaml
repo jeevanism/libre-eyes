@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0022
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/models/User.php
+  symbol: User::getAvailableFirms
+  lines: 636-657
+notes: Source code verified. Line 642 checks global_firm_rights; when 0, it joins firm_user_assignment, user_firm_rights, and user_service_rights to restrict firm access.

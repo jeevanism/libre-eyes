@@ -1,0 +1,13 @@
+id: AUTH-CLAIM-0018
+task: AUTH-EXT-003
+claim: >-
+  Identity changes force session ID regeneration via session_regenerate_id(true)
+  to prevent session fixation vulnerabilities.
+source:
+  path: OpenEyes/openeyes/protected/components/OEWebUser.php
+  symbol: OEWebUser::changeIdentity
+  lines: 24-29
+evidence_type: component
+confidence: needs_independent_verification
+open_questions:
+  - How will token/session regeneration be handled in JWT or Go session stores?

@@ -1,0 +1,8 @@
+id: AUTH-CLAIM-0004
+status: accepted
+verified_by: antigravity-agent
+source_checked:
+  path: OpenEyes/openeyes/protected/models/UserAuthentication.php
+  symbol: UserAuthentication::findAvailableAuthentications
+  lines: 334-374
+notes: Source code verified. Lines 336-356 query active=1 rows. When 0 rows match, it checks active=0 rows and returns "User has been deactivated..." if any match, or "Invalid login." if none match.
