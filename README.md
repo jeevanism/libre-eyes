@@ -6,8 +6,13 @@ ophthalmology EMR. The repository directory may retain the temporary
 
 ## Current Status
 
-The project is in repository preparation and targeted reverse-engineering.
-Application implementation has not started.
+The repository and governance foundation is established. The authentication and
+user-context specification is complete and independently reviewed, but remains
+at `specification` until its required human security and migration approvals
+are recorded. Application implementation has not started.
+
+See the [current project status](doc/project-status.md) for completed work,
+validation results, current gates, and next steps.
 
 The first planned walking skeleton is:
 
@@ -23,10 +28,12 @@ local authentication
 ## Documentation
 
 - [Engineering constitution](doc/constitution.md)
+- [Current project status](doc/project-status.md)
 - [Slice risk and approval policy](doc/slice-risk-policy.md)
 - [Modernization strategy](doc/modernization-strategy.md)
 - [Documentation index](doc/README.md)
 - [React and TanStack Router decision](doc/decisions/0001-react-tanstack-router.md)
+- [Authentication foundation decision](doc/decisions/0003-authentication-foundation-policy.md)
 - [Authentication extraction workspace](doc/slices/01-auth-user-context/README.md)
 
 Validate slice structure and readiness gates with:
