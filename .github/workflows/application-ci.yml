@@ -1,0 +1,179 @@
+name: Application CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - visionopus
+
+permissions:
+  contents: read
+
+concurrency:
+  group: application-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Go and PostgreSQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: visionopus
+          POSTGRES_USER: visionopus
+          POSTGRES_PASSWORD: synthetic-ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U visionopus -d visionopus"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      VISIONOPUS_ENV: development
+      VISIONOPUS_DATABASE_URL: postgres://visionopus:synthetic-ci-password@localhost:5432/visionopus?sslmode=disable
+      VISIONOPUS_TEST_DATABASE_URL: postgres://visionopus:synthetic-ci-password@localhost:5432/visionopus?sslmode=disable
+      VISIONOPUS_CSRF_KEY: Jk4j37boZHsZUX1pMXgbIJ67VvHZTQCJE8ziNdJHh9E
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: 1.26.5
+          cache: true
+
+      - name: Verify formatting
+        run: test -z "$(gofmt -l cmd internal db)"
+
+      - name: Run unit tests with race detection
+        run: go test -race ./cmd/... ./internal/... ./db/...
+
+      - name: Apply PostgreSQL migrations
+        run: go run ./cmd/migrate up
+
+      - name: Run PostgreSQL integration tests
+        run: go test -race -tags=integration ./internal/auth -count=1
+
+  frontend:
+    name: React and browser
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: web
+
+      - name: Lint and type-check
+        run: npm run lint && npm run typecheck
+        working-directory: web
+
+      - name: Run component tests
+        run: npm test
+        working-directory: web
+
+      - name: Build production frontend
+        run: npm run build
+        working-directory: web
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+        working-directory: web
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: web
+
+      - name: Run isolated browser tests
+        run: npm run test:e2e
+        working-directory: web
+
+  live-authentication:
+    name: Live authentication workflow
+    needs: [backend, frontend]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: visionopus
+          POSTGRES_USER: visionopus
+          POSTGRES_PASSWORD: synthetic-ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U visionopus -d visionopus"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      VISIONOPUS_ENV: development
+      VISIONOPUS_DATABASE_URL: postgres://visionopus:synthetic-ci-password@localhost:5432/visionopus?sslmode=disable
+      VISIONOPUS_CSRF_KEY: Jk4j37boZHsZUX1pMXgbIJ67VvHZTQCJE8ziNdJHh9E
+      VISIONOPUS_DEV_PASSWORD: synthetic-e2e-password
+      VISIONOPUS_LIVE_E2E: "true"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: 1.26.5
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install frontend and browser
+        run: npm ci && npx playwright install --with-deps chromium
+        working-directory: web
+
+      - name: Prepare synthetic database
+        run: go run ./cmd/migrate up && go run ./cmd/devseed
+
+      - name: Run live desktop and mobile authentication
+        run: |
+          go run ./cmd/api >/tmp/visionopus-api.log 2>&1 &
+          api_pid=$!
+          npm --prefix web run dev -- --host 127.0.0.1 --port 4173 >/tmp/visionopus-web.log 2>&1 &
+          web_pid=$!
+          trap 'kill "$api_pid" "$web_pid"' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8080/health/ready >/dev/null && \
+               curl --fail --silent http://127.0.0.1:4173/login >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8080/health/ready >/dev/null
+          curl --fail --silent http://127.0.0.1:4173/login >/dev/null
+          npm --prefix web run test:e2e -- --grep "real Go API"

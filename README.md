@@ -7,8 +7,9 @@ ophthalmology EMR. The repository directory may retain the temporary
 ## Current Status
 
 The repository and governance foundation is established. The authentication and
-user-context specification is complete, independently reviewed, human-approved,
-and marked `ready`. Application implementation has not started.
+user-context specification is complete, independently reviewed, and
+human-approved. The first bounded Go, PostgreSQL, and React authentication
+walking skeleton is implemented, independently reviewed, and fully verified.
 
 See the [current project status](doc/project-status.md) for completed work,
 validation results, current gates, and next steps.
@@ -41,6 +42,42 @@ Validate slice structure and readiness gates with:
 ```bash
 ./scripts/validate-slices
 ```
+
+## Local Development
+
+Prerequisites are Go 1.26.5, Node.js 24, npm, Docker with Compose, and a
+Chromium-compatible browser for Playwright. The module retains Go 1.25 language
+compatibility while CI and development use Go 1.26.5.
+
+Create and load development configuration, then start PostgreSQL and apply the
+versioned schema:
+
+```bash
+cp .env.example .env
+set -a
+source .env
+set +a
+make db-up
+make migrate-up
+```
+
+Create a synthetic local identity by supplying a password at execution time;
+the password is never stored in the repository:
+
+```bash
+VISIONOPUS_DEV_PASSWORD='choose-a-local-development-password' make dev-seed
+```
+
+Run the API and web application in separate terminals:
+
+```bash
+make api
+make web-dev
+```
+
+The application is then available at `http://localhost:5173`. Run the bounded
+verification suite with `make check`; PostgreSQL integration and live browser
+tests are also enforced by Application CI.
 
 ## Source Authority
 
