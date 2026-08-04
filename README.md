@@ -7,9 +7,8 @@ ophthalmology EMR. The repository directory may retain the temporary
 ## Current Status
 
 The repository and governance foundation is established. The authentication and
-user-context specification is complete and independently reviewed, but remains
-at `specification` until its required human security and migration approvals
-are recorded. Application implementation has not started.
+user-context specification is complete, independently reviewed, human-approved,
+and marked `ready`. Application implementation has not started.
 
 See the [current project status](doc/project-status.md) for completed work,
 validation results, current gates, and next steps.
@@ -34,6 +33,7 @@ local authentication
 - [Documentation index](doc/README.md)
 - [React and TanStack Router decision](doc/decisions/0001-react-tanstack-router.md)
 - [Authentication foundation decision](doc/decisions/0003-authentication-foundation-policy.md)
+- [Authentication security and migration approval](doc/approvals/0001-authentication-security-migration.md)
 - [Authentication extraction workspace](doc/slices/01-auth-user-context/README.md)
 
 Validate slice structure and readiness gates with:
