@@ -30,3 +30,4 @@ coverage.*
 # AI tool local state
 .claude/settings.local.json
 .gemini/
+agent-work/*/*.log
