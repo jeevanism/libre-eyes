@@ -13,7 +13,7 @@ services:
       timeout: 3s
       retries: 15
     volumes:
-      - visionopus-postgres:/var/lib/postgresql/data
+      - visionopus-postgres-18:/var/lib/postgresql
 
 volumes:
-  visionopus-postgres:
+  visionopus-postgres-18:

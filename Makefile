@@ -1,4 +1,4 @@
-.PHONY: api check db-down db-up dev-seed fmt migrate-up spec-check test test-race web-build web-check web-dev web-e2e web-install web-test
+.PHONY: api check db-down db-up dev dev-seed fmt migrate-up spec-check test test-race web-build web-check web-dev web-e2e web-install web-test
 
 spec-check:
 	./scripts/validate-slices
@@ -17,6 +17,9 @@ db-up:
 
 db-down:
 	docker compose down
+
+dev:
+	./scripts/dev
 
 migrate-up:
 	go run ./cmd/migrate up

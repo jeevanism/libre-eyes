@@ -49,8 +49,24 @@ Prerequisites are Go 1.26.5, Node.js 24, npm, Docker with Compose, and a
 Chromium-compatible browser for Playwright. The module retains Go 1.25 language
 compatibility while CI and development use Go 1.26.5.
 
-Create and load development configuration, then start PostgreSQL and apply the
-versioned schema:
+For normal development, one command prepares PostgreSQL, applies migrations,
+prompts for a synthetic clinician password, seeds the development identity, and
+starts the Go API and React application:
+
+```bash
+make dev
+```
+
+Open `http://localhost:5173/login` and sign in as `clinician` with the password
+entered at startup. Press `Ctrl+C` to stop the API and frontend. PostgreSQL is
+left running for the next session; stop it with `make db-down`.
+
+If port `5432` belongs to another Docker container, the script names the
+container and asks you to stop it rather than stopping unrelated work
+automatically.
+
+The equivalent manual workflow remains available. Create and load development
+configuration, then start PostgreSQL and apply the versioned schema:
 
 ```bash
 cp .env.example .env
