@@ -1,0 +1,2 @@
+-- Permission rows are retained on rollback because deployments may already
+-- reference them from role assignments.
