@@ -13,7 +13,7 @@ function PatientSummaryRoute() {
   const { session } = Route.useRouteContext()
   const header = useQuery({
     queryKey: ['patient-summary-header', patientId, session.contextVersion],
-    queryFn: () => patientSummaryAPI.header(patientId, session.contextVersion),
+    queryFn: () => patientSummaryAPI.header(patientId, session.csrfToken, session.contextVersion),
   })
   const canReadWarnings = session.permissions.includes('patient.clinical_summary.read')
   const warnings = useQuery({

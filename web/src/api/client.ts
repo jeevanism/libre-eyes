@@ -134,9 +134,9 @@ export const patientSearchAPI = {
 }
 
 export const patientSummaryAPI = {
-  header: (patientId: string, contextVersion: number) =>
+  header: (patientId: string, csrfToken: string, contextVersion: number) =>
     request<PatientSummaryHeader>(`/patients/${encodeURIComponent(patientId)}/summary-header`, {
-      headers: { 'X-Context-Version': String(contextVersion) },
+      headers: { 'X-CSRF-Token': csrfToken, 'X-Context-Version': String(contextVersion) },
     }),
   warnings: (patientId: string, csrfToken: string, contextVersion: number) =>
     request<PatientWarningDetails>(`/patients/${encodeURIComponent(patientId)}/summary-header/warnings`, {
