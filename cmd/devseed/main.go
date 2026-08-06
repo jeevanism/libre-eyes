@@ -194,8 +194,8 @@ func run(ctx context.Context) error {
 	}
 	identifierTypeID, err := findOrInsert(ctx, tx,
 		"SELECT id FROM patient_identifier_types WHERE institution_id = $1 AND site_id IS NULL AND stable_code = $2",
-		`INSERT INTO patient_identifier_types (stable_code, institution_id, display_label, normalization_kind, maximum_canonical_length, validation_state, source_system, source_record_id)
-		 VALUES ($2, $1, 'NHS number', 'nhs_number_v1', 10, 'validated', 'visionopus-dev', 'identifier-type-nhs') RETURNING id`, institutionID, "nhs_number")
+		`INSERT INTO patient_identifier_types (stable_code, institution_id, display_label, normalization_kind, maximum_canonical_length, validation_state, display_order, source_system, source_record_id)
+		 VALUES ($2, $1, 'NHS number', 'nhs_number_v1', 10, 'validated', 0, 'visionopus-dev', 'identifier-type-nhs') RETURNING id`, institutionID, "nhs_number")
 	if err != nil {
 		return fmt.Errorf("upsert synthetic identifier type: %w", err)
 	}
