@@ -17,6 +17,37 @@ INSERT INTO permissions (name, description) VALUES
     ('patient.break_glass.revoke', 'Revoke a bounded patient break-glass grant')
 ON CONFLICT (name) DO NOTHING;
 
+CREATE TABLE patient_break_glass_grants (
+    grant_id TEXT PRIMARY KEY CHECK (char_length(grant_id) BETWEEN 32 AND 128),
+    patient_id BIGINT NOT NULL REFERENCES patients(id),
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    session_id BIGINT NOT NULL REFERENCES sessions(id),
+    institution_id BIGINT NOT NULL REFERENCES institutions(id),
+    site_id BIGINT NOT NULL REFERENCES sites(id),
+    firm_id BIGINT NOT NULL REFERENCES firms(id),
+    reason_code TEXT NOT NULL CHECK (btrim(reason_code) <> ''),
+    reason_detail TEXT CHECK (reason_detail IS NULL OR char_length(reason_detail) <= 1000),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    CHECK (expires_at > created_at),
+    CHECK (revoked_at IS NULL OR revoked_at >= created_at)
+);
+
+CREATE INDEX patient_break_glass_grants_lookup_idx
+    ON patient_break_glass_grants (user_id, session_id, patient_id, expires_at)
+    WHERE revoked_at IS NULL;
+
+CREATE TABLE patient_break_glass_alert_outbox (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    grant_id TEXT NOT NULL REFERENCES patient_break_glass_grants(grant_id),
+    event_type TEXT NOT NULL CHECK (event_type IN ('created', 'revoked')),
+    queued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    delivered_at TIMESTAMPTZ,
+    attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+    UNIQUE (grant_id, event_type)
+);
+
 CREATE TABLE patient_summary_warning_projections (
     patient_id BIGINT PRIMARY KEY REFERENCES patients(id),
     allergy_status patient_summary_warning_status NOT NULL,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"time"
 
@@ -18,6 +19,8 @@ type Service interface {
 	AuthorizeClinical(context.Context, string, string, auth.RequestMetadata) (patientsummary.Authorization, error)
 	GetHeader(context.Context, patientsummary.Authorization, string, string) (patientsummary.Header, error)
 	GetWarningDetails(context.Context, patientsummary.Authorization, string, string) (patientsummary.WarningDetails, error)
+	CreateBreakGlassGrant(context.Context, string, string, auth.RequestMetadata, string, string, patientsummary.BreakGlassRequest) (patientsummary.BreakGlassGrant, error)
+	RevokeBreakGlassGrant(context.Context, string, string, auth.RequestMetadata, string, string, string) error
 }
 
 type Handler struct {
@@ -32,6 +35,57 @@ func NewHandler(service Service, cookieSecure bool) *Handler {
 func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/patients/{patientId}/summary-header", h.getHeader)
 	mux.HandleFunc("GET /api/v1/patients/{patientId}/summary-header/warnings", h.getWarnings)
+	mux.HandleFunc("POST /api/v1/patients/{patientId}/break-glass-grants", h.createGrant)
+	mux.HandleFunc("DELETE /api/v1/patients/{patientId}/break-glass-grants/{grantId}", h.revokeGrant)
+}
+
+func (h *Handler) createGrant(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil || cookie.Value == "" {
+		writeProblem(w, http.StatusUnauthorized, "unauthenticated", "Authentication required")
+		return
+	}
+	var body struct {
+		ReasonCode   string  `json:"reasonCode"`
+		ReasonDetail *string `json:"reasonDetail"`
+	}
+	decoder := json.NewDecoder(io.LimitReader(r.Body, 2048))
+	if err := decoder.Decode(&body); err != nil {
+		writeProblem(w, http.StatusBadRequest, "invalid_request", "Invalid break-glass request")
+		return
+	}
+	version := r.Header.Get("X-Context-Version")
+	if version == "" {
+		writeProblem(w, http.StatusBadRequest, "invalid_request", "A context version is required")
+		return
+	}
+	grant, err := h.service.CreateBreakGlassGrant(r.Context(), cookie.Value, r.Header.Get("X-CSRF-Token"), auth.RequestMetadata{CorrelationID: correlationID(r), SourceIPClass: "private"}, r.PathValue("patientId"), version, patientsummary.BreakGlassRequest{ReasonCode: body.ReasonCode, ReasonDetail: body.ReasonDetail})
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, grant)
+}
+
+func (h *Handler) revokeGrant(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil || cookie.Value == "" {
+		writeProblem(w, http.StatusUnauthorized, "unauthenticated", "Authentication required")
+		return
+	}
+	version := r.Header.Get("X-Context-Version")
+	if version == "" {
+		writeProblem(w, http.StatusBadRequest, "invalid_request", "A context version is required")
+		return
+	}
+	err = h.service.RevokeBreakGlassGrant(r.Context(), cookie.Value, r.Header.Get("X-CSRF-Token"), auth.RequestMetadata{CorrelationID: correlationID(r), SourceIPClass: "private"}, r.PathValue("patientId"), r.PathValue("grantId"), version)
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) getWarnings(w http.ResponseWriter, r *http.Request) {
