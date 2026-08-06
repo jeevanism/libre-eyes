@@ -169,7 +169,7 @@ jobs:
       - name: Prepare synthetic database
         run: go run ./cmd/migrate up && go run ./cmd/devseed
 
-      - name: Run live desktop and mobile authentication
+      - name: Run live desktop and tablet authentication
         run: |
           go run ./cmd/api >/tmp/visionopus-api.log 2>&1 &
           api_pid=$!
