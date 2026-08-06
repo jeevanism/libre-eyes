@@ -31,16 +31,29 @@ func TestPatientSearchFoundationConstraints(t *testing.T) {
 	t.Run("demographic search index exists", func(t *testing.T) {
 		var exists bool
 		if err := pool.QueryRow(context.Background(), `
-			SELECT EXISTS (
-				SELECT 1 FROM pg_indexes
-				WHERE schemaname = 'public'
-					AND indexname = 'patients_demographics_search_idx'
-			)`,
+			SELECT to_regclass('public.patients_demographics_search_idx') IS NOT NULL`,
 		).Scan(&exists); err != nil {
 			t.Fatalf("query demographic search index: %v", err)
 		}
 		if !exists {
 			t.Fatal("patients_demographics_search_idx does not exist")
+		}
+	})
+
+	t.Run("repository indexes match exact query paths", func(t *testing.T) {
+		var duplicateIndex, redundantIndex bool
+		if err := pool.QueryRow(context.Background(), `
+			SELECT
+				to_regclass('public.patients_demographics_duplicate_idx') IS NOT NULL,
+				to_regclass('public.patient_identifiers_patient_active_idx') IS NOT NULL`,
+		).Scan(&duplicateIndex, &redundantIndex); err != nil {
+			t.Fatalf("query repository indexes: %v", err)
+		}
+		if !duplicateIndex {
+			t.Fatal("patients_demographics_duplicate_idx does not exist")
+		}
+		if redundantIndex {
+			t.Fatal("redundant patient_identifiers_patient_active_idx still exists")
 		}
 	})
 
