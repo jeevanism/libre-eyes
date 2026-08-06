@@ -18,6 +18,7 @@ type Header struct {
 	GivenName         *string
 	FamilyName        *string
 	DateOfBirth       time.Time
+	AgeYears          *int
 	Gender            string
 	Deceased          bool
 	DateOfDeath       *time.Time

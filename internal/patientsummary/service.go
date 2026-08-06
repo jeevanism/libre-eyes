@@ -252,6 +252,17 @@ func (s *Service) GetHeader(ctx context.Context, authorization Authorization, pu
 	if err != nil {
 		return Header{}, err
 	}
+	comparisonDate := s.now().UTC()
+	if header.Deceased && header.DateOfDeath != nil {
+		comparisonDate = *header.DateOfDeath
+	}
+	age := comparisonDate.Year() - header.DateOfBirth.Year()
+	if comparisonDate.YearDay() < header.DateOfBirth.YearDay() {
+		age--
+	}
+	if age >= 0 {
+		header.AgeYears = &age
+	}
 	attributes, _ := json.Marshal(map[string]any{
 		"permission":     permissionSummaryRead,
 		"contextVersion": authorization.principal.ContextVersion,

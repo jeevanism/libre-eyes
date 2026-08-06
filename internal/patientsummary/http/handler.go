@@ -189,20 +189,13 @@ type headerResponse struct {
 func mapHeader(header patientsummary.Header) headerResponse {
 	response := headerResponse{
 		PatientID: header.PublicID, GivenName: header.GivenName, FamilyName: header.FamilyName,
-		DateOfBirth: header.DateOfBirth.Format("2006-01-02"), Gender: header.Gender,
+		DateOfBirth: header.DateOfBirth.Format("2006-01-02"), AgeYears: header.AgeYears, Gender: header.Gender,
 		Deceased: header.Deceased, ClinicalState: "withheld", Version: header.Version,
 		WarningVersion: header.WarningVersion,
 	}
 	if header.DateOfDeath != nil {
 		value := header.DateOfDeath.Format("2006-01-02")
 		response.DateOfDeath = &value
-		age := header.DateOfDeath.Year() - header.DateOfBirth.Year()
-		if header.DateOfDeath.YearDay() < header.DateOfBirth.YearDay() {
-			age--
-		}
-		if age >= 0 {
-			response.AgeYears = &age
-		}
 	}
 	return response
 }
