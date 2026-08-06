@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "generate:api": "openapi-typescript ../doc/slices/01-auth-user-context/api-contract.yaml -o src/api/schema.d.ts",
+    "generate:api": "npm run generate:api:auth && npm run generate:api:patient-search",
+    "generate:api:auth": "openapi-typescript ../doc/slices/01-auth-user-context/api-contract.yaml -o src/api/schema.d.ts",
+    "generate:api:patient-search": "openapi-typescript ../doc/slices/02-patient-search/api-contract.yaml -o src/api/patient-search-schema.d.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

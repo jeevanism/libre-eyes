@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 
 import { sessionQuery } from '../features/auth/queries'
+import { SessionShell } from '../features/auth/SessionShell'
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ context, location }) => {
@@ -13,5 +14,10 @@ export const Route = createFileRoute('/_authenticated')({
       throw redirect({ to: '/login', search: { redirect: location.href } })
     }
   },
-  component: () => <Outlet />,
+  component: AuthenticatedLayout,
 })
+
+function AuthenticatedLayout() {
+  const { session } = Route.useRouteContext()
+  return <SessionShell session={session}><Outlet /></SessionShell>
+}

@@ -1,12 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { SessionShell } from '../../features/auth/SessionShell'
-
 export const Route = createFileRoute('/_authenticated/')({
   component: AuthenticatedHome,
 })
 
 function AuthenticatedHome() {
-  const { session } = Route.useRouteContext()
-  return <SessionShell session={session} />
+  return (
+    <>
+      <div className="workspace-title">
+        <p>Clinical workspace</p>
+        <h1>Home</h1>
+      </div>
+      <div className="empty-workspace"><span>No patient selected</span></div>
+    </>
+  )
 }

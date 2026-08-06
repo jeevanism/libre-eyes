@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { axe } from 'vitest-axe'
 import { describe, expect, it, vi } from 'vitest'
 
+import { ThemeProvider } from '../theme/ThemeProvider'
 import { LoginForm } from './LoginForm'
 
 const options = {
@@ -20,7 +21,11 @@ const options = {
 describe('LoginForm', () => {
   it('submits credentials and selected context', () => {
     const onSubmit = vi.fn()
-    render(<LoginForm options={options} pending={false} errorMessage={undefined} onSubmit={onSubmit} />)
+    render(
+      <ThemeProvider>
+        <LoginForm options={options} pending={false} errorMessage={undefined} onSubmit={onSubmit} />
+      </ThemeProvider>,
+    )
 
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'clinician' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret' } })
@@ -37,7 +42,9 @@ describe('LoginForm', () => {
 
   it('has no automated accessibility violations', async () => {
     const { container } = render(
-      <LoginForm options={options} pending={false} errorMessage={undefined} onSubmit={vi.fn()} />,
+      <ThemeProvider>
+        <LoginForm options={options} pending={false} errorMessage={undefined} onSubmit={vi.fn()} />
+      </ThemeProvider>,
     )
     const results = await axe(container)
     expect(results.violations).toEqual([])

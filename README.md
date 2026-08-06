@@ -12,6 +12,9 @@ human-approved. The first bounded Go, PostgreSQL, and React authentication
 walking skeleton is implemented, independently reviewed, and fully verified.
 The patient identity schema, exact search repository, and audited patient-search
 REST boundary are also implemented with synthetic PostgreSQL integration tests.
+The authenticated React patient-search and exact-only duplicate-check workflow
+now runs end to end against that boundary on desktop and mobile, with semantic
+light, dark, and system themes.
 
 See the [current project status](doc/project-status.md) for completed work,
 validation results, current gates, and next steps.

@@ -28,6 +28,15 @@ test('authenticates and signs out through the real Go API', async ({ page }, tes
   await expect(page.getByText('Development Ophthalmology')).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('authenticated-home.png'), fullPage: true })
 
+  await page.getByRole('link', { name: 'Patient search' }).click()
+  await page.getByLabel('Family name').fill('NoSuchSyntheticPatient')
+  await page.getByLabel('Date of birth').fill('1901-01-01')
+  await page.getByLabel('Gender').selectOption('unknown')
+  await page.getByRole('button', { name: 'Search patients' }).click()
+  await expect(page.getByText('No matching patients found in current institution.')).toBeVisible()
+  await expect(page).toHaveURL('/patients/search')
+  await page.screenshot({ path: testInfo.outputPath('patient-search-empty.png'), fullPage: true })
+
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(page).toHaveURL(/\/login(?:\?|$)/)
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()

@@ -1,28 +1,44 @@
 import type { components, paths } from './schema'
+import type {
+  components as patientSearchComponents,
+  paths as patientSearchPaths,
+} from './patient-search-schema'
 
 export type LoginOptions = components['schemas']['LoginOptions']
 export type Session = components['schemas']['SessionRepresentation']
 export type LoginRequest = components['schemas']['LoginRequest']
 export type Problem = components['schemas']['Problem']
 export type ReplaceContextRequest = components['schemas']['ReplaceContextRequest']
+export type PatientSearchRequest = patientSearchComponents['schemas']['PatientSearchRequest']
+export type PatientSearchPage = patientSearchComponents['schemas']['PatientSearchPage']
+export type PatientSearchResult = patientSearchComponents['schemas']['PatientSearchResult']
+export type DuplicateCandidateRequest = patientSearchComponents['schemas']['DuplicateCandidateRequest']
+export type DuplicateCandidateResponse = patientSearchComponents['schemas']['DuplicateCandidateResponse']
+export type PatientSearchCriteria = patientSearchComponents['schemas']['PatientSearchCriteria']
+export type GenderCode = patientSearchComponents['schemas']['GenderCode']
 
 type LoginResponse = paths['/auth/sessions']['post']['responses']['200']['content']['application/json']
+type PatientSearchResponse = patientSearchPaths['/patients/searches']['post']['responses']['200']['content']['application/json']
+type DuplicateCandidatesResponse = patientSearchPaths['/patients/duplicate-candidates']['post']['responses']['200']['content']['application/json']
 
 export class ApiError extends Error {
   readonly status: number
   readonly problem: Problem | undefined
+  readonly retryAfterSeconds: number | undefined
 
-  constructor(status: number, problem?: Problem) {
+  constructor(status: number, problem?: Problem, retryAfterSeconds?: number) {
     super(problem?.title ?? `Request failed with status ${status}`)
     this.name = 'ApiError'
     this.status = status
     this.problem = problem
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/v1${path}`, {
     ...init,
+    cache: 'no-store',
     credentials: 'include',
     headers: {
       Accept: 'application/json',
@@ -34,7 +50,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = contentType.includes('application/problem+json')
       ? ((await response.json()) as Problem)
       : undefined
-    throw new ApiError(response.status, body)
+    const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
+    throw new ApiError(
+      response.status,
+      body,
+      Number.isSafeInteger(retryAfter) && retryAfter > 0 ? retryAfter : undefined,
+    )
   }
   if (response.status === 204) {
     return undefined as T
@@ -63,6 +84,27 @@ export const authAPI = {
         'Content-Type': 'application/json',
         'X-CSRF-Token': csrfToken,
         'If-Match': `"${contextVersion}"`,
+      },
+      body: JSON.stringify(body),
+    }),
+}
+
+export const patientSearchAPI = {
+  search: (body: PatientSearchRequest, csrfToken: string) =>
+    request<PatientSearchResponse>('/patients/searches', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify(body),
+    }),
+  findDuplicateCandidates: (body: DuplicateCandidateRequest, csrfToken: string) =>
+    request<DuplicateCandidatesResponse>('/patients/duplicate-candidates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
       },
       body: JSON.stringify(body),
     }),

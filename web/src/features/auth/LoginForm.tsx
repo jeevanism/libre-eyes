@@ -2,6 +2,7 @@ import { Eye, LoaderCircle, LockKeyhole } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 
 import type { LoginOptions, LoginRequest } from '../../api/client'
+import { ThemeControl } from '../theme/ThemeControl'
 
 interface LoginFormProps {
   options: LoginOptions
@@ -39,8 +40,11 @@ export function LoginForm({ options, pending, errorMessage, onSubmit }: LoginFor
     <main className="login-page">
       <section className="login-shell" aria-labelledby="login-heading">
         <header className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true"><Eye size={27} strokeWidth={2} /></span>
-          <span className="brand-name">VisionOpus</span>
+          <div className="brand-identity">
+            <span className="brand-mark" aria-hidden="true"><Eye size={27} strokeWidth={2} /></span>
+            <span className="brand-name">VisionOpus</span>
+          </div>
+          <ThemeControl />
         </header>
 
         <div className="login-panel">
