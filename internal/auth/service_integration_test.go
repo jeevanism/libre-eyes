@@ -154,6 +154,102 @@ func TestAuthorizationDenialAuditIsBounded(t *testing.T) {
 	}
 }
 
+func TestAuthorizeOperationEnforcesCSRFContextAndPermission(t *testing.T) {
+	service, pool := integrationService(t, 5)
+	seed := seedIntegrationUser(t, pool)
+	metadata := RequestMetadata{CorrelationID: "integration-operation-auth", SourceIPClass: "loopback"}
+	created, err := service.Login(context.Background(), LoginRequest{
+		Username: "clinician", Password: "synthetic-password",
+		InstitutionID: seed.institution1, SiteID: seed.site1,
+	}, metadata)
+	if err != nil {
+		t.Fatalf("Login() error = %v", err)
+	}
+	request := OperationAuthorizationRequest{
+		Token: created.Token, CSRFToken: created.Session.CSRFToken,
+		Permission: "patient.search", DeniedEventType: "patient_search.denied",
+		Metadata: metadata,
+	}
+
+	if _, err := service.AuthorizeOperation(context.Background(), request); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("AuthorizeOperation() without permission error = %v, want ErrForbidden", err)
+	}
+	if _, err := pool.Exec(context.Background(), `
+		INSERT INTO user_role_assignments (user_id, role_id, role_scope, institution_id)
+		SELECT $1, id, scope, $2 FROM roles WHERE name = 'Clinical Viewer'`,
+		created.Session.User.ID, seed.institution1,
+	); err != nil {
+		t.Fatalf("assign Clinical Viewer: %v", err)
+	}
+	principal, err := service.AuthorizeOperation(context.Background(), request)
+	if err != nil {
+		t.Fatalf("AuthorizeOperation() error = %v", err)
+	}
+	if principal.UserID != created.Session.User.ID || principal.InstitutionID != seed.institution1 ||
+		principal.SiteID != seed.site1 || principal.FirmID != seed.firm1 || principal.SessionID < 1 {
+		t.Fatalf("principal = %#v, want current validated session context", principal)
+	}
+
+	badCSRF := request
+	badCSRF.CSRFToken = "incorrect-csrf"
+	if _, err := pool.Exec(context.Background(), `
+		CREATE FUNCTION fail_operation_denial_audit() RETURNS trigger
+		LANGUAGE plpgsql AS $$
+		BEGIN
+			IF NEW.event_type = 'patient_search.denied' THEN
+				RAISE EXCEPTION 'synthetic denial audit failure';
+			END IF;
+			RETURN NEW;
+		END;
+		$$`); err != nil {
+		t.Fatalf("create denial audit failure function: %v", err)
+	}
+	if _, err := pool.Exec(context.Background(), `
+		CREATE TRIGGER operation_denial_audit_failure
+		BEFORE INSERT ON audit_events
+		FOR EACH ROW EXECUTE FUNCTION fail_operation_denial_audit()`); err != nil {
+		t.Fatalf("create denial audit failure trigger: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DROP TRIGGER IF EXISTS operation_denial_audit_failure ON audit_events`)
+		_, _ = pool.Exec(context.Background(), `DROP FUNCTION IF EXISTS fail_operation_denial_audit()`)
+	})
+	if _, err := service.AuthorizeOperation(context.Background(), badCSRF); !errors.Is(err, ErrCSRF) {
+		t.Fatalf("AuthorizeOperation() unavailable denial audit error = %v, want ErrCSRF", err)
+	}
+	if _, err := pool.Exec(context.Background(), `DROP TRIGGER operation_denial_audit_failure ON audit_events`); err != nil {
+		t.Fatalf("drop denial audit failure trigger: %v", err)
+	}
+	if _, err := pool.Exec(context.Background(), `DROP FUNCTION fail_operation_denial_audit()`); err != nil {
+		t.Fatalf("drop denial audit failure function: %v", err)
+	}
+	if _, err := service.AuthorizeOperation(context.Background(), badCSRF); !errors.Is(err, ErrCSRF) {
+		t.Fatalf("AuthorizeOperation() bad CSRF error = %v, want ErrCSRF", err)
+	}
+	if _, err := pool.Exec(context.Background(), `
+		UPDATE user_site_memberships SET active = FALSE
+		WHERE user_id = $1 AND site_id = $2`, created.Session.User.ID, seed.site1); err != nil {
+		t.Fatalf("deactivate site membership: %v", err)
+	}
+	if _, err := service.AuthorizeOperation(context.Background(), request); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("AuthorizeOperation() inaccessible context error = %v, want ErrForbidden", err)
+	}
+
+	var permissionDenied, csrfDenied, contextDenied int
+	if err := pool.QueryRow(context.Background(), `
+		SELECT
+			count(*) FILTER (WHERE reason_code = 'permission_denied'),
+			count(*) FILTER (WHERE reason_code = 'csrf_rejected'),
+			count(*) FILTER (WHERE reason_code = 'context_inaccessible')
+		FROM audit_events WHERE event_type = 'patient_search.denied'`,
+	).Scan(&permissionDenied, &csrfDenied, &contextDenied); err != nil {
+		t.Fatalf("query operation denial audit: %v", err)
+	}
+	if permissionDenied != 1 || csrfDenied != 1 || contextDenied != 1 {
+		t.Fatalf("denial audit counts = permission:%d csrf:%d context:%d, want 1 each", permissionDenied, csrfDenied, contextDenied)
+	}
+}
+
 func TestCurrentSessionBoundsRefreshWrites(t *testing.T) {
 	service, pool := integrationService(t, 5)
 	seed := seedIntegrationUser(t, pool)

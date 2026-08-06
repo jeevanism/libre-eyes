@@ -10,6 +10,8 @@ The repository and governance foundation is established. The authentication and
 user-context specification is complete, independently reviewed, and
 human-approved. The first bounded Go, PostgreSQL, and React authentication
 walking skeleton is implemented, independently reviewed, and fully verified.
+The patient identity schema, exact search repository, and audited patient-search
+REST boundary are also implemented with synthetic PostgreSQL integration tests.
 
 See the [current project status](doc/project-status.md) for completed work,
 validation results, current gates, and next steps.

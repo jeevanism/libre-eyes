@@ -327,6 +327,97 @@ func (s *Service) CurrentSession(ctx context.Context, token string, metadata Req
 	return record.representation(token, s.config.CSRFKey, permissions, idleExpiry), nil
 }
 
+// AuthorizeOperation validates a session, CSRF token, live context, and permission.
+// Denials are audited on a best-effort basis and always remain denials if audit is unavailable.
+func (s *Service) AuthorizeOperation(ctx context.Context, request OperationAuthorizationRequest) (OperationPrincipal, error) {
+	if strings.TrimSpace(request.Permission) == "" || strings.TrimSpace(request.DeniedEventType) == "" {
+		return OperationPrincipal{}, errors.New("operation authorization policy is incomplete")
+	}
+
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return OperationPrincipal{}, fmt.Errorf("begin operation authorization transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	record, err := s.loadActiveSession(ctx, tx, request.Token, request.Metadata)
+	if err != nil {
+		if errors.Is(err, ErrUnauthenticated) {
+			if commitErr := tx.Commit(ctx); commitErr != nil {
+				return OperationPrincipal{}, fmt.Errorf("commit operation session rejection: %w", commitErr)
+			}
+		}
+		return OperationPrincipal{}, err
+	}
+	if !verifyDigest(record.csrfDigest, request.CSRFToken) {
+		s.bestEffortOperationDenial(ctx, tx, record, request, "csrf_rejected")
+		return OperationPrincipal{}, ErrCSRF
+	}
+
+	firmID := record.context.Firm.ID
+	validatedContext, err := resolveContext(
+		ctx,
+		tx,
+		record.user.ID,
+		record.context.Institution.ID,
+		record.context.Site.ID,
+		&firmID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			s.bestEffortOperationDenial(ctx, tx, record, request, "context_inaccessible")
+			return OperationPrincipal{}, ErrForbidden
+		}
+		return OperationPrincipal{}, fmt.Errorf("validate operation context: %w", err)
+	}
+
+	permissions, err := loadPermissions(ctx, tx, record.user.ID, validatedContext.Institution.ID)
+	if err != nil {
+		return OperationPrincipal{}, err
+	}
+	if !slices.Contains(permissions, request.Permission) {
+		s.bestEffortOperationDenial(ctx, tx, record, request, "permission_denied")
+		return OperationPrincipal{}, ErrForbidden
+	}
+
+	now := s.now().UTC()
+	if now.Sub(record.lastSeenAt) >= sessionRefreshInterval(s.config.SessionIdleTimeout) {
+		idleExpiry := minTime(now.Add(s.config.SessionIdleTimeout), record.absoluteExpiresAt)
+		if _, err := tx.Exec(ctx, `
+			UPDATE sessions
+			SET last_seen_at = $2, idle_expires_at = $3, version = version + 1
+			WHERE id = $1`, record.id, now, idleExpiry); err != nil {
+			return OperationPrincipal{}, fmt.Errorf("refresh authorized session: %w", err)
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return OperationPrincipal{}, fmt.Errorf("commit operation authorization: %w", err)
+	}
+
+	return OperationPrincipal{
+		UserID:         record.user.ID,
+		SessionID:      record.id,
+		InstitutionID:  validatedContext.Institution.ID,
+		SiteID:         validatedContext.Site.ID,
+		FirmID:         validatedContext.Firm.ID,
+		ContextVersion: record.contextVersion,
+	}, nil
+}
+
+func (s *Service) bestEffortOperationDenial(
+	ctx context.Context,
+	tx pgx.Tx,
+	record sessionRecord,
+	request OperationAuthorizationRequest,
+	reason string,
+) {
+	denial := record.audit(request.DeniedEventType, "denied", reason, request.Metadata)
+	if err := insertRateLimitedAudit(ctx, tx, denial); err != nil {
+		return
+	}
+	_ = tx.Commit(ctx)
+}
+
 // Logout revokes only the current session after CSRF and permission checks.
 func (s *Service) Logout(ctx context.Context, token, csrf string, metadata RequestMetadata) error {
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})

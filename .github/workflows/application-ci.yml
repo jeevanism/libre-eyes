@@ -68,6 +68,9 @@ jobs:
       - name: Run PostgreSQL integration tests
         run: go test -race -tags=integration ./internal/auth -count=1
 
+      - name: Run patient-search PostgreSQL integration tests
+        run: go test -race -tags=integration ./internal/patientsearch -count=1
+
   frontend:
     name: React and browser
     runs-on: ubuntu-24.04

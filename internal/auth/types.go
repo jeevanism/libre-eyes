@@ -53,6 +53,25 @@ type RequestMetadata struct {
 	SourceIPClass string
 }
 
+// OperationAuthorizationRequest describes one authenticated, CSRF-protected permission check.
+type OperationAuthorizationRequest struct {
+	Token           string
+	CSRFToken       string
+	Permission      string
+	DeniedEventType string
+	Metadata        RequestMetadata
+}
+
+// OperationPrincipal is the server-validated identity and clinical context for one operation.
+type OperationPrincipal struct {
+	UserID         int64
+	SessionID      int64
+	InstitutionID  int64
+	SiteID         int64
+	FirmID         int64
+	ContextVersion int64
+}
+
 // User is the authenticated user's safe representation.
 type User struct {
 	ID          int64
