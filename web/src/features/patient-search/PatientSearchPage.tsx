@@ -453,7 +453,7 @@ function PatientTable({ patients, caption }: { patients: PatientSearchResult[]; 
         <tbody>
           {patients.map((patient) => (
             <tr key={patient.patientId}>
-              <td><strong>{patient.fullName ?? 'Name not recorded'}</strong></td>
+              <td><a className="patient-result-link" href={`/patients/${encodeURIComponent(patient.patientId)}`}><strong>{patient.fullName ?? 'Name not recorded'}</strong></a></td>
               <td>{patient.deceased ? <span className="status-badge status-deceased"><AlertTriangle size={14} aria-hidden="true" />Deceased{patient.dateOfDeath === null ? '' : `, ${formatDate(patient.dateOfDeath)}`}</span> : <span className="status-badge status-current">Current</span>}</td>
               <td>{patient.primaryIdentifier === null ? <span className="not-recorded">Not recorded</span> : <><span className="cell-label">{patient.primaryIdentifier.label}</span><span className="clinical-value">{patient.primaryIdentifier.value}</span></>}</td>
               <td className="clinical-value">{formatDate(patient.dateOfBirth)}</td>

@@ -16,6 +16,29 @@ export type DuplicateCandidateRequest = patientSearchComponents['schemas']['Dupl
 export type DuplicateCandidateResponse = patientSearchComponents['schemas']['DuplicateCandidateResponse']
 export type PatientSearchCriteria = patientSearchComponents['schemas']['PatientSearchCriteria']
 export type GenderCode = patientSearchComponents['schemas']['GenderCode']
+export type PatientSummaryHeader = {
+  patientId: string
+  givenName: string | null
+  familyName: string | null
+  dateOfBirth: string
+  ageYears: number | null
+  gender: string
+  deceased: boolean
+  dateOfDeath: string | null
+  clinicalDisclosure: 'authorized' | 'withheld'
+  allergyStatus?: string
+  alertStatus?: string
+  patientVersion: number
+  warningVersion?: number
+}
+export type PatientWarningDetails = {
+  patientId: string
+  allergies: { status: string }
+  alerts: { status: string }
+  items: Array<{ kind: string; code: string | null; label: string; reaction: string | null; comment: string | null }>
+  complete: boolean
+  warningVersion: number
+}
 
 type LoginResponse = paths['/auth/sessions']['post']['responses']['200']['content']['application/json']
 type PatientSearchResponse = patientSearchPaths['/patients/searches']['post']['responses']['200']['content']['application/json']
@@ -107,5 +130,16 @@ export const patientSearchAPI = {
         'X-CSRF-Token': csrfToken,
       },
       body: JSON.stringify(body),
+    }),
+}
+
+export const patientSummaryAPI = {
+  header: (patientId: string, contextVersion: number) =>
+    request<PatientSummaryHeader>(`/patients/${encodeURIComponent(patientId)}/summary-header`, {
+      headers: { 'X-Context-Version': String(contextVersion) },
+    }),
+  warnings: (patientId: string, csrfToken: string, contextVersion: number) =>
+    request<PatientWarningDetails>(`/patients/${encodeURIComponent(patientId)}/summary-header/warnings`, {
+      headers: { 'X-CSRF-Token': csrfToken, 'X-Context-Version': String(contextVersion) },
     }),
 }
