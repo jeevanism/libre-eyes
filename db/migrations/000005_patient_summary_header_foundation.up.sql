@@ -11,6 +11,12 @@ CREATE TYPE patient_summary_warning_kind AS ENUM (
     'diabetes'
 );
 
+INSERT INTO permissions (name, description) VALUES
+    ('patient.clinical_summary.read', 'Read patient summary warning status and details'),
+    ('patient.break_glass', 'Request bounded audited patient break-glass access'),
+    ('patient.break_glass.revoke', 'Revoke a bounded patient break-glass grant')
+ON CONFLICT (name) DO NOTHING;
+
 CREATE TABLE patient_summary_warning_projections (
     patient_id BIGINT PRIMARY KEY REFERENCES patients(id),
     allergy_status patient_summary_warning_status NOT NULL,
@@ -49,4 +55,3 @@ CREATE INDEX patient_summary_warning_items_patient_order_idx
 
 CREATE INDEX patient_summary_warning_projection_state_idx
     ON patient_summary_warning_projections (projection_state, updated_at);
-

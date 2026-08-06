@@ -15,7 +15,9 @@ const sessionCookieName = "visionopus_session"
 
 type Service interface {
 	Authorize(context.Context, string, string, auth.RequestMetadata) (patientsummary.Authorization, error)
+	AuthorizeClinical(context.Context, string, string, auth.RequestMetadata) (patientsummary.Authorization, error)
 	GetHeader(context.Context, patientsummary.Authorization, string, string) (patientsummary.Header, error)
+	GetWarningDetails(context.Context, patientsummary.Authorization, string, string) (patientsummary.WarningDetails, error)
 }
 
 type Handler struct {
@@ -29,6 +31,34 @@ func NewHandler(service Service, cookieSecure bool) *Handler {
 
 func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/patients/{patientId}/summary-header", h.getHeader)
+	mux.HandleFunc("GET /api/v1/patients/{patientId}/summary-header/warnings", h.getWarnings)
+}
+
+func (h *Handler) getWarnings(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil || cookie.Value == "" {
+		writeProblem(w, http.StatusUnauthorized, "unauthenticated", "Authentication required")
+		return
+	}
+	version := r.Header.Get("X-Context-Version")
+	if version == "" {
+		writeProblem(w, http.StatusBadRequest, "invalid_request", "A context version is required")
+		return
+	}
+	authorization, err := h.service.AuthorizeClinical(ctx, cookie.Value, r.Header.Get("X-CSRF-Token"), auth.RequestMetadata{CorrelationID: correlationID(r), SourceIPClass: "private"})
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	details, err := h.service.GetWarningDetails(ctx, authorization, r.PathValue("patientId"), version)
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, mapWarningDetails(details))
 }
 
 func (h *Handler) getHeader(w http.ResponseWriter, r *http.Request) {
@@ -68,8 +98,21 @@ func (h *Handler) writeServiceError(w http.ResponseWriter, err error) {
 		writeProblem(w, http.StatusConflict, "context_changed", "Clinical context changed")
 	case errors.Is(err, patientsummary.ErrNotFound):
 		writeProblem(w, http.StatusNotFound, "patient_not_found", "Patient not found")
+	case errors.Is(err, patientsummary.ErrWarningOverflow):
+		writeProblem(w, http.StatusServiceUnavailable, "summary_unavailable", "Patient summary is unavailable")
 	default:
 		writeProblem(w, http.StatusServiceUnavailable, "summary_unavailable", "Patient summary is unavailable")
+	}
+}
+
+func mapWarningDetails(details patientsummary.WarningDetails) map[string]any {
+	return map[string]any{
+		"patientId":      details.PatientID,
+		"allergies":      map[string]any{"status": details.AllergyStatus},
+		"alerts":         map[string]any{"status": details.AlertStatus},
+		"items":          details.Items,
+		"complete":       details.Complete,
+		"warningVersion": details.WarningVersion,
 	}
 }
 

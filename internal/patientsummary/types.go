@@ -29,3 +29,20 @@ type Header struct {
 	AlertAssessedAt   *time.Time
 	ProjectionState   *string
 }
+
+type WarningItem struct {
+	Kind     string  `json:"kind"`
+	Code     *string `json:"code"`
+	Label    string  `json:"label"`
+	Reaction *string `json:"reaction"`
+	Comment  *string `json:"comment"`
+}
+
+type WarningDetails struct {
+	PatientID      string
+	AllergyStatus  WarningStatus
+	AlertStatus    WarningStatus
+	Items          []WarningItem
+	Complete       bool
+	WarningVersion int64
+}
