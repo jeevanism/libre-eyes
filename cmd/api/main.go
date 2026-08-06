@@ -16,6 +16,8 @@ import (
 	"github.com/jeevanism/visionopus/internal/config"
 	"github.com/jeevanism/visionopus/internal/patientsearch"
 	patientsearchhttp "github.com/jeevanism/visionopus/internal/patientsearch/http"
+	"github.com/jeevanism/visionopus/internal/patientsummary"
+	patientsummaryhttp "github.com/jeevanism/visionopus/internal/patientsummary/http"
 	"github.com/jeevanism/visionopus/internal/platform/httpserver"
 )
 
@@ -56,7 +58,12 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	patientSearchHTTP := patientsearchhttp.NewHandler(patientSearch, cfg.CookieSecure)
-	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP)
+	patientSummary, err := patientsummary.NewService(database, authentication)
+	if err != nil {
+		return err
+	}
+	patientSummaryHTTP := patientsummaryhttp.NewHandler(patientSummary, cfg.CookieSecure)
+	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP)
 	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("api listening", "address", cfg.HTTPAddr, "environment", cfg.Environment)
