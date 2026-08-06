@@ -37,10 +37,10 @@ function PatientSummaryRoute() {
         <section className="summary-panel" aria-labelledby="identity-title">
           <div className="summary-panel-heading"><h2 id="identity-title">Identity</h2><span className="status-badge status-current">Verified context</span></div>
           <dl className="summary-details">
-            <div><dt>Date of birth</dt><dd>{patient.dateOfBirth}</dd></div>
+            <div><dt>Date of birth</dt><dd>{formatDate(patient.dateOfBirth)}</dd></div>
             <div><dt>Age</dt><dd>{patient.ageYears === null ? 'Unknown' : `${patient.ageYears} years`}</dd></div>
             <div><dt>Administrative sex</dt><dd>{patient.gender}</dd></div>
-            <div><dt>Patient status</dt><dd>{patient.deceased ? `Deceased${patient.dateOfDeath ? ` (${patient.dateOfDeath})` : ''}` : 'Current'}</dd></div>
+            <div><dt>Patient status</dt><dd>{patient.deceased ? `Deceased${patient.dateOfDeath ? ` (${formatDate(patient.dateOfDeath)})` : ''}` : 'Current'}</dd></div>
           </dl>
         </section>
         <section className="summary-panel" aria-labelledby="warning-title">
@@ -53,6 +53,11 @@ function PatientSummaryRoute() {
       </div>
     </section>
   )
+}
+
+function formatDate(value: string): string {
+  const [year = 0, month = 1, day = 1] = value.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, day)))
 }
 
 function WarningList({ details }: { details: Awaited<ReturnType<typeof patientSummaryAPI.warnings>> }) {
