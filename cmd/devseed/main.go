@@ -138,10 +138,33 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("upsert development firm preference: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `
+		INSERT INTO roles (name, description, scope, active)
+		VALUES (
+			'Development Patient Search Tester',
+			'Synthetic development-only patient search and duplicate-check access',
+			'institution',
+			TRUE
+		)
+		ON CONFLICT (name) DO UPDATE SET
+			description = EXCLUDED.description,
+			active = TRUE`); err != nil {
+		return fmt.Errorf("upsert development patient-search role: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO role_permissions (role_id, permission_id, active)
+		SELECT r.id, p.id, TRUE
+		FROM roles r
+		JOIN permissions p ON p.name IN ('patient.search', 'patient.duplicate_check')
+		WHERE r.name = 'Development Patient Search Tester'
+		ON CONFLICT (role_id, permission_id) DO UPDATE SET active = TRUE`); err != nil {
+		return fmt.Errorf("upsert development patient-search permissions: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
 		INSERT INTO user_role_assignments (user_id, role_id, role_scope, institution_id)
-		SELECT $1, id, scope, $2 FROM roles WHERE name = 'VisionOpus User'
+		SELECT $1, id, scope, $2 FROM roles
+		WHERE name IN ('VisionOpus User', 'Development Patient Search Tester')
 		ON CONFLICT (user_id, role_id, institution_id) DO UPDATE SET active = TRUE`, userID, institutionID); err != nil {
-		return fmt.Errorf("upsert development role: %w", err)
+		return fmt.Errorf("upsert development roles: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

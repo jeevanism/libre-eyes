@@ -59,6 +59,12 @@ jobs:
       - name: Apply PostgreSQL migrations
         run: go run ./cmd/migrate up
 
+      - name: Verify latest migration rollback and reapply
+        run: go run ./cmd/migrate down && go run ./cmd/migrate up
+
+      - name: Run patient identity migration tests
+        run: go test -race -tags=integration ./db/migrations -count=1
+
       - name: Run PostgreSQL integration tests
         run: go test -race -tags=integration ./internal/auth -count=1
 
