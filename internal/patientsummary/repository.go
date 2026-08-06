@@ -6,11 +6,13 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jeevanism/visionopus/internal/auth"
 )
 
 var (
 	ErrInvalidRequest = errors.New("invalid patient summary request")
 	ErrNotFound       = errors.New("patient summary not found")
+	ErrGrantRequired  = errors.New("active break-glass grant required")
 )
 
 // DBTX is the read surface used by the summary repository and its tests.
@@ -128,4 +130,29 @@ func (r *Repository) LoadWarningDetails(ctx context.Context, institutionID int64
 	}
 	result.Complete = true
 	return result, nil
+}
+
+func (r *Repository) LoadActiveGrantID(ctx context.Context, principal auth.OperationPrincipal, publicID string) (string, error) {
+	if principal.UserID < 1 || publicID == "" {
+		return "", ErrInvalidRequest
+	}
+	var grantID string
+	err := r.db.QueryRow(ctx, `
+		SELECT g.grant_id
+		FROM patient_break_glass_grants g
+		JOIN patients p ON p.id = g.patient_id
+		WHERE g.user_id = $1 AND g.session_id = $2
+			AND g.institution_id = $3 AND g.site_id = $4 AND g.firm_id = $5
+			AND p.public_id = $6 AND g.revoked_at IS NULL
+			AND g.expires_at > now()
+		ORDER BY g.created_at DESC
+		LIMIT 1`, principal.UserID, principal.SessionID, principal.InstitutionID,
+		principal.SiteID, principal.FirmID, publicID).Scan(&grantID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrGrantRequired
+	}
+	if err != nil {
+		return "", fmt.Errorf("load active break-glass grant: %w", err)
+	}
+	return grantID, nil
 }

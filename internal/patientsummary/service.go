@@ -32,8 +32,10 @@ type Service struct {
 }
 
 type Authorization struct {
-	principal auth.OperationPrincipal
-	metadata  auth.RequestMetadata
+	principal  auth.OperationPrincipal
+	metadata   auth.RequestMetadata
+	grantID    string
+	breakGlass bool
 }
 
 type BreakGlassRequest struct {
@@ -72,7 +74,17 @@ func (s *Service) AuthorizeClinical(ctx context.Context, token, csrf string, met
 		DeniedEventType: "patient_summary_warning.denied", Metadata: metadata,
 	})
 	if err != nil {
-		return Authorization{}, err
+		if !errors.Is(err, auth.ErrForbidden) {
+			return Authorization{}, err
+		}
+		principal, err = s.authorizer.AuthorizeOperation(ctx, auth.OperationAuthorizationRequest{
+			Token: token, CSRFToken: csrf, Permission: permissionBreakGlass,
+			DeniedEventType: "patient_break_glass.denied", Metadata: metadata,
+		})
+		if err != nil {
+			return Authorization{}, err
+		}
+		return Authorization{principal: principal, metadata: metadata, breakGlass: true}, nil
 	}
 	return Authorization{principal: principal, metadata: metadata}, nil
 }
@@ -94,7 +106,23 @@ func (s *Service) GetWarningDetails(ctx context.Context, authorization Authoriza
 	if err != nil {
 		return WarningDetails{}, err
 	}
+	grantID := authorization.grantID
+	if grantID == "" {
+		grantID, err = repository.LoadActiveGrantID(ctx, authorization.principal, publicID)
+		if err != nil && !errors.Is(err, ErrGrantRequired) {
+			return WarningDetails{}, err
+		}
+		if errors.Is(err, ErrGrantRequired) {
+			grantID = ""
+		}
+	}
+	if authorization.breakGlass && grantID == "" {
+		return WarningDetails{}, ErrGrantRequired
+	}
 	attributes, _ := json.Marshal(map[string]any{"permission": permissionClinicalSummaryRead, "contextVersion": authorization.principal.ContextVersion})
+	if grantID != "" {
+		attributes, _ = json.Marshal(map[string]any{"permission": permissionBreakGlass, "grantId": grantID, "contextVersion": authorization.principal.ContextVersion})
+	}
 	if _, err := tx.Exec(ctx, `INSERT INTO audit_events (event_type, actor_user_id, session_id, institution_id, site_id, firm_id, outcome, reason_code, correlation_id, source_ip_class, attributes) VALUES ($1,$2,$3,$4,$5,$6,'success',$7,$8,$9,$10::jsonb)`, "patient_summary_warning.view", authorization.principal.UserID, authorization.principal.SessionID, authorization.principal.InstitutionID, authorization.principal.SiteID, authorization.principal.FirmID, "disclosed", authorization.metadata.CorrelationID, authorization.metadata.SourceIPClass, attributes); err != nil {
 		return WarningDetails{}, fmt.Errorf("audit patient warnings: %w", err)
 	}
