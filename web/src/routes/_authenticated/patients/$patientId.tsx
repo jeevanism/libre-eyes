@@ -3,6 +3,7 @@ import { AlertTriangle, ShieldAlert } from 'lucide-react'
 import { createFileRoute } from '@tanstack/react-router'
 
 import { ApiError, patientSummaryAPI } from '../../../api/client'
+import { EpisodeTimeline } from '../../../features/episodes/EpisodeTimeline'
 
 export const Route = createFileRoute('/_authenticated/patients/$patientId')({
   component: PatientSummaryRoute,
@@ -51,6 +52,12 @@ function PatientSummaryRoute() {
           {canReadWarnings && warnings.data && <WarningList details={warnings.data} />}
         </section>
       </div>
+      <EpisodeTimeline
+        patientId={patientId}
+        csrfToken={session.csrfToken}
+        contextVersion={session.contextVersion}
+        allowed={session.permissions.includes('episode.read')}
+      />
     </section>
   )
 }

@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "generate:api": "npm run generate:api:auth && npm run generate:api:patient-search",
+    "generate:api": "npm run generate:api:auth && npm run generate:api:patient-search && npm run generate:api:episodes",
     "generate:api:auth": "openapi-typescript ../doc/slices/01-auth-user-context/api-contract.yaml -o src/api/schema.d.ts",
     "generate:api:patient-search": "openapi-typescript ../doc/slices/02-patient-search/api-contract.yaml -o src/api/patient-search-schema.d.ts",
+    "generate:api:episodes": "openapi-typescript ../doc/slices/04-episodes-events/api-contract.yaml -o src/api/episodes-schema.d.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

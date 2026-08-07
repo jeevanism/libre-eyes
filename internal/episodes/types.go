@@ -7,10 +7,19 @@ import (
 )
 
 const (
-	permissionRead   = "episode.read"
-	permissionCreate = "episode.create"
-	permissionUpdate = "episode.update"
-	permissionReopen = "episode.reopen"
+	// PermissionRead permits scoped episode-header disclosure.
+	PermissionRead = "episode.read"
+	// PermissionCreate permits creation in the server-derived clinical context.
+	PermissionCreate = "episode.create"
+	// PermissionUpdate permits activation and closure of scoped episodes.
+	PermissionUpdate = "episode.update"
+	// PermissionReopen permits reopening a scoped closed episode with a reason.
+	PermissionReopen = "episode.reopen"
+
+	permissionRead   = PermissionRead
+	permissionCreate = PermissionCreate
+	permissionUpdate = PermissionUpdate
+	permissionReopen = PermissionReopen
 
 	defaultPageSize = 25
 	maximumPageSize = 100

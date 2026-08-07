@@ -14,6 +14,8 @@ import (
 	"github.com/jeevanism/visionopus/internal/auth"
 	authhttp "github.com/jeevanism/visionopus/internal/auth/http"
 	"github.com/jeevanism/visionopus/internal/config"
+	"github.com/jeevanism/visionopus/internal/episodes"
+	episodeshttp "github.com/jeevanism/visionopus/internal/episodes/http"
 	"github.com/jeevanism/visionopus/internal/patientsearch"
 	patientsearchhttp "github.com/jeevanism/visionopus/internal/patientsearch/http"
 	"github.com/jeevanism/visionopus/internal/patientsummary"
@@ -63,7 +65,12 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	patientSummaryHTTP := patientsummaryhttp.NewHandler(patientSummary, cfg.CookieSecure)
-	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP)
+	episodeService, err := episodes.NewService(database, authentication)
+	if err != nil {
+		return err
+	}
+	episodesHTTP := episodeshttp.NewHandler(episodeService, cfg.CookieSecure)
+	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP)
 	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("api listening", "address", cfg.HTTPAddr, "environment", cfg.Environment)

@@ -141,7 +141,7 @@ func run(ctx context.Context) error {
 		INSERT INTO roles (name, description, scope, active)
 		VALUES (
 			'Development Patient Search Tester',
-			'Synthetic development-only patient search and duplicate-check access',
+			'Synthetic development-only patient, summary, and episode access',
 			'institution',
 			TRUE
 		)
@@ -154,7 +154,11 @@ func run(ctx context.Context) error {
 		INSERT INTO role_permissions (role_id, permission_id, active)
 		SELECT r.id, p.id, TRUE
 		FROM roles r
-		JOIN permissions p ON p.name IN ('patient.search', 'patient.duplicate_check', 'patient.summary.read', 'patient.clinical_summary.read', 'patient.break_glass', 'patient.break_glass.revoke')
+		JOIN permissions p ON p.name IN (
+			'patient.search', 'patient.duplicate_check', 'patient.summary.read', 'patient.clinical_summary.read',
+			'patient.break_glass', 'patient.break_glass.revoke',
+			'episode.read', 'episode.create', 'episode.update', 'episode.reopen'
+		)
 		WHERE r.name = 'Development Patient Search Tester'
 		ON CONFLICT (role_id, permission_id) DO UPDATE SET active = TRUE`); err != nil {
 		return fmt.Errorf("upsert development patient-search permissions: %w", err)
@@ -186,11 +190,34 @@ func run(ctx context.Context) error {
 		RETURNING id`, userID).Scan(&patientID); err != nil {
 		return fmt.Errorf("upsert synthetic patient: %w", err)
 	}
+	var patientInstitutionID int64
+	// The synthetic public ID is development-only. Normalize it to this one
+	// development institution so local test fixtures cannot leave a conflicting
+	// active primary association behind.
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO patient_institutions (patient_id, institution_id, primary_association, association_source, created_by_user_id, updated_by_user_id)
-		VALUES ($1, $2, TRUE, 'approved_deployment_default', $3, $3)
-		ON CONFLICT (patient_id, institution_id) WHERE active DO UPDATE SET active = TRUE, updated_at = now(), updated_by_user_id = EXCLUDED.updated_by_user_id`, patientID, institutionID, userID); err != nil {
-		return fmt.Errorf("upsert synthetic patient association: %w", err)
+		UPDATE patient_institutions
+		SET active = FALSE, primary_association = FALSE, effective_to = now(), updated_at = now(), updated_by_user_id = $2
+		WHERE patient_id = $1 AND institution_id <> $3 AND active`, patientID, userID, institutionID); err != nil {
+		return fmt.Errorf("retire non-development synthetic patient associations: %w", err)
+	}
+	err = tx.QueryRow(ctx, `
+		SELECT id FROM patient_institutions
+		WHERE patient_id = $1 AND institution_id = $2 AND active
+		ORDER BY id DESC LIMIT 1`, patientID, institutionID).Scan(&patientInstitutionID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		if err := tx.QueryRow(ctx, `
+			INSERT INTO patient_institutions (patient_id, institution_id, primary_association, association_source, created_by_user_id, updated_by_user_id)
+			VALUES ($1, $2, TRUE, 'approved_deployment_default', $3, $3)
+			RETURNING id`, patientID, institutionID, userID).Scan(&patientInstitutionID); err != nil {
+			return fmt.Errorf("insert synthetic patient association: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("find synthetic patient association: %w", err)
+	} else if _, err := tx.Exec(ctx, `
+		UPDATE patient_institutions
+		SET primary_association = TRUE, updated_at = now(), updated_by_user_id = $2
+		WHERE id = $1`, patientInstitutionID, userID); err != nil {
+		return fmt.Errorf("refresh synthetic patient association: %w", err)
 	}
 	identifierTypeID, err := findOrInsert(ctx, tx,
 		"SELECT id FROM patient_identifier_types WHERE institution_id = $1 AND site_id IS NULL AND stable_code = $2",
@@ -218,6 +245,30 @@ func run(ctx context.Context) error {
 		INSERT INTO patient_summary_warning_items (patient_id, warning_kind, code, label, reaction, item_order, source_revision)
 		VALUES ($1, 'allergy', 'peanuts', 'Peanut allergy', 'Urticaria', 0, 'visionopus-dev-1')`, patientID); err != nil {
 		return fmt.Errorf("insert synthetic warning item: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO episodes (
+			public_id, patient_id, institution_id, patient_institution_id, site_id, firm_id, status,
+			started_at, ended_at, created_by_user_id, updated_by_user_id
+		) VALUES
+			('22222222-2222-4222-8222-222222222222', $1, $2, $3, $4, $5, 'active', now() - interval '14 days', NULL, $6, $6),
+			('33333333-3333-4333-8333-333333333333', $1, $2, $3, $4, $5, 'closed', now() - interval '60 days', now() - interval '45 days', $6, $6)
+		ON CONFLICT (public_id) DO UPDATE SET
+			patient_id = EXCLUDED.patient_id, institution_id = EXCLUDED.institution_id,
+			patient_institution_id = EXCLUDED.patient_institution_id, site_id = EXCLUDED.site_id, firm_id = EXCLUDED.firm_id,
+			status = EXCLUDED.status, started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at,
+			deleted_at = NULL, deleted_by_user_id = NULL, deleted_reason = NULL,
+			updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()`,
+		patientID, institutionID, patientInstitutionID, siteID, firmID, userID); err != nil {
+		return fmt.Errorf("upsert synthetic episodes: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO episode_audit_sequences (episode_id)
+		SELECT id FROM episodes WHERE public_id IN (
+			'22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333'
+		)
+		ON CONFLICT (episode_id) DO NOTHING`); err != nil {
+		return fmt.Errorf("initialize synthetic episode audit sequences: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

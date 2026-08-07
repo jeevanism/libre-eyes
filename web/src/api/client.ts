@@ -1,8 +1,12 @@
 import type { components, paths } from './schema'
 import type {
-  components as patientSearchComponents,
-  paths as patientSearchPaths,
+	components as patientSearchComponents,
+	paths as patientSearchPaths,
 } from './patient-search-schema'
+import type {
+  components as episodeComponents,
+  paths as episodePaths,
+} from './episodes-schema'
 
 export type LoginOptions = components['schemas']['LoginOptions']
 export type Session = components['schemas']['SessionRepresentation']
@@ -16,6 +20,8 @@ export type DuplicateCandidateRequest = patientSearchComponents['schemas']['Dupl
 export type DuplicateCandidateResponse = patientSearchComponents['schemas']['DuplicateCandidateResponse']
 export type PatientSearchCriteria = patientSearchComponents['schemas']['PatientSearchCriteria']
 export type GenderCode = patientSearchComponents['schemas']['GenderCode']
+export type Episode = episodeComponents['schemas']['Episode']
+export type EpisodePage = episodeComponents['schemas']['EpisodePage']
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null
@@ -43,6 +49,7 @@ export type PatientWarningDetails = {
 type LoginResponse = paths['/auth/sessions']['post']['responses']['200']['content']['application/json']
 type PatientSearchResponse = patientSearchPaths['/patients/searches']['post']['responses']['200']['content']['application/json']
 type DuplicateCandidatesResponse = patientSearchPaths['/patients/duplicate-candidates']['post']['responses']['200']['content']['application/json']
+type EpisodeListResponse = episodePaths['/patients/{patientId}/episodes']['get']['responses']['200']['content']['application/json']
 
 export class ApiError extends Error {
   readonly status: number
@@ -142,4 +149,15 @@ export const patientSummaryAPI = {
     request<PatientWarningDetails>(`/patients/${encodeURIComponent(patientId)}/summary-header/warnings`, {
       headers: { 'X-CSRF-Token': csrfToken, 'X-Context-Version': String(contextVersion) },
     }),
+}
+
+export const episodesAPI = {
+  list: (patientId: string, csrfToken: string, cursor?: string) => {
+    const parameters = new URLSearchParams()
+    if (cursor) parameters.set('cursor', cursor)
+    const suffix = parameters.size > 0 ? `?${parameters.toString()}` : ''
+    return request<EpisodeListResponse>(`/patients/${encodeURIComponent(patientId)}/episodes${suffix}`, {
+      headers: { 'X-CSRF-Token': csrfToken },
+    })
+  },
 }

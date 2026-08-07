@@ -7,7 +7,7 @@ const session = {
     site: { id: '1', name: 'Development Eye Clinic' },
     firm: { id: '1', name: 'Development Ophthalmology' },
   },
-  permissions: ['patient.search', 'patient.summary.read', 'patient.clinical_summary.read'],
+  permissions: ['patient.search', 'patient.summary.read', 'patient.clinical_summary.read', 'episode.read'],
   csrfToken: 'synthetic-csrf-token',
   idleExpiresAt: '2026-08-06T12:00:00Z',
   absoluteExpiresAt: '2026-08-06T18:00:00Z',
@@ -33,6 +33,16 @@ test.beforeEach(async ({ page }) => {
       items: [{ kind: 'allergy', code: 'peanuts', label: 'Peanut allergy', reaction: 'Urticaria', comment: null }],
     } })
   })
+  await page.route('**/api/v1/patients/11111111-1111-4111-8111-111111111111/episodes', async (route) => {
+    expect(route.request().headers()['x-csrf-token']).toBe('synthetic-csrf-token')
+    await route.fulfill({ json: {
+      items: [{
+        id: '22222222-2222-4222-8222-222222222222', patientId: '11111111-1111-4111-8111-111111111111',
+        status: 'active', startedAt: '2026-08-07T09:30:00Z', endedAt: null,
+        supportServices: false, changeTracker: false, version: 1,
+      }], nextCursor: null,
+    } })
+  })
 })
 
 test('renders the selected patient identity and warning details', async ({ page }) => {
@@ -42,5 +52,7 @@ test('renders the selected patient identity and warning details', async ({ page 
   await expect(page.getByText('41 years')).toBeVisible()
   await expect(page.getByText('Peanut allergy')).toBeVisible()
   await expect(page.getByText('Urticaria')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Care episodes' })).toBeVisible()
+  await expect(page.getByText('active')).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
