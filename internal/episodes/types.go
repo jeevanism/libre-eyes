@@ -73,6 +73,30 @@ type EpisodePage struct {
 	NextCursor *string
 }
 
+// EventHeader is the approved minimum-disclosure representation of a current event.
+// It never contains clinical element data or automation metadata.
+type EventHeader struct {
+	ID            string
+	EpisodeID     *string
+	EventTypeCode string
+	OccurredAt    time.Time
+	Status        string
+	Version       int64
+}
+
+// EventListRequest bounds an event-header timeline query within one episode.
+type EventListRequest struct {
+	EpisodeID string
+	Limit     int
+	Cursor    string
+}
+
+// EventPage is a bounded, scope-bound event-header timeline page.
+type EventPage struct {
+	Items      []EventHeader
+	NextCursor *string
+}
+
 // LifecycleRequest identifies a resource and proves the caller observed its current version.
 type LifecycleRequest struct {
 	EpisodeID       string

@@ -30,6 +30,12 @@ describe('EpisodeTimeline', () => {
           supportServices: false, changeTracker: false, version: 2,
         }], nextCursor: 'opaque.synthetic.cursor',
       }))
+      .mockResolvedValueOnce(response({
+        items: [{
+          id: '33333333-3333-4333-8333-333333333333', episodeId: '22222222-2222-4222-8222-222222222222',
+          eventTypeCode: 'core.examination', occurredAt: '2026-08-07T10:00:00Z', status: 'current', version: 1,
+        }], nextCursor: null,
+      }))
       .mockResolvedValueOnce(response({ items: [], nextCursor: null }))
     vi.stubGlobal('fetch', fetchMock)
     const { container } = renderTimeline()
@@ -37,9 +43,12 @@ describe('EpisodeTimeline', () => {
     expect(await screen.findByText('active')).toBeVisible()
     expect(screen.getByText(/Started 07 Aug 2026/)).toBeVisible()
     expect((await axe(container)).violations).toEqual([])
+    fireEvent.click(screen.getByRole('button', { name: 'Show events' }))
+    expect(await screen.findByText('core.examination')).toBeVisible()
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('/episodes/22222222-2222-4222-8222-222222222222/events')
     fireEvent.click(screen.getByRole('button', { name: 'Load earlier episodes' }))
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
-    expect(fetchMock.mock.calls[1]?.[0]).toContain('cursor=opaque.synthetic.cursor')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    expect(fetchMock.mock.calls[2]?.[0]).toContain('cursor=opaque.synthetic.cursor')
   })
 
   it('withholds the timeline before requesting it without permission', async () => {

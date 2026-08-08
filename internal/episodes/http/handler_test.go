@@ -17,20 +17,25 @@ import (
 )
 
 type fakeService struct {
-	authorizeErr  error
-	operation     string
-	csrfToken     string
-	createCalls   int
-	listCalls     int
-	getCalls      int
-	activateCalls int
-	closeCalls    int
-	reopenCalls   int
-	listRequest   episodes.ListRequest
-	lifecycle     episodes.LifecycleRequest
-	createResult  episodes.Episode
-	listResult    episodes.EpisodePage
-	serviceErr    error
+	authorizeErr     error
+	operation        string
+	csrfToken        string
+	createCalls      int
+	listCalls        int
+	getCalls         int
+	eventListCalls   int
+	eventGetCalls    int
+	activateCalls    int
+	closeCalls       int
+	reopenCalls      int
+	listRequest      episodes.ListRequest
+	eventListRequest episodes.EventListRequest
+	lifecycle        episodes.LifecycleRequest
+	createResult     episodes.Episode
+	listResult       episodes.EpisodePage
+	eventListResult  episodes.EventPage
+	eventResult      episodes.EventHeader
+	serviceErr       error
 }
 
 func (f *fakeService) Authorize(_ context.Context, _, csrf string, permission string, _ auth.RequestMetadata) (episodes.Authorization, error) {
@@ -50,6 +55,15 @@ func (f *fakeService) List(_ context.Context, _ episodes.Authorization, request 
 func (f *fakeService) Get(_ context.Context, _ episodes.Authorization, _ string) (episodes.Episode, error) {
 	f.getCalls++
 	return f.createResult, f.serviceErr
+}
+func (f *fakeService) ListEvents(_ context.Context, _ episodes.Authorization, request episodes.EventListRequest) (episodes.EventPage, error) {
+	f.eventListCalls++
+	f.eventListRequest = request
+	return f.eventListResult, f.serviceErr
+}
+func (f *fakeService) GetEventHeader(_ context.Context, _ episodes.Authorization, _ string) (episodes.EventHeader, error) {
+	f.eventGetCalls++
+	return f.eventResult, f.serviceErr
 }
 func (f *fakeService) Activate(_ context.Context, _ episodes.Authorization, request episodes.LifecycleRequest) (episodes.Episode, error) {
 	f.activateCalls++
@@ -132,6 +146,61 @@ func TestGetUsesReadPermissionAndMapsHeader(t *testing.T) {
 	response := serve(t, service, http.MethodGet, "/api/v1/episodes/11111111-1111-4111-8111-111111111111", "")
 	if response.Code != http.StatusOK || service.operation != episodes.PermissionRead || service.getCalls != 1 {
 		t.Fatalf("status=%d operation=%q gets=%d body=%s", response.Code, service.operation, service.getCalls, response.Body.String())
+	}
+}
+
+func TestEventHeadersUseReadPermissionAndMinimumDisclosure(t *testing.T) {
+	episodeID := "11111111-1111-4111-8111-111111111111"
+	next := "opaque.event.cursor"
+	service := &fakeService{
+		eventListResult: episodes.EventPage{Items: []episodes.EventHeader{{
+			ID: "22222222-2222-4222-8222-222222222222", EpisodeID: &episodeID,
+			EventTypeCode: "core.examination", OccurredAt: time.Date(2026, 8, 8, 10, 0, 0, 0, time.UTC),
+			Status: "current", Version: 3,
+		}}, NextCursor: &next},
+		eventResult: episodes.EventHeader{
+			ID: "22222222-2222-4222-8222-222222222222", EpisodeID: &episodeID,
+			EventTypeCode: "core.examination", OccurredAt: time.Date(2026, 8, 8, 10, 0, 0, 0, time.UTC),
+			Status: "current", Version: 3,
+		},
+	}
+	list := serve(t, service, http.MethodGet, "/api/v1/episodes/11111111-1111-4111-8111-111111111111/events?limit=20&cursor=opaque.event.cursor", "")
+	if list.Code != http.StatusOK || service.operation != episodes.PermissionRead || service.eventListCalls != 1 {
+		t.Fatalf("list status=%d operation=%q calls=%d body=%s", list.Code, service.operation, service.eventListCalls, list.Body.String())
+	}
+	if service.eventListRequest.EpisodeID != episodeID || service.eventListRequest.Limit != 20 || service.eventListRequest.Cursor != "opaque.event.cursor" {
+		t.Fatalf("event list request = %#v", service.eventListRequest)
+	}
+	for _, expected := range []string{`"eventTypeCode":"core.examination"`, `"nextCursor":"opaque.event.cursor"`} {
+		if !strings.Contains(list.Body.String(), expected) {
+			t.Fatalf("event list missing %s: %s", expected, list.Body.String())
+		}
+	}
+	for _, excluded := range []string{"automatedSource", "deletionReason", "patientId"} {
+		if strings.Contains(list.Body.String(), excluded) {
+			t.Fatalf("event list disclosed %s: %s", excluded, list.Body.String())
+		}
+	}
+	assertNoStore(t, list)
+
+	get := serve(t, service, http.MethodGet, "/api/v1/events/22222222-2222-4222-8222-222222222222", "")
+	if get.Code != http.StatusOK || service.operation != episodes.PermissionRead || service.eventGetCalls != 1 {
+		t.Fatalf("get status=%d operation=%q calls=%d body=%s", get.Code, service.operation, service.eventGetCalls, get.Body.String())
+	}
+	assertNoStore(t, get)
+}
+
+func TestEventHeaderReadWithoutCSRFIsForbidden(t *testing.T) {
+	service := &fakeService{authorizeErr: auth.ErrCSRF}
+	mux := http.NewServeMux()
+	NewHandler(service, true).Register(mux)
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/episodes/11111111-1111-4111-8111-111111111111/events", nil)
+	request.RemoteAddr = "127.0.0.1:1234"
+	request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: "opaque-session"})
+	response := httptest.NewRecorder()
+	httpx.Middleware(slog.New(slog.NewTextHandler(io.Discard, nil)), mux).ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden || service.csrfToken != "" || service.eventListCalls != 0 {
+		t.Fatalf("status=%d csrf=%q lists=%d body=%s", response.Code, service.csrfToken, service.eventListCalls, response.Body.String())
 	}
 }
 

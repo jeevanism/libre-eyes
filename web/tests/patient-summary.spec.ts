@@ -43,6 +43,15 @@ test.beforeEach(async ({ page }) => {
       }], nextCursor: null,
     } })
   })
+  await page.route('**/api/v1/episodes/22222222-2222-4222-8222-222222222222/events', async (route) => {
+    expect(route.request().headers()['x-csrf-token']).toBe('synthetic-csrf-token')
+    await route.fulfill({ json: {
+      items: [{
+        id: '33333333-3333-4333-8333-333333333333', episodeId: '22222222-2222-4222-8222-222222222222',
+        eventTypeCode: 'core.examination', occurredAt: '2026-08-07T10:00:00Z', status: 'current', version: 1,
+      }], nextCursor: null,
+    } })
+  })
 })
 
 test('renders the selected patient identity and warning details', async ({ page }) => {
@@ -54,5 +63,7 @@ test('renders the selected patient identity and warning details', async ({ page 
   await expect(page.getByText('Urticaria')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Care episodes' })).toBeVisible()
   await expect(page.getByText('active')).toBeVisible()
+  await page.getByRole('button', { name: 'Show events' }).click()
+  await expect(page.getByText('core.examination')).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })

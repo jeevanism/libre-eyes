@@ -270,6 +270,35 @@ func run(ctx context.Context) error {
 		ON CONFLICT (episode_id) DO NOTHING`); err != nil {
 		return fmt.Errorf("initialize synthetic episode audit sequences: %w", err)
 	}
+	for _, event := range []struct {
+		publicID  string
+		episodeID string
+		typeCode  string
+		offset    string
+	}{
+		{"44444444-4444-4444-8444-444444444444", "22222222-2222-4222-8222-222222222222", "core.examination", "13 days"},
+		{"55555555-5555-4555-8555-555555555555", "22222222-2222-4222-8222-222222222222", "core.follow_up", "7 days"},
+		{"66666666-6666-4666-8666-666666666666", "33333333-3333-4333-8333-333333333333", "core.examination", "50 days"},
+	} {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO events (
+				public_id, episode_id, patient_id, institution_id, patient_institution_id, site_id, firm_id,
+				event_type_code, occurred_at, created_by_user_id, updated_by_user_id
+			)
+			SELECT $1::uuid, e.id, e.patient_id, e.institution_id, e.patient_institution_id, e.site_id, e.firm_id,
+				$2, now() - $3::interval, $4, $4
+			FROM episodes e WHERE e.public_id = $5::uuid
+			ON CONFLICT (public_id) DO UPDATE SET
+				episode_id = EXCLUDED.episode_id, patient_id = EXCLUDED.patient_id,
+				institution_id = EXCLUDED.institution_id, patient_institution_id = EXCLUDED.patient_institution_id,
+				site_id = EXCLUDED.site_id, firm_id = EXCLUDED.firm_id,
+				event_type_code = EXCLUDED.event_type_code, occurred_at = EXCLUDED.occurred_at,
+				status = 'current', deletion_reason = NULL, deleted_at = NULL, deleted_by_user_id = NULL,
+				updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()`,
+			event.publicID, event.typeCode, event.offset, userID, event.episodeID); err != nil {
+			return fmt.Errorf("upsert synthetic event header: %w", err)
+		}
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit development seed: %w", err)

@@ -22,6 +22,8 @@ export type PatientSearchCriteria = patientSearchComponents['schemas']['PatientS
 export type GenderCode = patientSearchComponents['schemas']['GenderCode']
 export type Episode = episodeComponents['schemas']['Episode']
 export type EpisodePage = episodeComponents['schemas']['EpisodePage']
+export type EventHeader = episodeComponents['schemas']['EventHeader']
+export type EventPage = episodeComponents['schemas']['EventPage']
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null
@@ -50,6 +52,7 @@ type LoginResponse = paths['/auth/sessions']['post']['responses']['200']['conten
 type PatientSearchResponse = patientSearchPaths['/patients/searches']['post']['responses']['200']['content']['application/json']
 type DuplicateCandidatesResponse = patientSearchPaths['/patients/duplicate-candidates']['post']['responses']['200']['content']['application/json']
 type EpisodeListResponse = episodePaths['/patients/{patientId}/episodes']['get']['responses']['200']['content']['application/json']
+type EventListResponse = episodePaths['/episodes/{episodeId}/events']['get']['responses']['200']['content']['application/json']
 
 export class ApiError extends Error {
   readonly status: number
@@ -157,6 +160,14 @@ export const episodesAPI = {
     if (cursor) parameters.set('cursor', cursor)
     const suffix = parameters.size > 0 ? `?${parameters.toString()}` : ''
     return request<EpisodeListResponse>(`/patients/${encodeURIComponent(patientId)}/episodes${suffix}`, {
+      headers: { 'X-CSRF-Token': csrfToken },
+    })
+  },
+  listEvents: (episodeId: string, csrfToken: string, cursor?: string) => {
+    const parameters = new URLSearchParams()
+    if (cursor) parameters.set('cursor', cursor)
+    const suffix = parameters.size > 0 ? `?${parameters.toString()}` : ''
+    return request<EventListResponse>(`/episodes/${encodeURIComponent(episodeId)}/events${suffix}`, {
       headers: { 'X-CSRF-Token': csrfToken },
     })
   },

@@ -238,6 +238,122 @@ func (s *Service) Get(ctx context.Context, authorization Authorization, episodeI
 	return episode, nil
 }
 
+// ListEvents returns current minimum-disclosure event headers for one authorized episode.
+func (s *Service) ListEvents(ctx context.Context, authorization Authorization, request EventListRequest) (EventPage, error) {
+	if !s.validAuthorization(authorization, permissionRead) || !validPublicID(request.EpisodeID) {
+		return EventPage{}, ErrInvalidRequest
+	}
+	limit := request.Limit
+	if limit == 0 {
+		limit = defaultPageSize
+	}
+	if limit < 1 || limit > maximumPageSize {
+		return EventPage{}, ErrInvalidRequest
+	}
+	binding := cursorEntry{
+		userID: authorization.principal.UserID, sessionID: authorization.principal.SessionID,
+		institutionID: authorization.principal.InstitutionID, siteID: authorization.principal.SiteID,
+		firmID: authorization.principal.FirmID, contextVersion: authorization.principal.ContextVersion,
+		episodeID: sha256.Sum256([]byte(request.EpisodeID)), limit: limit,
+	}
+	var boundary *pageBoundary
+	if request.Cursor != "" {
+		value, err := s.cursors.get(request.Cursor, binding)
+		if err != nil {
+			return EventPage{}, err
+		}
+		boundary = &value
+	}
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead})
+	if err != nil {
+		return EventPage{}, fmt.Errorf("begin event list: %w", err)
+	}
+	defer rollback(ctx, tx)
+	if _, err := loadEpisode(ctx, tx, authorization.principal, request.EpisodeID, false); err != nil {
+		return EventPage{}, err
+	}
+	query := `
+		SELECT e.id, e.public_id::text, ep.public_id::text, e.event_type_code,
+			e.occurred_at, e.status::text, e.version
+		FROM events e
+		JOIN episodes ep ON ep.id = e.episode_id
+		WHERE ep.public_id = $1 AND e.institution_id = $2 AND e.site_id = $3 AND e.firm_id = $4
+			AND ep.deleted_at IS NULL AND e.status = 'current' AND e.deleted_at IS NULL`
+	args := []any{request.EpisodeID, authorization.principal.InstitutionID, authorization.principal.SiteID, authorization.principal.FirmID}
+	if boundary != nil {
+		query += " AND (e.occurred_at < $5 OR (e.occurred_at = $5 AND e.id < $6))"
+		args = append(args, boundary.occurredAt, boundary.internalID)
+	}
+	query += " ORDER BY e.occurred_at DESC, e.id DESC LIMIT $" + fmt.Sprint(len(args)+1)
+	args = append(args, limit+1)
+	rows, err := tx.Query(ctx, query, args...)
+	if err != nil {
+		return EventPage{}, fmt.Errorf("list event headers: %w", err)
+	}
+	defer rows.Close()
+	events := make([]EventHeader, 0, limit)
+	boundaries := make([]pageBoundary, 0, limit+1)
+	for rows.Next() {
+		var internalID int64
+		var event EventHeader
+		if err := rows.Scan(&internalID, &event.ID, &event.EpisodeID, &event.EventTypeCode, &event.OccurredAt, &event.Status, &event.Version); err != nil {
+			return EventPage{}, fmt.Errorf("scan event header: %w", err)
+		}
+		events = append(events, event)
+		occurredAt := event.OccurredAt
+		boundaries = append(boundaries, pageBoundary{occurredAt: &occurredAt, internalID: internalID})
+	}
+	if err := rows.Err(); err != nil {
+		return EventPage{}, fmt.Errorf("iterate event headers: %w", err)
+	}
+	page := EventPage{Items: events}
+	if len(events) > limit {
+		page.Items = events[:limit]
+		binding.boundary = boundaries[limit-1]
+		token, err := s.cursors.put(binding)
+		if err != nil {
+			return EventPage{}, ErrUnavailable
+		}
+		page.NextCursor = &token
+	}
+	if err := appendAudit(ctx, tx, authorization, "event.headers_listed", "disclosed", request.EpisodeID, map[string]any{
+		"paginated": request.Cursor != "", "resultCount": len(page.Items),
+	}); err != nil {
+		return EventPage{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return EventPage{}, fmt.Errorf("commit event list: %w", err)
+	}
+	return page, nil
+}
+
+// GetEventHeader returns one current minimum-disclosure event header in ordinary scope.
+func (s *Service) GetEventHeader(ctx context.Context, authorization Authorization, eventID string) (EventHeader, error) {
+	if !s.validAuthorization(authorization, permissionRead) || !validPublicID(eventID) {
+		return EventHeader{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead})
+	if err != nil {
+		return EventHeader{}, fmt.Errorf("begin event header read: %w", err)
+	}
+	defer rollback(ctx, tx)
+	event, err := loadEventHeader(ctx, tx, authorization.principal, eventID)
+	if err != nil {
+		return EventHeader{}, err
+	}
+	episodeID := ""
+	if event.EpisodeID != nil {
+		episodeID = *event.EpisodeID
+	}
+	if err := appendAudit(ctx, tx, authorization, "event.header_read", "disclosed", episodeID, map[string]any{"eventId": event.ID}); err != nil {
+		return EventHeader{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return EventHeader{}, fmt.Errorf("commit event header read: %w", err)
+	}
+	return event, nil
+}
+
 // Activate changes an open episode to active.
 func (s *Service) Activate(ctx context.Context, authorization Authorization, request LifecycleRequest) (Episode, error) {
 	return s.transition(ctx, authorization, request, permissionUpdate, StatusOpen, StatusActive, "episode.activated")
@@ -356,6 +472,29 @@ func loadEpisode(ctx context.Context, tx pgx.Tx, principal auth.OperationPrincip
 		return Episode{}, fmt.Errorf("load episode: %w", err)
 	}
 	return episode, nil
+}
+
+func loadEventHeader(ctx context.Context, tx pgx.Tx, principal auth.OperationPrincipal, publicID string) (EventHeader, error) {
+	var event EventHeader
+	err := tx.QueryRow(ctx, `
+		SELECT e.public_id::text, ep.public_id::text, e.event_type_code,
+			e.occurred_at, e.status::text, e.version
+		FROM events e
+		LEFT JOIN episodes ep ON ep.id = e.episode_id
+		JOIN patients p ON p.id = e.patient_id AND p.active
+		JOIN patient_institutions pi ON pi.id = e.patient_institution_id AND pi.active
+		WHERE e.public_id = $1 AND e.institution_id = $2 AND e.site_id = $3 AND e.firm_id = $4
+			AND e.status = 'current' AND e.deleted_at IS NULL
+			AND (e.is_imported_orphan OR (ep.id IS NOT NULL AND ep.deleted_at IS NULL))`,
+		publicID, principal.InstitutionID, principal.SiteID, principal.FirmID,
+	).Scan(&event.ID, &event.EpisodeID, &event.EventTypeCode, &event.OccurredAt, &event.Status, &event.Version)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return EventHeader{}, auth.ErrForbidden
+	}
+	if err != nil {
+		return EventHeader{}, fmt.Errorf("load event header: %w", err)
+	}
+	return event, nil
 }
 
 func appendAudit(ctx context.Context, tx pgx.Tx, authorization Authorization, eventType, reasonCode, episodeID string, attributes map[string]any) error {

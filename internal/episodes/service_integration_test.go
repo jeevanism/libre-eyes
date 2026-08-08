@@ -151,6 +151,92 @@ func TestServiceIntegrationLifecycleAuditAndScope(t *testing.T) {
 	}
 }
 
+func TestServiceIntegrationEventHeaderScopeCursorAndAudit(t *testing.T) {
+	pool := episodesTestPool(t)
+	fixture := seedEpisodesFixture(t, pool)
+	authorizer := &integrationAuthorizer{principal: fixture.principal}
+	service, err := NewService(pool, authorizer)
+	if err != nil {
+		t.Fatalf("NewService() error = %v", err)
+	}
+	metadata := auth.RequestMetadata{CorrelationID: "event-header-integration", SourceIPClass: "loopback"}
+	createAuthorization := authorizeEpisode(t, service, permissionCreate, metadata)
+	episode, err := service.Create(context.Background(), createAuthorization, fixture.patientPublicID, CreateRequest{Status: StatusActive})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	otherEpisode, err := service.Create(context.Background(), createAuthorization, fixture.patientPublicID, CreateRequest{Status: StatusOpen})
+	if err != nil {
+		t.Fatalf("Create(other) error = %v", err)
+	}
+	insertEventHeader(t, pool, episode.ID, "44444444-4444-4444-8444-444444444444", time.Date(2026, 8, 8, 10, 0, 0, 0, time.UTC), "current")
+	insertEventHeader(t, pool, episode.ID, "55555555-5555-4555-8555-555555555555", time.Date(2026, 8, 8, 9, 0, 0, 0, time.UTC), "current")
+	insertEventHeader(t, pool, episode.ID, "66666666-6666-4666-8666-666666666666", time.Date(2026, 8, 8, 8, 0, 0, 0, time.UTC), "deletion_pending")
+
+	readAuthorization := authorizeEpisode(t, service, permissionRead, metadata)
+	firstPage, err := service.ListEvents(context.Background(), readAuthorization, EventListRequest{EpisodeID: episode.ID, Limit: 1})
+	if err != nil || len(firstPage.Items) != 1 || firstPage.NextCursor == nil || firstPage.Items[0].EventTypeCode != "core.examination" {
+		t.Fatalf("ListEvents(first page) = %#v, %v", firstPage, err)
+	}
+	if _, err := service.ListEvents(context.Background(), readAuthorization, EventListRequest{EpisodeID: otherEpisode.ID, Limit: 1, Cursor: *firstPage.NextCursor}); !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("ListEvents(cross episode cursor) error = %v, want invalid request", err)
+	}
+	secondPage, err := service.ListEvents(context.Background(), readAuthorization, EventListRequest{EpisodeID: episode.ID, Limit: 1, Cursor: *firstPage.NextCursor})
+	if err != nil || len(secondPage.Items) != 1 || secondPage.NextCursor != nil || secondPage.Items[0].ID == firstPage.Items[0].ID {
+		t.Fatalf("ListEvents(second page) = %#v, %v", secondPage, err)
+	}
+	if _, err := service.GetEventHeader(context.Background(), readAuthorization, "66666666-6666-4666-8666-666666666666"); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("GetEventHeader(deletion pending) error = %v, want forbidden", err)
+	}
+	loaded, err := service.GetEventHeader(context.Background(), readAuthorization, firstPage.Items[0].ID)
+	if err != nil || loaded.ID != firstPage.Items[0].ID || loaded.EpisodeID == nil || *loaded.EpisodeID != episode.ID || loaded.Status != "current" {
+		t.Fatalf("GetEventHeader() = %#v, %v", loaded, err)
+	}
+
+	otherFirm := fixture.principal
+	otherFirm.FirmID = fixture.otherFirmID
+	authorizer.principal = otherFirm
+	crossFirm := authorizeEpisode(t, service, permissionRead, metadata)
+	if _, err := service.ListEvents(context.Background(), crossFirm, EventListRequest{EpisodeID: episode.ID}); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("ListEvents(cross firm) error = %v, want forbidden", err)
+	}
+	if _, err := service.GetEventHeader(context.Background(), crossFirm, firstPage.Items[0].ID); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("GetEventHeader(cross firm) error = %v, want forbidden", err)
+	}
+	authorizer.principal = fixture.otherInstitutionPrincipal
+	crossInstitution := authorizeEpisode(t, service, permissionRead, metadata)
+	if _, err := service.GetEventHeader(context.Background(), crossInstitution, firstPage.Items[0].ID); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("GetEventHeader(cross institution) error = %v, want forbidden", err)
+	}
+
+	var audits int
+	if err := pool.QueryRow(context.Background(), `
+		SELECT count(*) FROM audit_events
+		WHERE event_type = ANY($1::text[])`, []string{"event.headers_listed", "event.header_read"}).Scan(&audits); err != nil {
+		t.Fatalf("count event header audits: %v", err)
+	}
+	if audits != 3 {
+		t.Fatalf("event header audit count = %d, want 3", audits)
+	}
+}
+
+func insertEventHeader(t *testing.T, pool *pgxpool.Pool, episodePublicID, eventPublicID string, occurredAt time.Time, status string) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(), `
+		INSERT INTO events (
+			public_id, episode_id, patient_id, institution_id, patient_institution_id, site_id, firm_id,
+			event_type_code, occurred_at, status, deletion_reason
+		)
+		SELECT $1, e.id, e.patient_id, e.institution_id, e.patient_institution_id, e.site_id, e.firm_id,
+			'core.examination', $2, $3::episode_event_status,
+			CASE WHEN $3 = 'deletion_pending' THEN 'synthetic deletion request' ELSE NULL END
+		FROM episodes e
+		WHERE e.public_id = $4`, eventPublicID, occurredAt, status, episodePublicID)
+	if err != nil {
+		t.Fatalf("insert event header: %v", err)
+	}
+}
+
 func authorizeEpisode(t *testing.T, service *Service, permission string, metadata auth.RequestMetadata) Authorization {
 	t.Helper()
 	authorization, err := service.Authorize(context.Background(), "token", "csrf", permission, metadata)

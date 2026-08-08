@@ -30,6 +30,8 @@ type Service interface {
 	Create(context.Context, episodes.Authorization, string, episodes.CreateRequest) (episodes.Episode, error)
 	List(context.Context, episodes.Authorization, episodes.ListRequest) (episodes.EpisodePage, error)
 	Get(context.Context, episodes.Authorization, string) (episodes.Episode, error)
+	ListEvents(context.Context, episodes.Authorization, episodes.EventListRequest) (episodes.EventPage, error)
+	GetEventHeader(context.Context, episodes.Authorization, string) (episodes.EventHeader, error)
 	Activate(context.Context, episodes.Authorization, episodes.LifecycleRequest) (episodes.Episode, error)
 	Close(context.Context, episodes.Authorization, episodes.LifecycleRequest) (episodes.Episode, error)
 	Reopen(context.Context, episodes.Authorization, episodes.LifecycleRequest) (episodes.Episode, error)
@@ -52,6 +54,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/patients/{patientId}/episodes", h.create)
 	mux.HandleFunc("GET /api/v1/episodes/{episodeId}", h.get)
 	mux.HandleFunc("PATCH /api/v1/episodes/{episodeId}", h.update)
+	mux.HandleFunc("GET /api/v1/episodes/{episodeId}/events", h.listEvents)
+	mux.HandleFunc("GET /api/v1/events/{eventId}", h.getEventHeader)
 }
 
 func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
@@ -109,6 +113,42 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, mapEpisode(episode))
+	})
+}
+
+func (h *Handler) listEvents(w http.ResponseWriter, r *http.Request) {
+	h.withTimeout(w, r, func(ctx context.Context) {
+		authorization, ok := h.authorize(w, r, ctx, episodes.PermissionRead)
+		if !ok {
+			return
+		}
+		request, err := eventListRequest(r)
+		if err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		request.EpisodeID = r.PathValue("episodeId")
+		page, err := h.service.ListEvents(ctx, authorization, request)
+		if err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, mapEventPage(page))
+	})
+}
+
+func (h *Handler) getEventHeader(w http.ResponseWriter, r *http.Request) {
+	h.withTimeout(w, r, func(ctx context.Context) {
+		authorization, ok := h.authorize(w, r, ctx, episodes.PermissionRead)
+		if !ok {
+			return
+		}
+		event, err := h.service.GetEventHeader(ctx, authorization, r.PathValue("eventId"))
+		if err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, mapEventHeader(event))
 	})
 }
 
@@ -218,6 +258,14 @@ func listRequest(r *http.Request) (episodes.ListRequest, error) {
 	return request, nil
 }
 
+func eventListRequest(r *http.Request) (episodes.EventListRequest, error) {
+	request, err := listRequest(r)
+	if err != nil {
+		return episodes.EventListRequest{}, err
+	}
+	return episodes.EventListRequest{Limit: request.Limit, Cursor: request.Cursor}, nil
+}
+
 func decodeJSON(w http.ResponseWriter, r *http.Request, target any) error {
 	r.Body = http.MaxBytesReader(w, r.Body, maximumBodyBytes)
 	decoder := json.NewDecoder(r.Body)
@@ -274,6 +322,20 @@ type pageResponse struct {
 	NextCursor *string           `json:"nextCursor"`
 }
 
+type eventHeaderResponse struct {
+	ID            string    `json:"id"`
+	EpisodeID     *string   `json:"episodeId"`
+	EventTypeCode string    `json:"eventTypeCode"`
+	OccurredAt    time.Time `json:"occurredAt"`
+	Status        string    `json:"status"`
+	Version       int64     `json:"version"`
+}
+
+type eventPageResponse struct {
+	Items      []eventHeaderResponse `json:"items"`
+	NextCursor *string               `json:"nextCursor"`
+}
+
 func mapEpisode(episode episodes.Episode) episodeResponse {
 	return episodeResponse{
 		ID: episode.ID, PatientID: episode.PatientID, Status: episode.Status,
@@ -288,6 +350,21 @@ func mapPage(page episodes.EpisodePage) pageResponse {
 		items[index] = mapEpisode(episode)
 	}
 	return pageResponse{Items: items, NextCursor: page.NextCursor}
+}
+
+func mapEventHeader(event episodes.EventHeader) eventHeaderResponse {
+	return eventHeaderResponse{
+		ID: event.ID, EpisodeID: event.EpisodeID, EventTypeCode: event.EventTypeCode,
+		OccurredAt: event.OccurredAt, Status: event.Status, Version: event.Version,
+	}
+}
+
+func mapEventPage(page episodes.EventPage) eventPageResponse {
+	items := make([]eventHeaderResponse, len(page.Items))
+	for index, event := range page.Items {
+		items[index] = mapEventHeader(event)
+	}
+	return eventPageResponse{Items: items, NextCursor: page.NextCursor}
 }
 
 func (h *Handler) writeError(w http.ResponseWriter, r *http.Request, err error) {

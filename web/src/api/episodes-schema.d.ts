@@ -433,7 +433,8 @@ export interface operations {
                 limit?: components["parameters"]["PageLimit"];
                 cursor?: components["parameters"]["PageCursor"];
             };
-            header?: {
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
                 /** @description Required only when a same-institution read exceeds ordinary site/firm scope. The server validates the override permission and records the reason in a minimal read audit event. */
                 "X-Access-Override-Reason"?: components["parameters"]["AccessOverrideReason"];
             };
@@ -447,13 +448,13 @@ export interface operations {
             200: components["responses"]["EventList"];
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
         };
     };
     getEventHeader: {
         parameters: {
             query?: never;
-            header?: {
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
                 /** @description Required only when a same-institution read exceeds ordinary site/firm scope. The server validates the override permission and records the reason in a minimal read audit event. */
                 "X-Access-Override-Reason"?: components["parameters"]["AccessOverrideReason"];
             };
@@ -467,7 +468,6 @@ export interface operations {
             200: components["responses"]["EventResponse"];
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
         };
     };
     createEventDraft: {

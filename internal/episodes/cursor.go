@@ -17,6 +17,7 @@ const (
 
 type pageBoundary struct {
 	startedAt  *time.Time
+	occurredAt *time.Time
 	internalID int64
 }
 
@@ -29,6 +30,7 @@ type cursorEntry struct {
 	firmID         int64
 	contextVersion int64
 	patientID      [32]byte
+	episodeID      [32]byte
 	limit          int
 	expiresAt      time.Time
 }
@@ -108,13 +110,18 @@ func cursorMatches(actual, expected cursorEntry) bool {
 		actual.firmID == expected.firmID &&
 		actual.contextVersion == expected.contextVersion &&
 		actual.limit == expected.limit &&
-		subtle.ConstantTimeCompare(actual.patientID[:], expected.patientID[:]) == 1
+		subtle.ConstantTimeCompare(actual.patientID[:], expected.patientID[:]) == 1 &&
+		subtle.ConstantTimeCompare(actual.episodeID[:], expected.episodeID[:]) == 1
 }
 
 func cloneBoundary(boundary pageBoundary) pageBoundary {
 	if boundary.startedAt != nil {
 		value := *boundary.startedAt
 		boundary.startedAt = &value
+	}
+	if boundary.occurredAt != nil {
+		value := *boundary.occurredAt
+		boundary.occurredAt = &value
 	}
 	return boundary
 }
