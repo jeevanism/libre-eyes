@@ -18,6 +18,7 @@ type DraftRegistry struct {
 	diagnosisDemo     *DiagnosisDemoDraftRegistry
 	eyeDrawDemo       *EyeDrawDemoDraftRegistry
 	operativeNoteDemo *OperativeNoteDemoDraftRegistry
+	prescriptionDemo  *PrescriptionDemoDraftRegistry
 }
 
 func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment string) (*DraftRegistry, error) {
@@ -41,7 +42,11 @@ func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment strin
 	if err != nil {
 		return nil, err
 	}
-	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo}, nil
+	prescriptionDemo, err := NewPrescriptionDemoDraftRegistry(ctx, pool, environment)
+	if err != nil {
+		return nil, err
+	}
+	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo}, nil
 }
 
 func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, intent episodes.DraftIntent, schemaVersion int64, payload json.RawMessage) error {
@@ -59,6 +64,8 @@ func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, inte
 		return r.eyeDrawDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	case operativeNoteDemoEventType:
 		return r.operativeNoteDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
+	case prescriptionDemoEventType:
+		return r.prescriptionDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	default:
 		return episodes.ErrInvalidRequest
 	}

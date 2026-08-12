@@ -4,7 +4,17 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestDraftLifetimeUsesPrescriptionSevenDayManualPolicy(t *testing.T) {
+	if got := draftLifetime("ophthalmology.prescription_demo", DraftModeManual); got != 7*24*time.Hour {
+		t.Fatalf("prescription manual lifetime = %s, want 168h", got)
+	}
+	if got := draftLifetime("ophthalmology.visual_acuity", DraftModeManual); got != 30*24*time.Hour {
+		t.Fatalf("generic manual lifetime = %s, want 720h", got)
+	}
+}
 
 func TestValidateDraftPayloadBounds(t *testing.T) {
 	if err := validateDraftPayload(json.RawMessage(`{"top":{"leaf":1}}`)); err != nil {

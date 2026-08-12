@@ -22,10 +22,11 @@ const (
 	PermissionDraftUpdate  = "event_draft.update"
 	PermissionDraftAbandon = "event_draft.abandon"
 
-	autosaveDraftLifetime = 24 * time.Hour
-	manualDraftLifetime   = 30 * 24 * time.Hour
-	maximumDraftDepth     = 16
-	maximumDraftKeys      = 2000
+	autosaveDraftLifetime           = 24 * time.Hour
+	manualDraftLifetime             = 30 * 24 * time.Hour
+	prescriptionManualDraftLifetime = 7 * 24 * time.Hour
+	maximumDraftDepth               = 16
+	maximumDraftKeys                = 2000
 )
 
 type DraftIntent string
@@ -125,10 +126,7 @@ func (s *Service) CreateDraft(ctx context.Context, authorization Authorization, 
 		}
 		targetID = &value
 	}
-	expiresAt := now.Add(manualDraftLifetime)
-	if request.Mode == DraftModeAutosave {
-		expiresAt = now.Add(autosaveDraftLifetime)
-	}
+	expiresAt := now.Add(draftLifetime(request.EventTypeCode, request.Mode))
 	var internalTargetID *int64
 	var draft EventDraft
 	err = tx.QueryRow(ctx, `
@@ -200,10 +198,7 @@ func (s *Service) UpdateDraft(ctx context.Context, authorization Authorization, 
 		return EventDraft{}, err
 	}
 	now := s.now().UTC()
-	expiresAt := now.Add(manualDraftLifetime)
-	if draft.Mode == DraftModeAutosave {
-		expiresAt = now.Add(autosaveDraftLifetime)
-	}
+	expiresAt := now.Add(draftLifetime(draft.EventTypeCode, draft.Mode))
 	err = tx.QueryRow(ctx, `
 		UPDATE event_drafts SET payload = $1::jsonb, schema_version = $2, version = version + 1, expires_at = $3, updated_at = $4
 		WHERE public_id = $5 AND owner_user_id = $6 AND institution_id = $7 AND site_id = $8 AND firm_id = $9
@@ -228,6 +223,16 @@ func (s *Service) UpdateDraft(ctx context.Context, authorization Authorization, 
 		return EventDraft{}, fmt.Errorf("commit draft update: %w", err)
 	}
 	return draft, nil
+}
+
+func draftLifetime(eventTypeCode string, mode DraftMode) time.Duration {
+	if mode == DraftModeAutosave {
+		return autosaveDraftLifetime
+	}
+	if eventTypeCode == "ophthalmology.prescription_demo" {
+		return prescriptionManualDraftLifetime
+	}
+	return manualDraftLifetime
 }
 
 func (s *Service) AbandonDraft(ctx context.Context, authorization Authorization, draftID string, expectedVersion int64) error {

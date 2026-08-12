@@ -71,6 +71,22 @@ export type OperativeNoteDemoDraftPayload = {
   deliveryCodes: Array<'development_subtenons' | 'development_topical' | 'development_other'>
   comment: string
 }
+export type PrescriptionDemoDraftPayload = {
+  recordMode: 'development_synthetic_medication_order'
+  headerComment: string
+  items: Array<{
+    medicationCode: string
+    dose: string
+    doseUnit: string
+    routeCode: string
+    frequencyCode: string
+    durationCode: string
+    laterality: 'development_left' | 'development_right' | 'development_bilateral' | 'development_not_applicable'
+    startDate: string
+    comment: string
+    taper: { dose: string; frequencyCode: string; durationCode: string } | null
+  }>
+}
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null
@@ -286,6 +302,11 @@ export const episodesAPI = {
         eventTypeCode: 'ophthalmology.operative_note_demo',
         intent: 'create', mode: 'manual', schemaVersion: 1, payload,
       }),
+    }),
+  createPrescriptionDemoDraft: (episodeId: string, csrfToken: string, payload: PrescriptionDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify({ eventTypeCode: 'ophthalmology.prescription_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }),
     }),
   updateEyeDrawDemoDraft: (draftId: string, csrfToken: string, expectedVersion: number, payload: EyeDrawDemoDraftPayload) =>
     request<EventDraft>(`/event-drafts/${encodeURIComponent(draftId)}`, {
