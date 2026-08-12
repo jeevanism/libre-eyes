@@ -9,7 +9,7 @@ function renderTimeline(allowed = true) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <EpisodeTimeline patientId="11111111-1111-4111-8111-111111111111" csrfToken="synthetic-csrf-token" contextVersion={1} allowed={allowed} />
+      <EpisodeTimeline patientId="11111111-1111-4111-8111-111111111111" csrfToken="synthetic-csrf-token" contextVersion={1} allowed={allowed} canCreateExaminationDraft={false} />
     </QueryClientProvider>,
   )
 }
@@ -69,7 +69,7 @@ describe('EpisodeTimeline', () => {
 
     rerender(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <EpisodeTimeline patientId="22222222-2222-4222-8222-222222222222" csrfToken="synthetic-csrf-token" contextVersion={1} allowed />
+        <EpisodeTimeline patientId="22222222-2222-4222-8222-222222222222" csrfToken="synthetic-csrf-token" contextVersion={1} allowed canCreateExaminationDraft={false} />
       </QueryClientProvider>,
     )
     expect(await screen.findByRole('alert')).toHaveTextContent('Care episodes are temporarily unavailable.')

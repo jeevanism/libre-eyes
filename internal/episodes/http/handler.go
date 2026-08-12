@@ -32,6 +32,10 @@ type Service interface {
 	Get(context.Context, episodes.Authorization, string) (episodes.Episode, error)
 	ListEvents(context.Context, episodes.Authorization, episodes.EventListRequest) (episodes.EventPage, error)
 	GetEventHeader(context.Context, episodes.Authorization, string) (episodes.EventHeader, error)
+	CreateDraft(context.Context, episodes.Authorization, string, episodes.DraftCreateRequest) (episodes.EventDraft, error)
+	GetDraft(context.Context, episodes.Authorization, string) (episodes.EventDraft, error)
+	UpdateDraft(context.Context, episodes.Authorization, string, episodes.DraftUpdateRequest) (episodes.EventDraft, error)
+	AbandonDraft(context.Context, episodes.Authorization, string, int64) error
 	Activate(context.Context, episodes.Authorization, episodes.LifecycleRequest) (episodes.Episode, error)
 	Close(context.Context, episodes.Authorization, episodes.LifecycleRequest) (episodes.Episode, error)
 	Reopen(context.Context, episodes.Authorization, episodes.LifecycleRequest) (episodes.Episode, error)
@@ -56,6 +60,10 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("PATCH /api/v1/episodes/{episodeId}", h.update)
 	mux.HandleFunc("GET /api/v1/episodes/{episodeId}/events", h.listEvents)
 	mux.HandleFunc("GET /api/v1/events/{eventId}", h.getEventHeader)
+	mux.HandleFunc("POST /api/v1/episodes/{episodeId}/event-drafts", h.createDraft)
+	mux.HandleFunc("GET /api/v1/event-drafts/{draftId}", h.getDraft)
+	mux.HandleFunc("PATCH /api/v1/event-drafts/{draftId}", h.updateDraft)
+	mux.HandleFunc("DELETE /api/v1/event-drafts/{draftId}", h.abandonDraft)
 }
 
 func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
@@ -152,6 +160,80 @@ func (h *Handler) getEventHeader(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) createDraft(w http.ResponseWriter, r *http.Request) {
+	h.withTimeout(w, r, func(ctx context.Context) {
+		authorization, ok := h.authorize(w, r, ctx, episodes.PermissionDraftCreate)
+		if !ok {
+			return
+		}
+		var body draftCreateRequest
+		if err := decodeDraftJSON(w, r, &body); err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		draft, err := h.service.CreateDraft(ctx, authorization, r.PathValue("episodeId"), episodes.DraftCreateRequest{EventTypeCode: body.EventTypeCode, TargetEventID: body.TargetEventID, Intent: body.Intent, Mode: body.Mode, SchemaVersion: body.SchemaVersion, Payload: body.Payload})
+		if err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusCreated, mapDraft(draft))
+	})
+}
+
+func (h *Handler) getDraft(w http.ResponseWriter, r *http.Request) {
+	h.withTimeout(w, r, func(ctx context.Context) {
+		authorization, ok := h.authorize(w, r, ctx, episodes.PermissionDraftRead)
+		if !ok {
+			return
+		}
+		draft, err := h.service.GetDraft(ctx, authorization, r.PathValue("draftId"))
+		if err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, mapDraft(draft))
+	})
+}
+
+func (h *Handler) updateDraft(w http.ResponseWriter, r *http.Request) {
+	h.withTimeout(w, r, func(ctx context.Context) {
+		authorization, ok := h.authorize(w, r, ctx, episodes.PermissionDraftUpdate)
+		if !ok {
+			return
+		}
+		var body draftUpdateRequest
+		if err := decodeDraftJSON(w, r, &body); err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		draft, err := h.service.UpdateDraft(ctx, authorization, r.PathValue("draftId"), episodes.DraftUpdateRequest{ExpectedVersion: body.ExpectedVersion, SchemaVersion: body.SchemaVersion, Payload: body.Payload})
+		if err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, mapDraft(draft))
+	})
+}
+
+func (h *Handler) abandonDraft(w http.ResponseWriter, r *http.Request) {
+	h.withTimeout(w, r, func(ctx context.Context) {
+		authorization, ok := h.authorize(w, r, ctx, episodes.PermissionDraftAbandon)
+		if !ok {
+			return
+		}
+		expected, err := strconv.ParseInt(r.URL.Query().Get("expectedVersion"), 10, 64)
+		if err != nil || expected < 1 {
+			h.writeError(w, r, episodes.ErrInvalidRequest)
+			return
+		}
+		if err := h.service.AbandonDraft(ctx, authorization, r.PathValue("draftId"), expected); err != nil {
+			h.writeError(w, r, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+}
+
 func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 	h.withTimeout(w, r, func(ctx context.Context) {
 		if !h.hasSessionCookie(w, r) {
@@ -240,6 +322,21 @@ type updateRequest struct {
 	ReopenReason    string `json:"reopenReason,omitempty"`
 }
 
+type draftCreateRequest struct {
+	EventTypeCode string               `json:"eventTypeCode"`
+	TargetEventID *string              `json:"targetEventId"`
+	Intent        episodes.DraftIntent `json:"intent"`
+	Mode          episodes.DraftMode   `json:"mode"`
+	SchemaVersion int64                `json:"schemaVersion"`
+	Payload       json.RawMessage      `json:"payload"`
+}
+
+type draftUpdateRequest struct {
+	ExpectedVersion int64           `json:"expectedVersion"`
+	SchemaVersion   int64           `json:"schemaVersion"`
+	Payload         json.RawMessage `json:"payload"`
+}
+
 func listRequest(r *http.Request) (episodes.ListRequest, error) {
 	request := episodes.ListRequest{Cursor: r.URL.Query().Get("cursor")}
 	if len(request.Cursor) > 512 {
@@ -268,6 +365,19 @@ func eventListRequest(r *http.Request) (episodes.EventListRequest, error) {
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, target any) error {
 	r.Body = http.MaxBytesReader(w, r.Body, maximumBodyBytes)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(target); err != nil {
+		return fmt.Errorf("%w: %w", episodes.ErrInvalidRequest, err)
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		return episodes.ErrInvalidRequest
+	}
+	return nil
+}
+
+func decodeDraftJSON(w http.ResponseWriter, r *http.Request, target any) error {
+	r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {
@@ -336,6 +446,20 @@ type eventPageResponse struct {
 	NextCursor *string               `json:"nextCursor"`
 }
 
+type draftResponse struct {
+	ID                  string               `json:"id"`
+	EpisodeID           string               `json:"episodeId"`
+	EventTypeCode       string               `json:"eventTypeCode"`
+	TargetEventID       *string              `json:"targetEventId,omitempty"`
+	Intent              episodes.DraftIntent `json:"intent"`
+	Mode                episodes.DraftMode   `json:"mode"`
+	SchemaVersion       int64                `json:"schemaVersion"`
+	Payload             json.RawMessage      `json:"payload"`
+	Version             int64                `json:"version"`
+	ExpiresAt           time.Time            `json:"expiresAt"`
+	NewerCommittedEdits *bool                `json:"newerCommittedEdits,omitempty"`
+}
+
 func mapEpisode(episode episodes.Episode) episodeResponse {
 	return episodeResponse{
 		ID: episode.ID, PatientID: episode.PatientID, Status: episode.Status,
@@ -365,6 +489,14 @@ func mapEventPage(page episodes.EventPage) eventPageResponse {
 		items[index] = mapEventHeader(event)
 	}
 	return eventPageResponse{Items: items, NextCursor: page.NextCursor}
+}
+
+func mapDraft(draft episodes.EventDraft) draftResponse {
+	response := draftResponse{ID: draft.ID, EpisodeID: draft.EpisodeID, EventTypeCode: draft.EventTypeCode, TargetEventID: draft.TargetEventID, Intent: draft.Intent, Mode: draft.Mode, SchemaVersion: draft.SchemaVersion, Payload: draft.Payload, Version: draft.Version, ExpiresAt: draft.ExpiresAt}
+	if draft.EventTypeCode != "ophthalmology.visual_acuity" && draft.EventTypeCode != "ophthalmology.principal_diagnosis_demo" {
+		response.NewerCommittedEdits = &draft.NewerCommittedEdits
+	}
+	return response
 }
 
 func (h *Handler) writeError(w http.ResponseWriter, r *http.Request, err error) {

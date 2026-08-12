@@ -16,11 +16,16 @@ import (
 	"github.com/jeevanism/visionopus/internal/config"
 	"github.com/jeevanism/visionopus/internal/episodes"
 	episodeshttp "github.com/jeevanism/visionopus/internal/episodes/http"
+	"github.com/jeevanism/visionopus/internal/examination"
 	"github.com/jeevanism/visionopus/internal/patientsearch"
 	patientsearchhttp "github.com/jeevanism/visionopus/internal/patientsearch/http"
 	"github.com/jeevanism/visionopus/internal/patientsummary"
 	patientsummaryhttp "github.com/jeevanism/visionopus/internal/patientsummary/http"
 	"github.com/jeevanism/visionopus/internal/platform/httpserver"
+	"github.com/jeevanism/visionopus/internal/theatrebooking"
+	theatrebookinghttp "github.com/jeevanism/visionopus/internal/theatrebooking/http"
+	"github.com/jeevanism/visionopus/internal/worklist"
+	worklisthttp "github.com/jeevanism/visionopus/internal/worklist/http"
 )
 
 func main() {
@@ -65,12 +70,26 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	patientSummaryHTTP := patientsummaryhttp.NewHandler(patientSummary, cfg.CookieSecure)
-	episodeService, err := episodes.NewService(database, authentication)
+	draftRegistry, err := examination.NewDraftRegistry(ctx, database, cfg.Environment)
+	if err != nil {
+		return err
+	}
+	episodeService, err := episodes.NewServiceWithDraftRegistry(database, authentication, draftRegistry)
 	if err != nil {
 		return err
 	}
 	episodesHTTP := episodeshttp.NewHandler(episodeService, cfg.CookieSecure)
-	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP)
+	developmentFlow, err := worklist.NewService(database, authentication)
+	if err != nil {
+		return err
+	}
+	developmentFlowHTTP := worklisthttp.NewHandler(developmentFlow, cfg.CookieSecure)
+	developmentTheatreBooking, err := theatrebooking.NewService(database, authentication)
+	if err != nil {
+		return err
+	}
+	developmentTheatreBookingHTTP := theatrebookinghttp.NewHandler(developmentTheatreBooking, cfg.CookieSecure)
+	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP, developmentFlowHTTP, developmentTheatreBookingHTTP)
 	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("api listening", "address", cfg.HTTPAddr, "environment", cfg.Environment)

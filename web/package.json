@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "generate:api": "npm run generate:api:auth && npm run generate:api:patient-search && npm run generate:api:episodes",
+    "generate:api": "npm run generate:api:auth && npm run generate:api:patient-search && npm run generate:api:episodes && npm run generate:api:worklist && npm run generate:api:theatre-booking",
     "generate:api:auth": "openapi-typescript ../doc/slices/01-auth-user-context/api-contract.yaml -o src/api/schema.d.ts",
     "generate:api:patient-search": "openapi-typescript ../doc/slices/02-patient-search/api-contract.yaml -o src/api/patient-search-schema.d.ts",
     "generate:api:episodes": "openapi-typescript ../doc/slices/04-episodes-events/api-contract.yaml -o src/api/episodes-schema.d.ts",
+    "generate:api:worklist": "openapi-typescript ../doc/slices/06-worklists-patient-flow/api-contract.yaml -o src/api/worklist-schema.d.ts",
+    "generate:api:theatre-booking": "openapi-typescript ../doc/slices/08-theatre-booking-demonstration/api-contract.yaml -o src/api/theatre-booking-schema.d.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -19,7 +21,10 @@
   "dependencies": {
     "@tanstack/react-query": "5.101.4",
     "@tanstack/react-router": "1.170.18",
+    "eventemitter2": "6.4.9",
+    "jquery": "3.7.1",
     "lucide-react": "1.28.0",
+    "mustache": "4.2.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -29,6 +34,8 @@
     "@tanstack/router-plugin": "1.168.23",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",
+    "@types/jquery": "3.5.33",
+    "@types/mustache": "4.2.6",
     "@types/node": "26.1.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",

@@ -34,16 +34,22 @@ type Authorization struct {
 type Service struct {
 	pool       *pgxpool.Pool
 	authorizer operationAuthorizer
+	drafts     DraftPayloadRegistry
 	cursors    *cursorStore
 	now        func() time.Time
 }
 
 // NewService constructs an episode service with its required dependencies.
 func NewService(pool *pgxpool.Pool, authorizer operationAuthorizer) (*Service, error) {
-	if pool == nil || authorizer == nil {
+	return NewServiceWithDraftRegistry(pool, authorizer, RejectingDraftRegistry{})
+}
+
+// NewServiceWithDraftRegistry constructs the episode service with a module-owned draft validator.
+func NewServiceWithDraftRegistry(pool *pgxpool.Pool, authorizer operationAuthorizer, drafts DraftPayloadRegistry) (*Service, error) {
+	if pool == nil || authorizer == nil || drafts == nil {
 		return nil, errors.New("episode database and authorizer are required")
 	}
-	service := &Service{pool: pool, authorizer: authorizer, cursors: newCursorStore(), now: time.Now}
+	service := &Service{pool: pool, authorizer: authorizer, drafts: drafts, cursors: newCursorStore(), now: time.Now}
 	service.cursors.now = func() time.Time { return service.now() }
 	return service, nil
 }
@@ -194,6 +200,7 @@ func (s *Service) List(ctx context.Context, authorization Authorization, request
 	if err := rows.Err(); err != nil {
 		return EpisodePage{}, fmt.Errorf("iterate episodes: %w", err)
 	}
+	rows.Close()
 	page := EpisodePage{Items: episodes}
 	if len(episodes) > limit {
 		page.Items = episodes[:limit]
@@ -306,6 +313,7 @@ func (s *Service) ListEvents(ctx context.Context, authorization Authorization, r
 	if err := rows.Err(); err != nil {
 		return EventPage{}, fmt.Errorf("iterate event headers: %w", err)
 	}
+	rows.Close()
 	page := EventPage{Items: events}
 	if len(events) > limit {
 		page.Items = events[:limit]
@@ -536,6 +544,14 @@ func deniedEventFor(permission string) (string, bool) {
 		return "episode.update_denied", true
 	case permissionReopen:
 		return "episode.reopen_denied", true
+	case PermissionDraftCreate:
+		return "event_draft.create_denied", true
+	case PermissionDraftRead:
+		return "event_draft.read_denied", true
+	case PermissionDraftUpdate:
+		return "event_draft.update_denied", true
+	case PermissionDraftAbandon:
+		return "event_draft.abandon_denied", true
 	default:
 		return "", false
 	}

@@ -4,6 +4,7 @@ package episodes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"testing"
@@ -148,6 +149,153 @@ func TestServiceIntegrationLifecycleAuditAndScope(t *testing.T) {
 	}
 	if audits != 9 || reopenReason != "corrected closure" {
 		t.Fatalf("episode audit summary = count:%d reopenReason:%q", audits, reopenReason)
+	}
+}
+
+type acceptingDraftRegistry struct{}
+
+func (acceptingDraftRegistry) Validate(_ context.Context, eventTypeCode string, intent DraftIntent, schemaVersion int64, payload json.RawMessage) error {
+	if eventTypeCode != "test.draft" || intent != DraftIntentCreate || schemaVersion != 1 || string(payload) != `{"field":"value"}` {
+		return ErrInvalidRequest
+	}
+	return nil
+}
+
+func TestServiceIntegrationDraftLifecycle(t *testing.T) {
+	pool := episodesTestPool(t)
+	fixture := seedEpisodesFixture(t, pool)
+	authorizer := &integrationAuthorizer{principal: fixture.principal}
+	service, err := NewServiceWithDraftRegistry(pool, authorizer, acceptingDraftRegistry{})
+	if err != nil {
+		t.Fatalf("NewServiceWithDraftRegistry() error = %v", err)
+	}
+	metadata := auth.RequestMetadata{CorrelationID: "draft-lifecycle", SourceIPClass: "loopback"}
+	read := authorizeEpisode(t, service, PermissionDraftRead, metadata)
+	create := authorizeEpisode(t, service, PermissionDraftCreate, metadata)
+	episode, err := service.Create(context.Background(), authorizeEpisode(t, service, PermissionCreate, metadata), fixture.patientPublicID, CreateRequest{Status: StatusOpen})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	draft, err := service.CreateDraft(context.Background(), create, episode.ID, DraftCreateRequest{EventTypeCode: "test.draft", Mode: DraftModeManual, SchemaVersion: 1, Payload: json.RawMessage(`{"field":"value"}`)})
+	if err != nil {
+		t.Fatalf("CreateDraft() error = %v", err)
+	}
+	if draft.Version != 1 || draft.Intent != DraftIntentCreate || draft.EpisodeID != episode.ID {
+		t.Fatalf("created draft = %#v", draft)
+	}
+	loaded, err := service.GetDraft(context.Background(), read, draft.ID)
+	if err != nil || loaded.ID != draft.ID {
+		t.Fatalf("GetDraft() = %#v, %v", loaded, err)
+	}
+	updated, err := service.UpdateDraft(context.Background(), authorizeEpisode(t, service, PermissionDraftUpdate, metadata), draft.ID, DraftUpdateRequest{ExpectedVersion: 1, SchemaVersion: 1, Payload: json.RawMessage(`{"field":"value"}`)})
+	if err != nil || updated.Version != 2 {
+		t.Fatalf("UpdateDraft() = %#v, %v", updated, err)
+	}
+	if err := service.AbandonDraft(context.Background(), authorizeEpisode(t, service, PermissionDraftAbandon, metadata), draft.ID, 2); err != nil {
+		t.Fatalf("AbandonDraft() error = %v", err)
+	}
+	if _, err := service.GetDraft(context.Background(), read, draft.ID); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("GetDraft(disposed) error = %v, want forbidden", err)
+	}
+	var auditPayloads int
+	if err := pool.QueryRow(context.Background(), `SELECT count(*) FROM audit_events WHERE event_type LIKE 'event_draft.%' AND attributes::text LIKE '%field%'`).Scan(&auditPayloads); err != nil {
+		t.Fatalf("count payload audits: %v", err)
+	}
+	if auditPayloads != 0 {
+		t.Fatalf("draft payload leaked into %d audit records", auditPayloads)
+	}
+}
+
+func TestServiceIntegrationDraftExpiryIsAuditedWithoutPayload(t *testing.T) {
+	pool := episodesTestPool(t)
+	fixture := seedEpisodesFixture(t, pool)
+	authorizer := &integrationAuthorizer{principal: fixture.principal}
+	service, err := NewServiceWithDraftRegistry(pool, authorizer, acceptingDraftRegistry{})
+	if err != nil {
+		t.Fatalf("NewServiceWithDraftRegistry() error = %v", err)
+	}
+	service.now = func() time.Time { return time.Date(2026, 8, 8, 12, 0, 0, 0, time.UTC) }
+	metadata := auth.RequestMetadata{CorrelationID: "draft-expiry", SourceIPClass: "loopback"}
+	episode, err := service.Create(context.Background(), authorizeEpisode(t, service, PermissionCreate, metadata), fixture.patientPublicID, CreateRequest{Status: StatusOpen})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	draft, err := service.CreateDraft(context.Background(), authorizeEpisode(t, service, PermissionDraftCreate, metadata), episode.ID, DraftCreateRequest{EventTypeCode: "test.draft", Mode: DraftModeAutosave, SchemaVersion: 1, Payload: json.RawMessage(`{"field":"value"}`)})
+	if err != nil {
+		t.Fatalf("CreateDraft() error = %v", err)
+	}
+	expiresAt := service.now().Add(-time.Second)
+	if _, err := pool.Exec(context.Background(), `UPDATE event_drafts SET created_at = $1::timestamptz - interval '1 second', expires_at = $1::timestamptz WHERE public_id = $2`, expiresAt, draft.ID); err != nil {
+		t.Fatalf("expire draft fixture: %v", err)
+	}
+	count, err := service.ExpireDueDrafts(context.Background(), fixture.principal.UserID, 10)
+	if err != nil || count != 1 {
+		t.Fatalf("ExpireDueDrafts() = %d, %v", count, err)
+	}
+	if _, err := service.GetDraft(context.Background(), authorizeEpisode(t, service, PermissionDraftRead, metadata), draft.ID); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("GetDraft(expired) error = %v, want forbidden", err)
+	}
+	var eventType, payloadLeak string
+	if err := pool.QueryRow(context.Background(), `SELECT event_type, COALESCE(attributes->>'field', '') FROM audit_events WHERE event_type = 'event_draft.expired' ORDER BY id DESC LIMIT 1`).Scan(&eventType, &payloadLeak); err != nil {
+		t.Fatalf("load expiry audit: %v", err)
+	}
+	if eventType != "event_draft.expired" || payloadLeak != "" {
+		t.Fatalf("expiry audit = event:%q payload:%q", eventType, payloadLeak)
+	}
+}
+
+func TestServiceIntegrationDraftGuardsScopeAndConflicts(t *testing.T) {
+	pool := episodesTestPool(t)
+	fixture := seedEpisodesFixture(t, pool)
+	authorizer := &integrationAuthorizer{principal: fixture.principal}
+	service, err := NewServiceWithDraftRegistry(pool, authorizer, acceptingDraftRegistry{})
+	if err != nil {
+		t.Fatalf("NewServiceWithDraftRegistry() error = %v", err)
+	}
+	metadata := auth.RequestMetadata{CorrelationID: "draft-guards", SourceIPClass: "loopback"}
+	episode, err := service.Create(context.Background(), authorizeEpisode(t, service, PermissionCreate, metadata), fixture.patientPublicID, CreateRequest{Status: StatusOpen})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	create := authorizeEpisode(t, service, PermissionDraftCreate, metadata)
+	defaultRegistryService, err := NewService(pool, authorizer)
+	if err != nil {
+		t.Fatalf("NewService() error = %v", err)
+	}
+	if _, err := defaultRegistryService.CreateDraft(context.Background(), authorizeEpisode(t, defaultRegistryService, PermissionDraftCreate, metadata), episode.ID, DraftCreateRequest{EventTypeCode: "test.draft", Mode: DraftModeManual, SchemaVersion: 1, Payload: json.RawMessage(`{"field":"value"}`)}); !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("CreateDraft(unregistered schema) error = %v, want invalid request", err)
+	}
+	otherEpisode, err := service.Create(context.Background(), authorizeEpisode(t, service, PermissionCreate, metadata), fixture.patientPublicID, CreateRequest{Status: StatusOpen})
+	if err != nil {
+		t.Fatalf("Create(other episode) error = %v", err)
+	}
+	otherEventID := "77777777-7777-4777-8777-777777777777"
+	insertEventHeader(t, pool, otherEpisode.ID, otherEventID, time.Now().UTC(), "current")
+	if _, err := service.CreateDraft(context.Background(), create, episode.ID, DraftCreateRequest{EventTypeCode: "test.draft", Intent: DraftIntentUpdate, TargetEventID: &otherEventID, Mode: DraftModeManual, SchemaVersion: 1, Payload: json.RawMessage(`{"field":"value"}`)}); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("CreateDraft(other episode target) error = %v, want forbidden", err)
+	}
+	draft, err := service.CreateDraft(context.Background(), create, episode.ID, DraftCreateRequest{EventTypeCode: "test.draft", Mode: DraftModeAutosave, SchemaVersion: 1, Payload: json.RawMessage(`{"field":"value"}`)})
+	if err != nil {
+		t.Fatalf("CreateDraft() error = %v", err)
+	}
+	if _, err := service.CreateDraft(context.Background(), create, episode.ID, DraftCreateRequest{EventTypeCode: "test.draft", Mode: DraftModeAutosave, SchemaVersion: 1, Payload: json.RawMessage(`{"field":"value"}`)}); !errors.Is(err, auth.ErrConflict) {
+		t.Fatalf("CreateDraft(duplicate autosave) error = %v, want conflict", err)
+	}
+	otherUser := fixture.principal
+	otherUser.UserID++
+	authorizer.principal = otherUser
+	if _, err := service.GetDraft(context.Background(), authorizeEpisode(t, service, PermissionDraftRead, metadata), draft.ID); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("GetDraft(other owner) error = %v, want forbidden", err)
+	}
+	authorizer.principal = fixture.principal
+	if err := service.AbandonDraft(context.Background(), authorizeEpisode(t, service, PermissionDraftAbandon, metadata), draft.ID, 2); !errors.Is(err, auth.ErrConflict) {
+		t.Fatalf("AbandonDraft(stale) error = %v, want conflict", err)
+	}
+	if _, err := pool.Exec(context.Background(), `UPDATE event_drafts SET event_type_code = 'illegal.type' WHERE public_id = $1`, draft.ID); err == nil {
+		t.Fatal("immutable event draft field mutation succeeded")
+	}
+	if _, err := pool.Exec(context.Background(), `DELETE FROM event_drafts WHERE public_id = $1`, draft.ID); err == nil {
+		t.Fatal("hard deletion of event draft succeeded")
 	}
 }
 

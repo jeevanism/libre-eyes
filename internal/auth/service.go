@@ -404,6 +404,52 @@ func (s *Service) AuthorizeOperation(ctx context.Context, request OperationAutho
 	}, nil
 }
 
+// AuthorizeRead validates a session, live context, and permission for a
+// non-mutating operation. CSRF is intentionally not required for reads.
+func (s *Service) AuthorizeRead(ctx context.Context, request ReadAuthorizationRequest) (OperationPrincipal, error) {
+	if strings.TrimSpace(request.Permission) == "" || strings.TrimSpace(request.DeniedEventType) == "" {
+		return OperationPrincipal{}, errors.New("read authorization policy is incomplete")
+	}
+
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return OperationPrincipal{}, fmt.Errorf("begin read authorization transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	record, err := s.loadActiveSession(ctx, tx, request.Token, request.Metadata)
+	if err != nil {
+		if errors.Is(err, ErrUnauthenticated) {
+			if commitErr := tx.Commit(ctx); commitErr != nil {
+				return OperationPrincipal{}, fmt.Errorf("commit read session rejection: %w", commitErr)
+			}
+		}
+		return OperationPrincipal{}, err
+	}
+
+	firmID := record.context.Firm.ID
+	validatedContext, err := resolveContext(ctx, tx, record.user.ID, record.context.Institution.ID, record.context.Site.ID, &firmID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			s.bestEffortOperationDenial(ctx, tx, record, OperationAuthorizationRequest{DeniedEventType: request.DeniedEventType, Metadata: request.Metadata}, "context_inaccessible")
+			return OperationPrincipal{}, ErrForbidden
+		}
+		return OperationPrincipal{}, fmt.Errorf("validate read context: %w", err)
+	}
+	permissions, err := loadPermissions(ctx, tx, record.user.ID, validatedContext.Institution.ID)
+	if err != nil {
+		return OperationPrincipal{}, err
+	}
+	if !slices.Contains(permissions, request.Permission) {
+		s.bestEffortOperationDenial(ctx, tx, record, OperationAuthorizationRequest{DeniedEventType: request.DeniedEventType, Metadata: request.Metadata}, "permission_denied")
+		return OperationPrincipal{}, ErrForbidden
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return OperationPrincipal{}, fmt.Errorf("commit read authorization: %w", err)
+	}
+	return OperationPrincipal{UserID: record.user.ID, SessionID: record.id, InstitutionID: validatedContext.Institution.ID, SiteID: validatedContext.Site.ID, FirmID: validatedContext.Firm.ID, ContextVersion: record.contextVersion}, nil
+}
+
 func (s *Service) bestEffortOperationDenial(
 	ctx context.Context,
 	tx pgx.Tx,

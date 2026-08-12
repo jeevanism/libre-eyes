@@ -7,7 +7,7 @@ const session = {
     site: { id: '1', name: 'Development Eye Clinic' },
     firm: { id: '1', name: 'Development Ophthalmology' },
   },
-  permissions: ['patient.search', 'patient.summary.read', 'patient.clinical_summary.read', 'episode.read'],
+  permissions: ['patient.search', 'patient.summary.read', 'patient.clinical_summary.read', 'episode.read', 'event_draft.create', 'worklist.development_flow.manage'],
   csrfToken: 'synthetic-csrf-token',
   idleExpiresAt: '2026-08-06T12:00:00Z',
   absoluteExpiresAt: '2026-08-06T18:00:00Z',
@@ -52,6 +52,71 @@ test.beforeEach(async ({ page }) => {
       }], nextCursor: null,
     } })
   })
+  await page.route('**/api/v1/episodes/22222222-2222-4222-8222-222222222222/event-drafts', async (route) => {
+    const request = route.request()
+    expect(request.headers()['x-csrf-token']).toBe('synthetic-csrf-token')
+    const body: unknown = request.postDataJSON()
+    const eventTypeCode = (body as { eventTypeCode?: string }).eventTypeCode
+    if (eventTypeCode === 'ophthalmology.visual_acuity') {
+      expect(body).toEqual({
+        eventTypeCode: 'ophthalmology.visual_acuity', intent: 'create', mode: 'manual', schemaVersion: 1,
+        payload: {
+          recordMode: 'simple',
+          eyes: [
+            { eye: 'right', assessment: 'recorded', readings: [{ unitCode: 'development_distance_scale', valueCode: 'development_value_m028', methodCode: 'development_unaided' }] },
+            { eye: 'left', assessment: 'recorded', readings: [{ unitCode: 'development_distance_scale', valueCode: 'development_value_150', methodCode: 'development_unaided' }] },
+          ],
+        },
+      })
+    } else if (eventTypeCode === 'ophthalmology.intraocular_pressure') {
+      expect(body).toEqual({
+        eventTypeCode: 'ophthalmology.intraocular_pressure', intent: 'create', mode: 'manual', schemaVersion: 1,
+        payload: { recordMode: 'development_raw_mmhg', profileCode: 'development_iop_manual_mmhg', eyes: [{ eye: 'right', valueCode: 'development_iop_14' }, { eye: 'left', valueCode: 'development_iop_18' }] },
+      })
+    } else if (eventTypeCode === 'ophthalmology.principal_diagnosis_demo') {
+      expect(body).toEqual({
+        eventTypeCode: 'ophthalmology.principal_diagnosis_demo', intent: 'create', mode: 'manual', schemaVersion: 1,
+        payload: { recordMode: 'development_synthetic_diagnosis', profileCode: 'development_ophthalmology_diagnosis_v1', selectionCode: 'development_cataract', laterality: 'bilateral', diagnosisDate: '2026-08-09' },
+      })
+    } else if (eventTypeCode === 'ophthalmology.eyedraw_anterior_segment_demo') {
+      const drawing = (body as { payload?: { drawing?: unknown[] } }).payload?.drawing
+      expect(body).toMatchObject({
+        eventTypeCode: 'ophthalmology.eyedraw_anterior_segment_demo', intent: 'create', mode: 'manual', schemaVersion: 1,
+        payload: { recordMode: 'development_eyedraw_anterior_segment', canvasCode: 'development_exam_ant_seg_v1', laterality: 'right' },
+      })
+      expect(drawing).toEqual(expect.arrayContaining([expect.objectContaining({ className: 'AntSeg' })]))
+      expect(JSON.stringify(drawing)).not.toContain('tags')
+    } else {
+      throw new Error(`unexpected demonstration event type: ${eventTypeCode}`)
+    }
+    await route.fulfill({ status: 201, json: {
+      id: '77777777-7777-4777-8777-777777777777', episodeId: '22222222-2222-4222-8222-222222222222',
+      eventTypeCode: 'ophthalmology.intraocular_pressure', intent: 'create', mode: 'manual', schemaVersion: 1,
+      payload: { recordMode: 'development_raw_mmhg', profileCode: 'development_iop_manual_mmhg', eyes: [{ eye: 'right', valueCode: 'development_iop_14' }, { eye: 'left', valueCode: 'development_iop_18' }] }, version: 1, expiresAt: '2026-09-01T10:00:00Z', newerCommittedEdits: false,
+    } })
+  })
+  await page.route('**/api/v1/event-drafts/77777777-7777-4777-8777-777777777777', async (route) => {
+    expect(route.request().headers()['x-csrf-token']).toBe('synthetic-csrf-token')
+    await route.fulfill({ json: {
+      id: '77777777-7777-4777-8777-777777777777', episodeId: '22222222-2222-4222-8222-222222222222',
+      eventTypeCode: 'ophthalmology.eyedraw_anterior_segment_demo', intent: 'create', mode: 'manual', schemaVersion: 1,
+      payload: { recordMode: 'development_eyedraw_anterior_segment', canvasCode: 'development_exam_ant_seg_v1', laterality: 'right', drawing: [{ className: 'AntSeg', subclass: 'AntSeg' }] },
+      version: 1, expiresAt: '2026-09-01T10:00:00Z', newerCommittedEdits: false,
+    } })
+  })
+  await page.route('**/api/v1/development/clinic-flow/tickets**', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({ json: {
+        items: [{ id: '77777777-7777-4777-8777-777777777777', syntheticPatientLabel: 'Synthetic queue patient A', status: 'waiting', assigneeDisplayName: null, version: 1 }],
+      } })
+      return
+    }
+    expect(route.request().headers()['x-csrf-token']).toBe('synthetic-csrf-token')
+    expect(route.request().postDataJSON()).toEqual({ expectedVersion: 1 })
+    await route.fulfill({ json: {
+      id: '77777777-7777-4777-8777-777777777777', syntheticPatientLabel: 'Synthetic queue patient A', status: 'arrived', assigneeDisplayName: null, version: 2,
+    } })
+  })
 })
 
 test('renders the selected patient identity and warning details', async ({ page }) => {
@@ -65,5 +130,60 @@ test('renders the selected patient identity and warning details', async ({ page 
   await expect(page.getByText('active')).toBeVisible()
   await page.getByRole('button', { name: 'Show events' }).click()
   await expect(page.getByText('core.examination')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Open examination workspace' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Clinic flow queue' })).not.toBeVisible()
+})
+
+test('keeps clinic flow in its own operational workspace', async ({ page }) => {
+  await page.goto('/clinic-flow')
+  await expect(page.getByRole('heading', { name: 'Clinic flow', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Clinic flow queue' })).toBeVisible()
+  await page.getByRole('button', { name: 'Mark arrived' }).click()
+  await expect(page.getByText('Arrived')).toBeVisible()
+})
+
+test('keeps development examination demonstrations in a focused workspace', async ({ page }) => {
+  await page.goto('/patients/11111111-1111-4111-8111-111111111111/examination')
+  await expect(page.getByRole('heading', { name: 'Examination workspace' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Visual acuity', selected: true })).toBeVisible()
+  const visualAcuityForm = page.locator('.visual-acuity-demo-form')
+  await visualAcuityForm.getByLabel('Right eye demonstration value').selectOption('development_value_m028')
+  await visualAcuityForm.getByLabel('Left eye demonstration value').selectOption('development_value_150')
+  await visualAcuityForm.getByRole('button', { name: 'Save demonstration draft' }).click()
+  await expect(visualAcuityForm.getByRole('status')).toHaveText('Development draft saved. It remains uncommitted.')
+
+  await page.getByRole('tab', { name: 'Intraocular pressure' }).click()
+  const iopForm = page.locator('.iop-draft-demo-form')
+  await iopForm.getByLabel('Right eye development IOP value').selectOption('development_iop_14')
+  await iopForm.getByLabel('Left eye development IOP value').selectOption('development_iop_18')
+  await iopForm.getByRole('button', { name: 'Save demonstration draft' }).click()
+  await expect(iopForm.getByRole('status')).toHaveText('Development draft saved. It remains uncommitted.')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+})
+
+test('saves only a synthetic diagnosis development draft', async ({ page }) => {
+  await page.goto('/patients/11111111-1111-4111-8111-111111111111/examination')
+  await page.getByRole('tab', { name: 'Ophthalmology selection' }).click()
+  const form = page.locator('.diagnosis-draft-demo-form')
+  await form.getByLabel('Development example').selectOption('development_cataract')
+  await form.getByLabel('Laterality').selectOption('bilateral')
+  await form.getByLabel('Development date').fill('2026-08-09')
+  await form.getByRole('button', { name: 'Save demonstration draft' }).click()
+  await expect(form.getByRole('status')).toHaveText('Development draft saved. It remains uncommitted.')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+})
+
+test('saves and recovers only the approved EyeDraw development draft', async ({ page }) => {
+  await page.goto('/patients/11111111-1111-4111-8111-111111111111/examination')
+  await page.getByRole('tab', { name: 'Anterior segment drawing' }).click()
+  const demo = page.locator('.eyedraw-draft-demo')
+  await expect(demo.getByRole('heading', { name: 'Anterior segment drawing draft' })).toBeVisible()
+  await expect(demo.getByRole('button', { name: 'Add anterior segment' })).toBeEnabled()
+  await demo.getByRole('button', { name: 'Add anterior segment' }).click()
+  await demo.getByLabel('Anterior segment pupil size').selectOption('Small')
+  await demo.getByRole('button', { name: 'Save demonstration draft' }).click()
+  await expect(demo.getByRole('status')).toHaveText('Development drawing draft saved. It remains uncommitted.')
+  await demo.getByRole('button', { name: 'Reload saved draft' }).click()
+  await expect(demo.getByRole('button', { name: 'Update demonstration draft' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })

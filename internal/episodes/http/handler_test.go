@@ -2,6 +2,7 @@ package episodeshttp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -17,25 +18,33 @@ import (
 )
 
 type fakeService struct {
-	authorizeErr     error
-	operation        string
-	csrfToken        string
-	createCalls      int
-	listCalls        int
-	getCalls         int
-	eventListCalls   int
-	eventGetCalls    int
-	activateCalls    int
-	closeCalls       int
-	reopenCalls      int
-	listRequest      episodes.ListRequest
-	eventListRequest episodes.EventListRequest
-	lifecycle        episodes.LifecycleRequest
-	createResult     episodes.Episode
-	listResult       episodes.EpisodePage
-	eventListResult  episodes.EventPage
-	eventResult      episodes.EventHeader
-	serviceErr       error
+	authorizeErr      error
+	operation         string
+	csrfToken         string
+	createCalls       int
+	listCalls         int
+	getCalls          int
+	eventListCalls    int
+	eventGetCalls     int
+	draftCreateCalls  int
+	draftGetCalls     int
+	draftUpdateCalls  int
+	draftAbandonCalls int
+	activateCalls     int
+	closeCalls        int
+	reopenCalls       int
+	listRequest       episodes.ListRequest
+	eventListRequest  episodes.EventListRequest
+	lifecycle         episodes.LifecycleRequest
+	createResult      episodes.Episode
+	listResult        episodes.EpisodePage
+	eventListResult   episodes.EventPage
+	eventResult       episodes.EventHeader
+	draftResult       episodes.EventDraft
+	draftCreate       episodes.DraftCreateRequest
+	draftUpdate       episodes.DraftUpdateRequest
+	draftExpected     int64
+	serviceErr        error
 }
 
 func (f *fakeService) Authorize(_ context.Context, _, csrf string, permission string, _ auth.RequestMetadata) (episodes.Authorization, error) {
@@ -64,6 +73,25 @@ func (f *fakeService) ListEvents(_ context.Context, _ episodes.Authorization, re
 func (f *fakeService) GetEventHeader(_ context.Context, _ episodes.Authorization, _ string) (episodes.EventHeader, error) {
 	f.eventGetCalls++
 	return f.eventResult, f.serviceErr
+}
+func (f *fakeService) CreateDraft(_ context.Context, _ episodes.Authorization, _ string, request episodes.DraftCreateRequest) (episodes.EventDraft, error) {
+	f.draftCreateCalls++
+	f.draftCreate = request
+	return f.draftResult, f.serviceErr
+}
+func (f *fakeService) GetDraft(_ context.Context, _ episodes.Authorization, _ string) (episodes.EventDraft, error) {
+	f.draftGetCalls++
+	return f.draftResult, f.serviceErr
+}
+func (f *fakeService) UpdateDraft(_ context.Context, _ episodes.Authorization, _ string, request episodes.DraftUpdateRequest) (episodes.EventDraft, error) {
+	f.draftUpdateCalls++
+	f.draftUpdate = request
+	return f.draftResult, f.serviceErr
+}
+func (f *fakeService) AbandonDraft(_ context.Context, _ episodes.Authorization, _ string, expected int64) error {
+	f.draftAbandonCalls++
+	f.draftExpected = expected
+	return f.serviceErr
 }
 func (f *fakeService) Activate(_ context.Context, _ episodes.Authorization, request episodes.LifecycleRequest) (episodes.Episode, error) {
 	f.activateCalls++
@@ -188,6 +216,41 @@ func TestEventHeadersUseReadPermissionAndMinimumDisclosure(t *testing.T) {
 		t.Fatalf("get status=%d operation=%q calls=%d body=%s", get.Code, service.operation, service.eventGetCalls, get.Body.String())
 	}
 	assertNoStore(t, get)
+}
+
+func TestDraftRoutesUseScopedPermissionsAndBoundedPayloads(t *testing.T) {
+	draft := episodes.EventDraft{ID: "11111111-1111-4111-8111-111111111111", EpisodeID: "22222222-2222-4222-8222-222222222222", EventTypeCode: "test.draft", Intent: episodes.DraftIntentCreate, Mode: episodes.DraftModeManual, SchemaVersion: 1, Payload: json.RawMessage(`{"field":"value"}`), Version: 1, ExpiresAt: time.Now().UTC()}
+	service := &fakeService{draftResult: draft}
+	response := serve(t, service, http.MethodPost, "/api/v1/episodes/22222222-2222-4222-8222-222222222222/event-drafts", `{"eventTypeCode":"test.draft","mode":"manual","schemaVersion":1,"payload":{"field":"value"}}`)
+	if response.Code != http.StatusCreated || service.operation != episodes.PermissionDraftCreate || service.draftCreateCalls != 1 || string(service.draftCreate.Payload) != `{"field":"value"}` {
+		t.Fatalf("status=%d permission=%q draft=%#v body=%s", response.Code, service.operation, service.draftCreate, response.Body.String())
+	}
+	loaded := serve(t, service, http.MethodGet, "/api/v1/event-drafts/11111111-1111-4111-8111-111111111111", "")
+	if loaded.Code != http.StatusOK || service.operation != episodes.PermissionDraftRead || service.draftGetCalls != 1 {
+		t.Fatalf("status=%d permission=%q calls=%d body=%s", loaded.Code, service.operation, service.draftGetCalls, loaded.Body.String())
+	}
+	updated := serve(t, service, http.MethodPatch, "/api/v1/event-drafts/11111111-1111-4111-8111-111111111111", `{"expectedVersion":1,"schemaVersion":1,"payload":{"field":"value"}}`)
+	if updated.Code != http.StatusOK || service.operation != episodes.PermissionDraftUpdate || service.draftUpdateCalls != 1 || service.draftUpdate.ExpectedVersion != 1 {
+		t.Fatalf("status=%d permission=%q update=%#v", updated.Code, service.operation, service.draftUpdate)
+	}
+	abandoned := serve(t, service, http.MethodDelete, "/api/v1/event-drafts/11111111-1111-4111-8111-111111111111?expectedVersion=1", "")
+	if abandoned.Code != http.StatusNoContent || service.operation != episodes.PermissionDraftAbandon || service.draftExpected != 1 {
+		t.Fatalf("status=%d permission=%q expected=%d", abandoned.Code, service.operation, service.draftExpected)
+	}
+}
+
+func TestDraftReadWithoutCSRFIsForbidden(t *testing.T) {
+	service := &fakeService{authorizeErr: auth.ErrCSRF}
+	mux := http.NewServeMux()
+	NewHandler(service, true).Register(mux)
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/event-drafts/11111111-1111-4111-8111-111111111111", nil)
+	request.RemoteAddr = "127.0.0.1:1234"
+	request.AddCookie(&http.Cookie{Name: sessionCookieName, Value: "opaque-session"})
+	response := httptest.NewRecorder()
+	httpx.Middleware(slog.New(slog.NewTextHandler(io.Discard, nil)), mux).ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden || service.csrfToken != "" || service.draftGetCalls != 0 {
+		t.Fatalf("status=%d csrf=%q calls=%d body=%s", response.Code, service.csrfToken, service.draftGetCalls, response.Body.String())
+	}
 }
 
 func TestEventHeaderReadWithoutCSRFIsForbidden(t *testing.T) {

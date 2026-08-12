@@ -38,6 +38,7 @@ local authentication
 - [Modernization strategy](doc/modernization-strategy.md)
 - [Documentation index](doc/README.md)
 - [React and TanStack Router decision](doc/decisions/0001-react-tanstack-router.md)
+- [Demonstration-first delivery policy](doc/decisions/0011-demonstration-first-delivery-policy.md)
 - [Authentication foundation decision](doc/decisions/0003-authentication-foundation-policy.md)
 - [Authentication security and migration approval](doc/approvals/0001-authentication-security-migration.md)
 - [Authentication extraction workspace](doc/slices/01-auth-user-context/README.md)

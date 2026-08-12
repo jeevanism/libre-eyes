@@ -188,6 +188,18 @@ export interface components {
             /** @description Module-owned draft-only JSON. The server enforces a 64 KiB decoded body limit, a maximum nesting depth of 16, and 2,000 object keys before persistence. */
             payload: Record<string, never>;
         };
+        /** @description Development-only overlay for ophthalmology.intraocular_pressure schema version 1. It is valid only as an uncommitted generic event draft and never creates a clinical observation, event element, calculation, interpretation, alert, diagnosis, or workflow effect. */
+        DevelopmentIOPDraftPayload: {
+            /** @constant */
+            recordMode: "development_raw_mmhg";
+            /** @constant */
+            profileCode: "development_iop_manual_mmhg";
+            eyes: {
+                /** @enum {string} */
+                eye: "left" | "right";
+                valueCode: string;
+            }[];
+        };
         EventDraft: {
             /** Format: uuid */
             id: string;
@@ -204,7 +216,7 @@ export interface components {
             version: number;
             /** Format: date-time */
             expiresAt: string;
-            newerCommittedEdits?: boolean;
+            newerCommittedEdits: boolean;
         };
         Problem: {
             /** Format: uri-reference */
@@ -497,7 +509,9 @@ export interface operations {
     getEventDraft: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
             path: {
                 draftId: components["parameters"]["DraftId"];
             };
@@ -506,9 +520,9 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["DraftResponse"];
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
         };
     };
     abandonEventDraft: {
@@ -535,9 +549,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
         };
     };

@@ -27,8 +27,8 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if cfg.Environment != "development" {
-		return errors.New("devseed may run only when VISIONOPUS_ENV=development")
+	if err := requireDevelopmentEnvironment(cfg.Environment); err != nil {
+		return err
 	}
 	username := strings.ToLower(strings.TrimSpace(valueOrDefault("VISIONOPUS_DEV_USERNAME", "clinician")))
 	displayName := strings.TrimSpace(valueOrDefault("VISIONOPUS_DEV_DISPLAY_NAME", "Synthetic Clinician"))
@@ -61,6 +61,15 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// Integration tests intentionally create isolated institutions in the shared
+	// development database. Keep the interactive demo focused on its one
+	// synthetic context without deleting those test records.
+	if _, err := tx.Exec(ctx, `
+		UPDATE institutions
+		SET active = (id = $1), updated_at = now()
+		WHERE active <> (id = $1)`, institutionID); err != nil {
+		return fmt.Errorf("focus development login institutions: %w", err)
+	}
 	siteID, err := findOrInsert(ctx, tx,
 		"SELECT id FROM sites WHERE institution_id = $1 AND name = $2",
 		"INSERT INTO sites (institution_id, name) VALUES ($1, $2) RETURNING id",
@@ -68,6 +77,12 @@ func run(ctx context.Context) error {
 	)
 	if err != nil {
 		return err
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE sites
+		SET active = (id = $1), updated_at = now()
+		WHERE institution_id = $2 AND active <> (id = $1)`, siteID, institutionID); err != nil {
+		return fmt.Errorf("focus development login sites: %w", err)
 	}
 	firmID, err := findOrInsert(ctx, tx,
 		"SELECT id FROM firms WHERE institution_id = $1 AND name = $2",
@@ -157,7 +172,9 @@ func run(ctx context.Context) error {
 		JOIN permissions p ON p.name IN (
 			'patient.search', 'patient.duplicate_check', 'patient.summary.read', 'patient.clinical_summary.read',
 			'patient.break_glass', 'patient.break_glass.revoke',
-			'episode.read', 'episode.create', 'episode.update', 'episode.reopen'
+			'episode.read', 'episode.create', 'episode.update', 'episode.reopen',
+			'event_draft.create', 'event_draft.read', 'event_draft.update', 'event_draft.abandon',
+			'worklist.development_flow.manage', 'theatre.development_booking.manage'
 		)
 		WHERE r.name = 'Development Patient Search Tester'
 		ON CONFLICT (role_id, permission_id) DO UPDATE SET active = TRUE`); err != nil {
@@ -185,6 +202,10 @@ func run(ctx context.Context) error {
 			given_name_normalized = EXCLUDED.given_name_normalized,
 			family_name = EXCLUDED.family_name,
 			family_name_normalized = EXCLUDED.family_name_normalized,
+			date_of_birth = EXCLUDED.date_of_birth,
+			gender = EXCLUDED.gender,
+			source_system = EXCLUDED.source_system,
+			source_record_id = EXCLUDED.source_record_id,
 			active = TRUE, deleted_at = NULL, version = patients.version + 1,
 			updated_at = now(), updated_by_user_id = EXCLUDED.updated_by_user_id
 		RETURNING id`, userID).Scan(&patientID); err != nil {
@@ -299,11 +320,278 @@ func run(ctx context.Context) error {
 			return fmt.Errorf("upsert synthetic event header: %w", err)
 		}
 	}
+	if err := seedDevelopmentVisualAcuityCatalogue(ctx, tx, userID); err != nil {
+		return err
+	}
+	if err := seedDevelopmentIOPCatalogue(ctx, tx, userID); err != nil {
+		return err
+	}
+	if err := seedDevelopmentDiagnosisCatalogue(ctx, tx, userID); err != nil {
+		return err
+	}
+	if err := seedDevelopmentClinicFlow(ctx, tx, institutionID, siteID, firmID); err != nil {
+		return err
+	}
+	if err := seedDevelopmentTheatreBooking(ctx, tx, institutionID, siteID, firmID); err != nil {
+		return err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit development seed: %w", err)
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "seeded synthetic user %q for institution %d, site %d, firm %d\n", username, institutionID, siteID, firmID)
+	return nil
+}
+
+func requireDevelopmentEnvironment(environment string) error {
+	if environment != "development" {
+		return errors.New("devseed may run only when VISIONOPUS_ENV=development")
+	}
+	return nil
+}
+
+func seedDevelopmentVisualAcuityCatalogue(ctx context.Context, tx pgx.Tx, userID int64) error {
+	var unitID int64
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO visual_acuity_units (code, display_name, active, display_order, created_by_user_id, updated_by_user_id)
+		VALUES ('development_distance_scale', 'Development LogMAR distance 4 m demonstration', TRUE, 0, $1, $1)
+		ON CONFLICT (code) DO UPDATE SET
+			display_name = EXCLUDED.display_name, active = TRUE, display_order = EXCLUDED.display_order,
+			updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()
+		RETURNING id`, userID).Scan(&unitID); err != nil {
+		return fmt.Errorf("upsert development visual acuity unit: %w", err)
+	}
+	for _, value := range developmentVisualAcuityCatalogueValues() {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO visual_acuity_unit_values (unit_id, code, display_value, base_value, selectable, active, display_order, created_by_user_id, updated_by_user_id)
+			VALUES ($1, $2, $3, $4::numeric, TRUE, TRUE, $5, $6, $6)
+			ON CONFLICT (code) DO UPDATE SET
+				unit_id = EXCLUDED.unit_id, display_value = EXCLUDED.display_value, base_value = EXCLUDED.base_value,
+				selectable = TRUE, active = TRUE, display_order = EXCLUDED.display_order,
+				updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()`,
+			unitID, value.code, value.displayValue, value.baseValue, value.order, userID); err != nil {
+			return fmt.Errorf("upsert development visual acuity value: %w", err)
+		}
+	}
+	for _, method := range []struct {
+		code, displayName, category string
+		order                       int
+	}{
+		{"development_unaided", "Development unaided", "unaided", 0},
+		{"development_habitual", "Development habitual correction", "habitual", 1},
+		{"development_best_corrected", "Development best-corrected", "best_corrected", 2},
+		{"development_pinhole", "Development pinhole", "pinhole", 3},
+	} {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO visual_acuity_methods (code, display_name, correction_category, active, display_order, created_by_user_id, updated_by_user_id)
+			VALUES ($1, $2, $3, TRUE, $4, $5, $5)
+			ON CONFLICT (code) DO UPDATE SET
+				display_name = EXCLUDED.display_name, correction_category = EXCLUDED.correction_category,
+				active = TRUE, display_order = EXCLUDED.display_order,
+				updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()`,
+			method.code, method.displayName, method.category, method.order, userID); err != nil {
+			return fmt.Errorf("upsert development visual acuity method: %w", err)
+		}
+	}
+	return nil
+}
+
+type developmentVisualAcuityValue struct {
+	code         string
+	displayValue string
+	baseValue    string
+	order        int
+}
+
+func developmentVisualAcuityCatalogueValues() []developmentVisualAcuityValue {
+	const (
+		firstHundredths = -30
+		lastHundredths  = 150
+		stepHundredths  = 2
+	)
+
+	values := make([]developmentVisualAcuityValue, 0, (lastHundredths-firstHundredths)/stepHundredths+1)
+	for hundredths := firstHundredths; hundredths <= lastHundredths; hundredths += stepHundredths {
+		values = append(values, developmentVisualAcuityValue{
+			code:         developmentVisualAcuityValueCode(hundredths),
+			displayValue: formatVisualAcuityHundredths(hundredths, 2),
+			baseValue:    formatVisualAcuityHundredths(hundredths, 4),
+			order:        len(values),
+		})
+	}
+	return values
+}
+
+func developmentVisualAcuityValueCode(hundredths int) string {
+	if hundredths < 0 {
+		return fmt.Sprintf("development_value_m%03d", -hundredths)
+	}
+	return fmt.Sprintf("development_value_%03d", hundredths)
+}
+
+func formatVisualAcuityHundredths(hundredths, decimalPlaces int) string {
+	sign := ""
+	if hundredths < 0 {
+		sign = "-"
+		hundredths = -hundredths
+	}
+	whole := hundredths / 100
+	fraction := hundredths % 100
+	if decimalPlaces == 2 {
+		return fmt.Sprintf("%s%d.%02d", sign, whole, fraction)
+	}
+	return fmt.Sprintf("%s%d.%04d", sign, whole, fraction*100)
+}
+
+func seedDevelopmentIOPCatalogue(ctx context.Context, tx pgx.Tx, userID int64) error {
+	var profileID int64
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO intraocular_pressure_profiles (code, display_name, active, display_order, created_by_user_id, updated_by_user_id)
+		VALUES ('development_iop_manual_mmhg', 'Development manual IOP demonstration', TRUE, 0, $1, $1)
+		ON CONFLICT (code) DO UPDATE SET
+			display_name = EXCLUDED.display_name, active = TRUE, display_order = EXCLUDED.display_order,
+			updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()
+		RETURNING id`, userID).Scan(&profileID); err != nil {
+		return fmt.Errorf("upsert development intraocular pressure profile: %w", err)
+	}
+	for _, value := range developmentIOPCatalogueValues() {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO intraocular_pressure_profile_values (
+				profile_id, code, display_value, mmhg, selectable, active, display_order, created_by_user_id, updated_by_user_id
+			) VALUES ($1, $2, $3, $4::smallint, TRUE, TRUE, $4::integer, $5, $5)
+			ON CONFLICT (code) DO UPDATE SET
+				profile_id = EXCLUDED.profile_id, display_value = EXCLUDED.display_value, mmhg = EXCLUDED.mmhg,
+				selectable = TRUE, active = TRUE, display_order = EXCLUDED.display_order,
+				updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()`,
+			profileID, value.code, value.displayValue, value.mmhg, userID); err != nil {
+			return fmt.Errorf("upsert development intraocular pressure value: %w", err)
+		}
+	}
+	return nil
+}
+
+type developmentIOPValue struct {
+	code, displayValue string
+	mmhg               int
+}
+
+func developmentIOPCatalogueValues() []developmentIOPValue {
+	values := make([]developmentIOPValue, 0, 100)
+	for mmhg := 0; mmhg <= 99; mmhg++ {
+		values = append(values, developmentIOPValue{
+			code:         fmt.Sprintf("development_iop_%02d", mmhg),
+			displayValue: fmt.Sprintf("%d mmHg", mmhg),
+			mmhg:         mmhg,
+		})
+	}
+	return values
+}
+
+func seedDevelopmentDiagnosisCatalogue(ctx context.Context, tx pgx.Tx, userID int64) error {
+	var profileID int64
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO development_diagnosis_profiles (code, display_name, active, display_order, created_by_user_id, updated_by_user_id)
+		VALUES ('development_ophthalmology_diagnosis_v1', 'Development ophthalmology selection demonstration', TRUE, 0, $1, $1)
+		ON CONFLICT (code) DO UPDATE SET display_name = EXCLUDED.display_name, active = TRUE, display_order = EXCLUDED.display_order, updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()
+		RETURNING id`, userID).Scan(&profileID); err != nil {
+		return fmt.Errorf("upsert development diagnosis profile: %w", err)
+	}
+	for _, selection := range developmentDiagnosisSelections() {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO development_diagnosis_profile_selections (profile_id, code, display_name, selectable, active, display_order, created_by_user_id, updated_by_user_id)
+			VALUES ($1, $2, $3, TRUE, TRUE, $4, $5, $5)
+			ON CONFLICT (code) DO UPDATE SET profile_id = EXCLUDED.profile_id, display_name = EXCLUDED.display_name, selectable = TRUE, active = TRUE, display_order = EXCLUDED.display_order, updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()`,
+			profileID, selection.code, selection.displayName, selection.order, userID); err != nil {
+			return fmt.Errorf("upsert development diagnosis selection: %w", err)
+		}
+	}
+	return nil
+}
+
+type developmentDiagnosisSelection struct {
+	code, displayName string
+	order             int
+}
+
+func developmentDiagnosisSelections() []developmentDiagnosisSelection {
+	return []developmentDiagnosisSelection{
+		{code: "development_cataract", displayName: "Development cataract example", order: 0},
+		{code: "development_glaucoma", displayName: "Development glaucoma example", order: 1},
+		{code: "development_macular_condition", displayName: "Development macular-condition example", order: 2},
+	}
+}
+
+func seedDevelopmentClinicFlow(ctx context.Context, tx pgx.Tx, institutionID, siteID, firmID int64) error {
+	for _, ticket := range []struct {
+		id, patientID, label string
+	}{
+		{"77777777-7777-4777-8777-777777777777", "development-flow-patient-001", "Synthetic queue patient A"},
+		{"88888888-8888-4888-8888-888888888888", "development-flow-patient-002", "Synthetic queue patient B"},
+		{"99999999-9999-4999-8999-999999999999", "development-flow-patient-003", "Synthetic queue patient C"},
+	} {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO development_flow_tickets (
+				id, institution_id, site_id, firm_id, synthetic_patient_id, synthetic_patient_label, status
+			) VALUES ($1::uuid,$2,$3,$4,$5,$6,'waiting')
+			ON CONFLICT (id) DO UPDATE SET
+				institution_id = EXCLUDED.institution_id, site_id = EXCLUDED.site_id, firm_id = EXCLUDED.firm_id,
+				synthetic_patient_id = EXCLUDED.synthetic_patient_id, synthetic_patient_label = EXCLUDED.synthetic_patient_label,
+				status = 'waiting', assignee_user_id = NULL,
+				version = CASE WHEN development_flow_tickets.status <> 'waiting' OR development_flow_tickets.assignee_user_id IS NOT NULL THEN development_flow_tickets.version + 1 ELSE development_flow_tickets.version END,
+				updated_at = now()`,
+			ticket.id, institutionID, siteID, firmID, ticket.patientID, ticket.label); err != nil {
+			return fmt.Errorf("upsert synthetic development clinic-flow ticket: %w", err)
+		}
+	}
+	return nil
+}
+
+func seedDevelopmentTheatreBooking(ctx context.Context, tx pgx.Tx, institutionID, siteID, firmID int64) error {
+	const roomID = "a1111111-1111-4111-8111-111111111111"
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO development_theatre_rooms (id, institution_id, site_id, firm_id, synthetic_label)
+		VALUES ($1::uuid,$2,$3,$4,'Development Theatre One')
+		ON CONFLICT (id) DO UPDATE SET institution_id = EXCLUDED.institution_id, site_id = EXCLUDED.site_id,
+			firm_id = EXCLUDED.firm_id, synthetic_label = EXCLUDED.synthetic_label`, roomID, institutionID, siteID, firmID); err != nil {
+		return fmt.Errorf("upsert synthetic theatre room: %w", err)
+	}
+	for _, session := range []struct {
+		id, startsAt, endsAt string
+		capacity             int
+	}{
+		{"b1111111-1111-4111-8111-111111111111", "2026-08-10T08:00:00Z", "2026-08-10T12:00:00Z", 180},
+		{"c1111111-1111-4111-8111-111111111111", "2026-08-10T13:00:00Z", "2026-08-10T17:00:00Z", 180},
+	} {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO development_theatre_sessions (id, room_id, institution_id, site_id, firm_id, starts_at, ends_at, capacity_minutes)
+			VALUES ($1::uuid,$2::uuid,$3,$4,$5,$6::timestamptz,$7::timestamptz,$8)
+			ON CONFLICT (id) DO UPDATE SET room_id = EXCLUDED.room_id, institution_id = EXCLUDED.institution_id,
+				site_id = EXCLUDED.site_id, firm_id = EXCLUDED.firm_id, starts_at = EXCLUDED.starts_at,
+				ends_at = EXCLUDED.ends_at, capacity_minutes = EXCLUDED.capacity_minutes,
+				updated_at = development_theatre_sessions.updated_at`, session.id, roomID, institutionID, siteID, firmID, session.startsAt, session.endsAt, session.capacity); err != nil {
+			return fmt.Errorf("upsert synthetic theatre session: %w", err)
+		}
+	}
+	for _, request := range []struct {
+		id, label string
+		duration  int
+	}{
+		{"d1111111-1111-4111-8111-111111111111", "Synthetic booking request A", 60},
+		{"e1111111-1111-4111-8111-111111111111", "Synthetic booking request B", 90},
+		{"f1111111-1111-4111-8111-111111111111", "Synthetic booking request C", 120},
+	} {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO development_booking_requests (id, institution_id, site_id, firm_id, synthetic_label, requested_duration_minutes)
+			VALUES ($1::uuid,$2,$3,$4,$5,$6)
+			ON CONFLICT (id) DO UPDATE SET institution_id = EXCLUDED.institution_id, site_id = EXCLUDED.site_id,
+				firm_id = EXCLUDED.firm_id, synthetic_label = EXCLUDED.synthetic_label,
+				requested_duration_minutes = EXCLUDED.requested_duration_minutes,
+				status = 'waiting', assigned_session_id = NULL,
+				version = CASE WHEN development_booking_requests.status <> 'waiting' OR development_booking_requests.assigned_session_id IS NOT NULL THEN development_booking_requests.version + 1 ELSE development_booking_requests.version END,
+				updated_at = now()`, request.id, institutionID, siteID, firmID, request.label, request.duration); err != nil {
+			return fmt.Errorf("upsert synthetic booking request: %w", err)
+		}
+	}
 	return nil
 }
 

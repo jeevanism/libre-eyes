@@ -3,7 +3,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'src/routeTree.gen.ts', 'src/api/*.d.ts'] },
+  { ignores: ['dist', 'public/vendor/eyedraw/**', 'src/routeTree.gen.ts', 'src/api/*.d.ts'] },
   { ...eslint.configs.recommended, files: ['**/*.{js,mjs,cjs}'] },
   ...tseslint.configs.recommendedTypeChecked.map((config) => ({
     ...config,

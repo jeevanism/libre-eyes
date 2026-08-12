@@ -62,6 +62,15 @@ type OperationAuthorizationRequest struct {
 	Metadata        RequestMetadata
 }
 
+// ReadAuthorizationRequest describes an authenticated, permission-protected
+// read. It deliberately carries no CSRF token because it cannot mutate state.
+type ReadAuthorizationRequest struct {
+	Token           string
+	Permission      string
+	DeniedEventType string
+	Metadata        RequestMetadata
+}
+
 // OperationPrincipal is the server-validated identity and clinical context for one operation.
 type OperationPrincipal struct {
 	UserID         int64
