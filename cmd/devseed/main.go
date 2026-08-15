@@ -338,11 +338,37 @@ func run(ctx context.Context) error {
 	if err := seedDevelopmentConsentCatalogue(ctx, tx, userID); err != nil {
 		return err
 	}
+	if err := seedDevelopmentCorrespondenceCatalogue(ctx, tx); err != nil {
+		return err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit development seed: %w", err)
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "seeded synthetic user %q for institution %d, site %d, firm %d\n", username, institutionID, siteID, firmID)
+	return nil
+}
+
+func seedDevelopmentCorrespondenceCatalogue(ctx context.Context, tx pgx.Tx) error {
+	rows := []struct {
+		category, code, name string
+		order                int
+	}{
+		{"template", "demo_clinic_update", "Demo clinic update", 0},
+		{"template", "demo_referral_summary", "Demo referral summary", 1},
+		{"template", "demo_follow_up", "Demo follow-up letter", 2},
+		{"recipient_role", "demo_gp", "Demo GP", 0},
+		{"recipient_role", "demo_optometrist", "Demo optometrist", 1},
+		{"recipient_role", "demo_consultant", "Demo consultant", 2},
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM development_correspondence_catalogue WHERE code LIKE 'demo\_%'`); err != nil {
+		return fmt.Errorf("reset development correspondence catalogue: %w", err)
+	}
+	for _, row := range rows {
+		if _, err := tx.Exec(ctx, `INSERT INTO development_correspondence_catalogue (category, code, display_name, display_order) VALUES ($1,$2,$3,$4) ON CONFLICT (code) DO UPDATE SET category=EXCLUDED.category, display_name=EXCLUDED.display_name, display_order=EXCLUDED.display_order, active=TRUE`, row.category, row.code, row.name, row.order); err != nil {
+			return fmt.Errorf("upsert correspondence catalogue: %w", err)
+		}
+	}
 	return nil
 }
 

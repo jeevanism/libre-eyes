@@ -1,7 +1,7 @@
-import { Activity, ClipboardList, Eye, FileCheck2, Gauge, ScanEye } from 'lucide-react'
+import { Activity, ClipboardList, Eye, FileCheck2, Gauge, Mail, ScanEye } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type ExaminationTool = 'acuity' | 'pressure' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent'
+export type ExaminationTool = 'acuity' | 'pressure' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
 
 export type ExaminationToolItem = {
   id: ExaminationTool
@@ -39,6 +39,7 @@ export const examinationToolGroups: ExaminationToolGroup[] = [
       { id: 'operative-note', label: 'Operative note', Icon: Activity },
       { id: 'prescription', label: 'Medication order', Icon: ClipboardList },
       { id: 'consent', label: 'Consent form', Icon: FileCheck2 },
+      { id: 'correspondence', label: 'Correspondence', Icon: Mail },
     ],
   },
 ]

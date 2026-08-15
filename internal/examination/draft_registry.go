@@ -13,13 +13,14 @@ import (
 // DraftRegistry dispatches approved examination draft schemas by event type.
 // The generic episode service remains responsible for authorization and storage.
 type DraftRegistry struct {
-	visualAcuity      *VisualAcuityDraftRegistry
-	iop               *IOPDraftRegistry
-	diagnosisDemo     *DiagnosisDemoDraftRegistry
-	eyeDrawDemo       *EyeDrawDemoDraftRegistry
-	operativeNoteDemo *OperativeNoteDemoDraftRegistry
-	prescriptionDemo  *PrescriptionDemoDraftRegistry
-	consentDemo       *ConsentDemoDraftRegistry
+	visualAcuity       *VisualAcuityDraftRegistry
+	iop                *IOPDraftRegistry
+	diagnosisDemo      *DiagnosisDemoDraftRegistry
+	eyeDrawDemo        *EyeDrawDemoDraftRegistry
+	operativeNoteDemo  *OperativeNoteDemoDraftRegistry
+	prescriptionDemo   *PrescriptionDemoDraftRegistry
+	consentDemo        *ConsentDemoDraftRegistry
+	correspondenceDemo *CorrespondenceDemoDraftRegistry
 }
 
 func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment string) (*DraftRegistry, error) {
@@ -51,7 +52,11 @@ func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment strin
 	if err != nil {
 		return nil, err
 	}
-	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo}, nil
+	correspondenceDemo, err := NewCorrespondenceDemoDraftRegistry(ctx, pool, environment)
+	if err != nil {
+		return nil, err
+	}
+	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo}, nil
 }
 
 func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, intent episodes.DraftIntent, schemaVersion int64, payload json.RawMessage) error {
@@ -73,6 +78,8 @@ func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, inte
 		return r.prescriptionDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	case consentDemoEventType:
 		return r.consentDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
+	case correspondenceDemoEventType:
+		return r.correspondenceDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	default:
 		return episodes.ErrInvalidRequest
 	}

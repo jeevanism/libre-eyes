@@ -7,6 +7,7 @@ import { VisualAcuityDraftDemo } from './VisualAcuityDraftDemo'
 import { OperativeNoteDraftDemo } from './OperativeNoteDraftDemo'
 import { PrescriptionDraftDemo } from './PrescriptionDraftDemo'
 import { ConsentDraftDemo } from './ConsentDraftDemo'
+import { CorrespondenceDraftDemo } from './CorrespondenceDraftDemo'
 import { ExaminationToolNavigation } from './ExaminationToolNavigation'
 import type { ExaminationTool } from './examinationNavigation'
 
@@ -38,6 +39,7 @@ export function ExaminationDraftWorkspace({ csrfToken, episodeId, selectedTool =
           {selectedTool === 'operative-note' && <OperativeNoteDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'prescription' && <PrescriptionDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'consent' && <ConsentDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
+          {selectedTool === 'correspondence' && <CorrespondenceDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
         </div>
       </div>
     </section>

@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS development_correspondence_catalogue;
