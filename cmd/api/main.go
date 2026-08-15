@@ -22,6 +22,8 @@ import (
 	"github.com/jeevanism/visionopus/internal/patientsummary"
 	patientsummaryhttp "github.com/jeevanism/visionopus/internal/patientsummary/http"
 	"github.com/jeevanism/visionopus/internal/platform/httpserver"
+	"github.com/jeevanism/visionopus/internal/referralappointment"
+	referralappointmenthttp "github.com/jeevanism/visionopus/internal/referralappointment/http"
 	"github.com/jeevanism/visionopus/internal/theatrebooking"
 	theatrebookinghttp "github.com/jeevanism/visionopus/internal/theatrebooking/http"
 	"github.com/jeevanism/visionopus/internal/worklist"
@@ -89,7 +91,12 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	developmentTheatreBookingHTTP := theatrebookinghttp.NewHandler(developmentTheatreBooking, cfg.CookieSecure)
-	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP, developmentFlowHTTP, developmentTheatreBookingHTTP)
+	developmentReferral, err := referralappointment.NewService(database, authentication)
+	if err != nil {
+		return err
+	}
+	developmentReferralHTTP := referralappointmenthttp.NewHandler(developmentReferral, cfg.CookieSecure)
+	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP, developmentFlowHTTP, developmentTheatreBookingHTTP, developmentReferralHTTP)
 	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("api listening", "address", cfg.HTTPAddr, "environment", cfg.Environment)

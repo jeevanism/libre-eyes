@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CalendarDays, ClipboardList, LogOut, Search } from 'lucide-react'
+import { CalendarDays, ClipboardList, LogOut, Search, CalendarPlus } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { authAPI, type Session } from '../../api/client'
@@ -51,6 +51,7 @@ export function SessionShell({ session, children }: SessionShellProps) {
         <Link to="/patients/search"><Search size={16} aria-hidden="true" />Patient search</Link>
         <Link to="/clinic-flow"><ClipboardList size={16} aria-hidden="true" />Clinic flow</Link>
         <Link to="/theatre-booking"><CalendarDays size={16} aria-hidden="true" />Theatre schedule</Link>
+        <Link to="/referral-appointments"><CalendarPlus size={16} aria-hidden="true" />Referrals</Link>
       </nav>
       <main className="workspace">{children}</main>
     </div>

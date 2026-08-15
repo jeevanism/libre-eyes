@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedClinicFlowRouteImport } from './routes/_authenticated/clinic-flow'
+import { Route as AuthenticatedReferralAppointmentsRouteImport } from './routes/_authenticated/referral-appointments'
 import { Route as AuthenticatedTheatreBookingRouteImport } from './routes/_authenticated/theatre-booking'
 import { Route as AuthenticatedPatientsPatientIdRouteImport } from './routes/_authenticated/patients/$patientId'
 import { Route as AuthenticatedPatientsSearchRouteImport } from './routes/_authenticated/patients/search'
@@ -38,6 +39,12 @@ const AuthenticatedClinicFlowRoute = AuthenticatedClinicFlowRouteImport.update({
   path: '/clinic-flow',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedReferralAppointmentsRoute =
+  AuthenticatedReferralAppointmentsRouteImport.update({
+    id: '/referral-appointments',
+    path: '/referral-appointments',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTheatreBookingRoute =
   AuthenticatedTheatreBookingRouteImport.update({
     id: '/theatre-booking',
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/clinic-flow': typeof AuthenticatedClinicFlowRoute
+  '/referral-appointments': typeof AuthenticatedReferralAppointmentsRoute
   '/theatre-booking': typeof AuthenticatedTheatreBookingRoute
   '/patients/$patientId': typeof AuthenticatedPatientsPatientIdRouteWithChildren
   '/patients/search': typeof AuthenticatedPatientsSearchRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/clinic-flow': typeof AuthenticatedClinicFlowRoute
+  '/referral-appointments': typeof AuthenticatedReferralAppointmentsRoute
   '/theatre-booking': typeof AuthenticatedTheatreBookingRoute
   '/': typeof AuthenticatedIndexRoute
   '/patients/search': typeof AuthenticatedPatientsSearchRoute
@@ -93,6 +102,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/clinic-flow': typeof AuthenticatedClinicFlowRoute
+  '/_authenticated/referral-appointments': typeof AuthenticatedReferralAppointmentsRoute
   '/_authenticated/theatre-booking': typeof AuthenticatedTheatreBookingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/patients/$patientId': typeof AuthenticatedPatientsPatientIdRouteWithChildren
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/clinic-flow'
+    | '/referral-appointments'
     | '/theatre-booking'
     | '/patients/$patientId'
     | '/patients/search'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/clinic-flow'
+    | '/referral-appointments'
     | '/theatre-booking'
     | '/'
     | '/patients/search'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/clinic-flow'
+    | '/_authenticated/referral-appointments'
     | '/_authenticated/theatre-booking'
     | '/_authenticated/'
     | '/_authenticated/patients/$patientId'
@@ -166,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/clinic-flow'
       fullPath: '/clinic-flow'
       preLoaderRoute: typeof AuthenticatedClinicFlowRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/referral-appointments': {
+      id: '/_authenticated/referral-appointments'
+      path: '/referral-appointments'
+      fullPath: '/referral-appointments'
+      preLoaderRoute: typeof AuthenticatedReferralAppointmentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/theatre-booking': {
@@ -226,6 +246,7 @@ const AuthenticatedPatientsPatientIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedClinicFlowRoute: typeof AuthenticatedClinicFlowRoute
+  AuthenticatedReferralAppointmentsRoute: typeof AuthenticatedReferralAppointmentsRoute
   AuthenticatedTheatreBookingRoute: typeof AuthenticatedTheatreBookingRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedPatientsPatientIdRoute: typeof AuthenticatedPatientsPatientIdRouteWithChildren
@@ -234,6 +255,8 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedClinicFlowRoute: AuthenticatedClinicFlowRoute,
+  AuthenticatedReferralAppointmentsRoute:
+    AuthenticatedReferralAppointmentsRoute,
   AuthenticatedTheatreBookingRoute: AuthenticatedTheatreBookingRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedPatientsPatientIdRoute:

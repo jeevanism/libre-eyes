@@ -174,7 +174,7 @@ func run(ctx context.Context) error {
 			'patient.break_glass', 'patient.break_glass.revoke',
 			'episode.read', 'episode.create', 'episode.update', 'episode.reopen',
 			'event_draft.create', 'event_draft.read', 'event_draft.update', 'event_draft.abandon',
-			'worklist.development_flow.manage', 'theatre.development_booking.manage'
+			'worklist.development_flow.manage', 'theatre.development_booking.manage', 'referral.development_appointment.manage'
 		)
 		WHERE r.name = 'Development Patient Search Tester'
 		ON CONFLICT (role_id, permission_id) DO UPDATE SET active = TRUE`); err != nil {
@@ -341,11 +341,31 @@ func run(ctx context.Context) error {
 	if err := seedDevelopmentCorrespondenceCatalogue(ctx, tx); err != nil {
 		return err
 	}
+	if err := seedDevelopmentReferralAppointments(ctx, tx, institutionID, siteID, firmID, userID); err != nil {
+		return err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit development seed: %w", err)
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "seeded synthetic user %q for institution %d, site %d, firm %d\n", username, institutionID, siteID, firmID)
+	return nil
+}
+
+func seedDevelopmentReferralAppointments(ctx context.Context, tx pgx.Tx, institutionID, siteID, firmID, userID int64) error {
+	if _, err := tx.Exec(ctx, `DELETE FROM development_referral_appointments WHERE institution_id=$1 AND site_id=$2 AND firm_id=$3`, institutionID, siteID, firmID); err != nil {
+		return fmt.Errorf("reset synthetic referral appointments: %w", err)
+	}
+	rows := []struct{ id, label, role, clinic, date, priority string }{
+		{"77777777-7777-4777-8777-777777777771", "Demo referral to GP", "demo_gp", "demo_general_eye_clinic", "2026-08-18", "routine"},
+		{"77777777-7777-4777-8777-777777777772", "Demo optometry follow-up", "demo_optometrist", "demo_glaucoma_clinic", "2026-08-19", "soon"},
+		{"77777777-7777-4777-8777-777777777773", "Demo consultant review", "demo_consultant", "demo_retina_clinic", "2026-08-20", "urgent"},
+	}
+	for _, r := range rows {
+		if _, err := tx.Exec(ctx, `INSERT INTO development_referral_appointments (id,institution_id,site_id,firm_id,synthetic_patient_id,synthetic_patient_label,recipient_role,clinic_code,appointment_date,appointment_time,priority,notes,owner_user_id,expires_at) VALUES ($1::uuid,$2,$3,$4,'11111111-1111-4111-8111-111111111111',$5,$6,$7,$8::date,'09:00',$9,'Synthetic demonstration referral',$10,now()+interval '7 days')`, r.id, institutionID, siteID, firmID, r.label, r.role, r.clinic, r.date, r.priority, userID); err != nil {
+			return fmt.Errorf("seed synthetic referral appointment: %w", err)
+		}
+	}
 	return nil
 }
 

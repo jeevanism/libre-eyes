@@ -104,6 +104,19 @@ export type CorrespondenceDemoDraftPayload = {
   footer: string
   clinicDate: string
 }
+export type DevelopmentReferralAppointment = {
+  id: string
+  syntheticPatientLabel: string
+  recipientRole: 'demo_gp' | 'demo_optometrist' | 'demo_consultant'
+  clinicCode: 'demo_general_eye_clinic' | 'demo_glaucoma_clinic' | 'demo_retina_clinic'
+  appointmentDate: string
+  appointmentTime: string
+  priority: 'routine' | 'soon' | 'urgent'
+  notes: string
+  status: 'requested' | 'scheduled' | 'arrived' | 'completed' | 'abandoned'
+  version: number
+  retentionKind?: 'autosave' | 'manual'
+}
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null
@@ -372,4 +385,10 @@ export const developmentTheatreBookingAPI = {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       body: JSON.stringify({ expectedVersion }),
     }),
+}
+
+export const developmentReferralAppointmentsAPI = {
+  list: (csrfToken: string) => request<{ items: DevelopmentReferralAppointment[] }>('/development/referral-appointments/requests', { headers: { 'X-CSRF-Token': csrfToken } }),
+  create: (body: Omit<DevelopmentReferralAppointment, 'id' | 'status' | 'version'> & { syntheticPatientId: string }, csrfToken: string) => request<DevelopmentReferralAppointment>('/development/referral-appointments/requests', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
+  command: (id: string, command: 'schedule' | 'arrive' | 'complete' | 'abandon', expectedVersion: number, csrfToken: string) => request<DevelopmentReferralAppointment>(`/development/referral-appointments/requests/${encodeURIComponent(id)}/${command}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ expectedVersion }) }),
 }
