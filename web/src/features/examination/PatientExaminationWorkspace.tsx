@@ -4,13 +4,16 @@ import { ArrowLeft, Stethoscope } from 'lucide-react'
 
 import { patientSummaryAPI, type Session } from '../../api/client'
 import { EpisodeTimeline } from '../episodes/EpisodeTimeline'
+import type { ExaminationTool } from './examinationNavigation'
 
 interface PatientExaminationWorkspaceProps {
   patientId: string
   session: Session
+  selectedTool: ExaminationTool
+  onToolChange: (tool: ExaminationTool) => void
 }
 
-export function PatientExaminationWorkspace({ patientId, session }: PatientExaminationWorkspaceProps) {
+export function PatientExaminationWorkspace({ patientId, session, selectedTool, onToolChange }: PatientExaminationWorkspaceProps) {
   const header = useQuery({
     queryKey: ['patient-summary-header', patientId, session.contextVersion],
     queryFn: () => patientSummaryAPI.header(patientId, session.csrfToken, session.contextVersion),
@@ -42,6 +45,8 @@ export function PatientExaminationWorkspace({ patientId, session }: PatientExami
         csrfToken={session.csrfToken}
         patientId={patientId}
         workspace="examination"
+        selectedTool={selectedTool}
+        onToolChange={onToolChange}
       />
     </section>
   )

@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { episodesAPI, type Episode, type EventHeader } from '../../api/client'
 import { ExaminationDraftWorkspace } from '../examination/ExaminationDraftWorkspace'
+import type { ExaminationTool } from '../examination/examinationNavigation'
 
 const episodeKeys = {
   timeline: (patientId: string, contextVersion: number) => ['episodes', 'timeline', patientId, contextVersion] as const,
@@ -17,9 +18,11 @@ interface EpisodeTimelineProps {
   allowed: boolean
   canCreateExaminationDraft: boolean
   workspace?: 'summary' | 'examination'
+  selectedTool?: ExaminationTool
+  onToolChange?: ((tool: ExaminationTool) => void) | undefined
 }
 
-export function EpisodeTimeline({ patientId, csrfToken, contextVersion, allowed, canCreateExaminationDraft, workspace = 'summary' }: EpisodeTimelineProps) {
+export function EpisodeTimeline({ patientId, csrfToken, contextVersion, allowed, canCreateExaminationDraft, workspace = 'summary', selectedTool = 'acuity', onToolChange }: EpisodeTimelineProps) {
   const timeline = useInfiniteQuery({
     queryKey: episodeKeys.timeline(patientId, contextVersion),
     queryFn: ({ pageParam }) => episodesAPI.list(patientId, csrfToken, pageParam),
@@ -57,6 +60,8 @@ export function EpisodeTimeline({ patientId, csrfToken, contextVersion, allowed,
                 expanded={selectedEpisodeID === episode.id}
                 onExpandedChange={() => setExpandedEpisodeID((current) => current === episode.id ? null : episode.id)}
                 workspace={workspace}
+                selectedTool={selectedTool}
+                onToolChange={onToolChange}
               />
             ))}
           </ol>
@@ -71,7 +76,7 @@ export function EpisodeTimeline({ patientId, csrfToken, contextVersion, allowed,
   )
 }
 
-function EpisodeRow({ csrfToken, contextVersion, episode, canCreateExaminationDraft, expanded, onExpandedChange, workspace }: { csrfToken: string, contextVersion: number, episode: Episode, canCreateExaminationDraft: boolean, expanded: boolean, onExpandedChange: () => void, workspace: 'summary' | 'examination' }) {
+function EpisodeRow({ csrfToken, contextVersion, episode, canCreateExaminationDraft, expanded, onExpandedChange, workspace, selectedTool, onToolChange }: { csrfToken: string, contextVersion: number, episode: Episode, canCreateExaminationDraft: boolean, expanded: boolean, onExpandedChange: () => void, workspace: 'summary' | 'examination', selectedTool: ExaminationTool, onToolChange?: ((tool: ExaminationTool) => void) | undefined }) {
   const eventsID = `episode-events-${episode.id}`
   return (
     <li className="episode-row">
@@ -92,7 +97,7 @@ function EpisodeRow({ csrfToken, contextVersion, episode, canCreateExaminationDr
         </button>
       </div>
       {expanded && <EventHeaders csrfToken={csrfToken} contextVersion={contextVersion} episodeId={episode.id} id={eventsID} />}
-      {expanded && workspace === 'examination' && episode.status === 'active' && canCreateExaminationDraft && <ExaminationDraftWorkspace csrfToken={csrfToken} episodeId={episode.id} />}
+      {expanded && workspace === 'examination' && episode.status === 'active' && canCreateExaminationDraft && <ExaminationDraftWorkspace csrfToken={csrfToken} episodeId={episode.id} selectedTool={selectedTool} onToolChange={onToolChange} />}
     </li>
   )
 }

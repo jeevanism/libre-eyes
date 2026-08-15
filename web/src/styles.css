@@ -422,10 +422,20 @@ a:focus-visible {
 .examination-workspace-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; color: var(--action-primary); }
 .examination-workspace-heading p { margin: 0 0 3px; color: var(--text-subtle); font-size: 12px; font-weight: 700; text-transform: uppercase; }
 .examination-workspace-heading h3 { margin: 0; color: var(--text-primary); font-size: 17px; }
-.examination-tool-tabs { display: flex; align-items: stretch; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--border-default); }
-.examination-tool-tabs button { min-height: 40px; display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; padding: 0 12px; border: 0; border-bottom: 3px solid transparent; color: var(--text-secondary); font-size: 13px; font-weight: 700; background: transparent; }
-.examination-tool-tabs button:hover { color: var(--text-primary); background: var(--surface-subtle); }
-.examination-tool-tabs button[aria-selected="true"] { color: var(--action-primary); border-bottom-color: var(--action-primary); }
+.examination-tool-layout { display: grid; grid-template-columns: minmax(190px, 220px) minmax(0, 1fr); gap: 22px; align-items: start; }
+.examination-tool-rail { position: sticky; top: 16px; min-width: 0; padding-right: 14px; border-right: 1px solid var(--border-subtle); }
+.examination-tool-rail-heading { display: flex; align-items: center; gap: 7px; margin: 0 0 14px; color: var(--text-secondary); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.examination-tool-rail-hint { display: inline-flex; margin-left: auto; color: var(--text-subtle); }
+.examination-tool-rail nav { display: grid; gap: 14px; }
+.examination-tool-group { display: grid; gap: 5px; }
+.examination-tool-group h4 { margin: 0; padding: 0 9px; color: var(--text-subtle); font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.examination-tool-group ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.examination-tool-link { display: flex; width: 100%; min-height: 38px; align-items: center; gap: 8px; padding: 8px 9px; border: 1px solid transparent; border-radius: 5px; color: var(--text-secondary); text-align: left; font-size: 13px; font-weight: 700; background: transparent; }
+.examination-tool-link:hover { color: var(--text-primary); background: var(--surface-subtle); }
+.examination-tool-link[aria-current="page"] { border-color: var(--border-subtle); color: var(--action-primary); background: var(--surface-selected); }
+.examination-tool-link-indicator { margin-left: auto; }
+.examination-tool-drawer-toggle { display: none; min-height: 40px; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid var(--border-default); border-radius: 5px; color: var(--text-primary); font-size: 13px; font-weight: 700; background: var(--surface); }
+.examination-tool-drawer-toggle:hover { border-color: var(--action-primary); color: var(--action-primary); background: var(--surface-subtle); }
 .examination-tool-panel { min-width: 0; }
 .examination-tool-panel .visual-acuity-demo,
 .examination-tool-panel .examination-draft-demo,
@@ -439,6 +449,12 @@ a:focus-visible {
   .patient-summary-grid { grid-template-columns: 1fr; }
   .patient-summary-title,
   .examination-page-title { align-items: flex-start; flex-direction: column; }
+  .examination-tool-layout { grid-template-columns: 1fr; gap: 12px; }
+  .examination-tool-drawer-toggle { display: inline-flex; justify-self: start; }
+  .examination-tool-rail { display: none; position: static; padding: 12px 0 0; border-right: 0; border-top: 1px solid var(--border-subtle); }
+  .examination-tool-rail-open { display: block; }
+  .examination-tool-rail-hint { display: none; }
+  .examination-tool-rail nav { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 }
 
 @media (max-width: 600px) {
@@ -454,6 +470,7 @@ a:focus-visible {
   .eyedraw-draft-demo { margin-left: 0; }
   .eyedraw-canvas-shell { min-height: 300px; }
   .examination-tool-panel .eyedraw-canvas-shell { min-height: 360px; }
+  .examination-tool-rail nav { grid-template-columns: 1fr; gap: 12px; }
   .development-clinic-flow-ticket { grid-template-columns: 1fr; }
   .development-flow-actions { justify-content: flex-start; }
   .theatre-request { grid-template-columns: 1fr; }
