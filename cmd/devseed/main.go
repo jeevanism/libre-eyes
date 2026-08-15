@@ -335,11 +335,44 @@ func run(ctx context.Context) error {
 	if err := seedDevelopmentTheatreBooking(ctx, tx, institutionID, siteID, firmID); err != nil {
 		return err
 	}
+	if err := seedDevelopmentConsentCatalogue(ctx, tx, userID); err != nil {
+		return err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit development seed: %w", err)
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "seeded synthetic user %q for institution %d, site %d, firm %d\n", username, institutionID, siteID, firmID)
+	return nil
+}
+
+func seedDevelopmentConsentCatalogue(ctx context.Context, tx pgx.Tx, userID int64) error {
+	rows := []struct {
+		category, code, name string
+		order                int
+	}{
+		{"form_type", "development_form_type_1", "Demo consent form type 1", 0},
+		{"form_type", "development_form_type_2", "Demo consent form type 2", 1},
+		{"form_type", "development_form_type_3", "Demo consent form type 3", 2},
+		{"form_type", "development_form_type_4", "Demo consent form type 4", 3},
+		{"procedure", "development_cataract_extraction", "Demo cataract extraction", 0},
+		{"procedure", "development_trabeculectomy", "Demo trabeculectomy", 1},
+		{"laterality", "development_left_eye", "Left eye", 0},
+		{"laterality", "development_right_eye", "Right eye", 1},
+		{"laterality", "development_both_eyes", "Both eyes", 2},
+		{"anaesthetic", "development_local_anaesthetic", "Demo local anaesthetic", 0},
+		{"anaesthetic", "development_general_anaesthetic", "Demo general anaesthetic", 1},
+		{"anaesthetic", "development_no_anaesthetic", "Demo no anaesthetic", 2},
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM development_consent_catalogue WHERE code LIKE 'development\_%'`); err != nil {
+		return fmt.Errorf("reset development consent catalogue: %w", err)
+	}
+	for _, row := range rows {
+		if _, err := tx.Exec(ctx, `INSERT INTO development_consent_catalogue (category, code, display_name, display_order) VALUES ($1,$2,$3,$4) ON CONFLICT (code) DO UPDATE SET category=EXCLUDED.category, display_name=EXCLUDED.display_name, display_order=EXCLUDED.display_order, active=TRUE`, row.category, row.code, row.name, row.order); err != nil {
+			return fmt.Errorf("upsert consent catalogue: %w", err)
+		}
+	}
+	_ = userID
 	return nil
 }
 

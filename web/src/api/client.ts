@@ -87,6 +87,14 @@ export type PrescriptionDemoDraftPayload = {
     taper: { dose: string; frequencyCode: string; durationCode: string } | null
   }>
 }
+export type ConsentDemoDraftPayload = {
+  recordMode: 'development_synthetic_consent'
+  formTypeCode: 'development_form_type_1' | 'development_form_type_2' | 'development_form_type_3' | 'development_form_type_4'
+  procedureCode: 'development_cataract_extraction' | 'development_trabeculectomy'
+  laterality: 'development_left_eye' | 'development_right_eye' | 'development_both_eyes'
+  anaestheticCode: 'development_local_anaesthetic' | 'development_general_anaesthetic' | 'development_no_anaesthetic'
+  comment: string
+}
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null
@@ -307,6 +315,11 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       body: JSON.stringify({ eventTypeCode: 'ophthalmology.prescription_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }),
+    }),
+  createConsentDemoDraft: (episodeId: string, csrfToken: string, payload: ConsentDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify({ eventTypeCode: 'ophthalmology.consent_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }),
     }),
   updateEyeDrawDemoDraft: (draftId: string, csrfToken: string, expectedVersion: number, payload: EyeDrawDemoDraftPayload) =>
     request<EventDraft>(`/event-drafts/${encodeURIComponent(draftId)}`, {

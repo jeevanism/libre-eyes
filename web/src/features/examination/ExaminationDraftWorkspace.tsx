@@ -1,4 +1,4 @@
-import { Activity, ClipboardList, Eye, Gauge, ScanEye, Stethoscope } from 'lucide-react'
+import { Activity, ClipboardList, Eye, Gauge, ScanEye, Stethoscope, FileCheck2 } from 'lucide-react'
 import { useId, useState } from 'react'
 
 import { DiagnosisDraftDemo } from './DiagnosisDraftDemo'
@@ -7,13 +7,14 @@ import { IOPDraftDemo } from './IOPDraftDemo'
 import { VisualAcuityDraftDemo } from './VisualAcuityDraftDemo'
 import { OperativeNoteDraftDemo } from './OperativeNoteDraftDemo'
 import { PrescriptionDraftDemo } from './PrescriptionDraftDemo'
+import { ConsentDraftDemo } from './ConsentDraftDemo'
 
 interface ExaminationDraftWorkspaceProps {
   csrfToken: string
   episodeId: string
 }
 
-type ExaminationTool = 'acuity' | 'pressure' | 'selection' | 'drawing' | 'operative-note' | 'prescription'
+type ExaminationTool = 'acuity' | 'pressure' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent'
 
 const tools: Array<{ id: ExaminationTool, label: string, Icon: typeof Eye }> = [
   { id: 'acuity', label: 'Visual acuity', Icon: Eye },
@@ -22,6 +23,7 @@ const tools: Array<{ id: ExaminationTool, label: string, Icon: typeof Eye }> = [
   { id: 'drawing', label: 'Anterior segment drawing', Icon: ScanEye },
   { id: 'operative-note', label: 'Operative note', Icon: Activity },
   { id: 'prescription', label: 'Medication order', Icon: ClipboardList },
+  { id: 'consent', label: 'Consent form', Icon: FileCheck2 },
 ]
 
 // Development-only clinical demonstrations stay isolated to one selected tool.
@@ -61,6 +63,7 @@ export function ExaminationDraftWorkspace({ csrfToken, episodeId }: ExaminationD
         {selectedTool === 'drawing' && <EyeDrawDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
         {selectedTool === 'operative-note' && <OperativeNoteDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
         {selectedTool === 'prescription' && <PrescriptionDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
+        {selectedTool === 'consent' && <ConsentDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
       </div>
     </section>
   )
