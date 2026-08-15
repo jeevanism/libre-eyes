@@ -425,7 +425,6 @@ a:focus-visible {
 .examination-tool-layout { display: grid; grid-template-columns: minmax(190px, 220px) minmax(0, 1fr); gap: 22px; align-items: start; }
 .examination-tool-rail { position: sticky; top: 16px; min-width: 0; padding-right: 14px; border-right: 1px solid var(--border-subtle); }
 .examination-tool-rail-heading { display: flex; align-items: center; gap: 7px; margin: 0 0 14px; color: var(--text-secondary); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-.examination-tool-rail-hint { display: inline-flex; margin-left: auto; color: var(--text-subtle); }
 .examination-tool-rail nav { display: grid; gap: 14px; }
 .examination-tool-group { display: grid; gap: 5px; }
 .examination-tool-group h4 { margin: 0; padding: 0 9px; color: var(--text-subtle); font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
@@ -453,7 +452,6 @@ a:focus-visible {
   .examination-tool-drawer-toggle { display: inline-flex; justify-self: start; }
   .examination-tool-rail { display: none; position: static; padding: 12px 0 0; border-right: 0; border-top: 1px solid var(--border-subtle); }
   .examination-tool-rail-open { display: block; }
-  .examination-tool-rail-hint { display: none; }
   .examination-tool-rail nav { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 }
 

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Menu, Stethoscope, X } from 'lucide-react'
+import { ChevronRight, Menu, Stethoscope, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 
 import { examinationToolGroups, type ExaminationTool } from './examinationNavigation'
@@ -47,7 +47,6 @@ export function ExaminationToolNavigation({ selectedTool, onSelect }: Examinatio
         <div className="examination-tool-rail-heading">
           <Stethoscope size={17} aria-hidden="true" />
           <span>Tools</span>
-          <span className="examination-tool-rail-hint" aria-hidden="true"><ChevronLeft size={14} /></span>
         </div>
         <nav aria-label="Examination tool navigation">
           {examinationToolGroups.map((group) => (
