@@ -17,6 +17,9 @@ func TestVisualFieldsDemoDraftRegistryValidate(t *testing.T) {
 	if err := r.Validate(context.Background(), visualFieldsDemoEventType, episodes.DraftIntentCreate, 1, payload([]map[string]string{{"eye": "right", "resultCode": "demo_normal"}, {"eye": "left", "resultCode": "demo_field_defect"}})); err != nil {
 		t.Fatalf("valid payload rejected: %v", err)
 	}
+	if err := r.Validate(context.Background(), visualFieldsDemoEventType, episodes.DraftIntentUpdate, 1, payload([]map[string]string{{"eye": "right", "resultCode": "demo_normal"}})); err != nil {
+		t.Fatalf("valid update rejected: %v", err)
+	}
 	if err := r.Validate(context.Background(), visualFieldsDemoEventType, episodes.DraftIntentCreate, 1, payload([]map[string]string{{"eye": "right", "resultCode": "demo_unknown"}})); err == nil {
 		t.Fatal("unknown result accepted")
 	}

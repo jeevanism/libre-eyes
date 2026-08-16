@@ -22,7 +22,7 @@ func NewVisualFieldsDemoDraftRegistry(environment string) (*VisualFieldsDemoDraf
 }
 
 func (VisualFieldsDemoDraftRegistry) Validate(_ context.Context, eventTypeCode string, intent episodes.DraftIntent, schemaVersion int64, payload json.RawMessage) error {
-	if eventTypeCode != visualFieldsDemoEventType || intent != episodes.DraftIntentCreate || schemaVersion != 1 {
+	if eventTypeCode != visualFieldsDemoEventType || (intent != episodes.DraftIntentCreate && intent != episodes.DraftIntentUpdate) || schemaVersion != 1 {
 		return episodes.ErrInvalidRequest
 	}
 	var p struct {
