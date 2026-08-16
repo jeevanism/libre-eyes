@@ -121,6 +121,8 @@ export type VisualFieldsDemoDraftPayload = {
   eyes: Array<{ eye: 'left' | 'right'; resultCode: 'demo_normal' | 'demo_generalised_reduction' | 'demo_field_defect' }>
   comment: string
 }
+export type BiometryDemoEye = { axialLength: string; r1: string; r2: string; r1Axis: number; r2Axis: number; acd: string; wtw: string }
+export type BiometryDemoDraftPayload = { recordMode: 'demo_biometry'; profileCode: 'demo_biometry_v1'; deviceCode: 'demo_manual' | 'demo_iolmaster'; lensCode: 'demo_none' | 'demo_ma60ac' | 'demo_sn60wf' | 'demo_sa60at' | 'demo_mta3uo'; measurementDate: string; rightEye: BiometryDemoEye | null; leftEye: BiometryDemoEye | null; comment: string }
 export type DevelopmentReferralAppointment = {
   id: string
   syntheticPatientLabel: string
@@ -375,6 +377,8 @@ export const episodesAPI = {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       body: JSON.stringify({ eventTypeCode: 'ophthalmology.visual_fields_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }),
     }),
+  createBiometryDemoDraft: (episodeId: string, csrfToken: string, payload: BiometryDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.biometry_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
   updateEyeDrawDemoDraft: (draftId: string, csrfToken: string, expectedVersion: number, payload: EyeDrawDemoDraftPayload) =>
     request<EventDraft>(`/event-drafts/${encodeURIComponent(draftId)}`, {
       method: 'PATCH',
