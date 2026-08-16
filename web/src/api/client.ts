@@ -114,6 +114,13 @@ export type LabResultDemoDraftPayload = {
   observedAt: string
   comment: string
 }
+export type DidNotAttendDemoDraftPayload = {
+  recordMode: 'demo_did_not_attend'
+  profileCode: 'demo_did_not_attend_v1'
+  eventDate: string
+  source: 'demo_clinic_flow'
+  comment: string
+}
 export type VisualFieldsDemoDraftPayload = {
   recordMode: 'demo_visual_fields'
   strategyCode: 'demo_sita_standard'
@@ -399,6 +406,8 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.operation_checklist_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
   updateOperationChecklistDemoDraft: (draftId: string, csrfToken: string, expectedVersion: number, payload: OperationChecklistDemoDraftPayload) =>
     request<EventDraft>(`/event-drafts/${encodeURIComponent(draftId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ expectedVersion, schemaVersion: 1, payload }) }),
+  createDidNotAttendDemoDraft: (episodeId: string, csrfToken: string, payload: DidNotAttendDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.did_not_attend_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
 }
 
 export const developmentClinicFlowAPI = {

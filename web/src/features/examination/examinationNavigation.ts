@@ -1,7 +1,7 @@
-import { Activity, ClipboardList, Eye, FileCheck2, FlaskConical, Gauge, Mail, ScanEye, Syringe, Zap } from 'lucide-react'
+import { Activity, ClipboardList, Eye, FileCheck2, FlaskConical, Gauge, Mail, ScanEye, Syringe, UserRoundX, Zap } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type ExaminationTool = 'acuity' | 'pressure' | 'lab-results' | 'visual-fields' | 'biometry' | 'intravitreal' | 'laser' | 'checklist' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
+export type ExaminationTool = 'acuity' | 'pressure' | 'lab-results' | 'visual-fields' | 'biometry' | 'intravitreal' | 'laser' | 'checklist' | 'did-not-attend' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
 
 export type ExaminationToolItem = {
   id: ExaminationTool
@@ -46,6 +46,7 @@ export const examinationToolGroups: ExaminationToolGroup[] = [
       { id: 'consent', label: 'Consent form', Icon: FileCheck2 },
       { id: 'correspondence', label: 'Correspondence', Icon: Mail },
       { id: 'checklist', label: 'Operation checklist', Icon: ClipboardList },
+      { id: 'did-not-attend', label: 'Did not attend', Icon: UserRoundX },
     ],
   },
 ]
