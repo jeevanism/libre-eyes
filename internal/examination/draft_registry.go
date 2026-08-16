@@ -13,17 +13,18 @@ import (
 // DraftRegistry dispatches approved examination draft schemas by event type.
 // The generic episode service remains responsible for authorization and storage.
 type DraftRegistry struct {
-	visualAcuity       *VisualAcuityDraftRegistry
-	iop                *IOPDraftRegistry
-	diagnosisDemo      *DiagnosisDemoDraftRegistry
-	eyeDrawDemo        *EyeDrawDemoDraftRegistry
-	operativeNoteDemo  *OperativeNoteDemoDraftRegistry
-	prescriptionDemo   *PrescriptionDemoDraftRegistry
-	consentDemo        *ConsentDemoDraftRegistry
-	correspondenceDemo *CorrespondenceDemoDraftRegistry
-	labResultsDemo     *LabResultsDemoDraftRegistry
-	visualFieldsDemo   *VisualFieldsDemoDraftRegistry
-	biometryDemo       *BiometryDemoDraftRegistry
+	visualAcuity              *VisualAcuityDraftRegistry
+	iop                       *IOPDraftRegistry
+	diagnosisDemo             *DiagnosisDemoDraftRegistry
+	eyeDrawDemo               *EyeDrawDemoDraftRegistry
+	operativeNoteDemo         *OperativeNoteDemoDraftRegistry
+	prescriptionDemo          *PrescriptionDemoDraftRegistry
+	consentDemo               *ConsentDemoDraftRegistry
+	correspondenceDemo        *CorrespondenceDemoDraftRegistry
+	labResultsDemo            *LabResultsDemoDraftRegistry
+	visualFieldsDemo          *VisualFieldsDemoDraftRegistry
+	biometryDemo              *BiometryDemoDraftRegistry
+	intravitrealInjectionDemo *IntravitrealInjectionDemoDraftRegistry
 }
 
 func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment string) (*DraftRegistry, error) {
@@ -71,7 +72,11 @@ func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment strin
 	if err != nil {
 		return nil, err
 	}
-	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo}, nil
+	intravitrealInjectionDemo, err := NewIntravitrealInjectionDemoDraftRegistry(environment)
+	if err != nil {
+		return nil, err
+	}
+	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo}, nil
 }
 
 func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, intent episodes.DraftIntent, schemaVersion int64, payload json.RawMessage) error {
@@ -101,6 +106,8 @@ func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, inte
 		return r.visualFieldsDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	case biometryDemoEventType:
 		return r.biometryDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
+	case intravitrealInjectionDemoEventType:
+		return r.intravitrealInjectionDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	default:
 		return episodes.ErrInvalidRequest
 	}

@@ -123,6 +123,8 @@ export type VisualFieldsDemoDraftPayload = {
 }
 export type BiometryDemoEye = { axialLength: string; r1: string; r2: string; r1Axis: number; r2Axis: number; acd: string; wtw: string }
 export type BiometryDemoDraftPayload = { recordMode: 'demo_biometry'; profileCode: 'demo_biometry_v1'; deviceCode: 'demo_manual' | 'demo_iolmaster'; lensCode: 'demo_none' | 'demo_ma60ac' | 'demo_sn60wf' | 'demo_sa60at' | 'demo_mta3uo'; measurementDate: string; rightEye: BiometryDemoEye | null; leftEye: BiometryDemoEye | null; comment: string }
+export type IntravitrealInjectionDemoEye = { drugCode: string; siteCode: string; anaestheticCode: string; injectionNumber: number; plannedDate: string; postCheck: 'demo_not_recorded' | 'demo_clear' | 'demo_review' }
+export type IntravitrealInjectionDemoDraftPayload = { recordMode: 'demo_intravitreal_injection'; profileCode: 'demo_intravitreal_injection_v1'; eyeMode: 'right' | 'left' | 'both'; rightEye: IntravitrealInjectionDemoEye | null; leftEye: IntravitrealInjectionDemoEye | null; note: string }
 export type DevelopmentReferralAppointment = {
   id: string
   syntheticPatientLabel: string
@@ -387,6 +389,8 @@ export const episodesAPI = {
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       body: JSON.stringify({ expectedVersion, schemaVersion: 1, payload }),
     }),
+  createIntravitrealInjectionDemoDraft: (episodeId: string, csrfToken: string, payload: IntravitrealInjectionDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.intravitreal_injection_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
 }
 
 export const developmentClinicFlowAPI = {
