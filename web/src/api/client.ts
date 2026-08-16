@@ -126,6 +126,7 @@ export type BiometryDemoDraftPayload = { recordMode: 'demo_biometry'; profileCod
 export type IntravitrealInjectionDemoEye = { drugCode: string; siteCode: string; anaestheticCode: string; injectionNumber: number; plannedDate: string; postCheck: 'demo_not_recorded' | 'demo_clear' | 'demo_review' }
 export type IntravitrealInjectionDemoDraftPayload = { recordMode: 'demo_intravitreal_injection'; profileCode: 'demo_intravitreal_injection_v1'; eyeMode: 'right' | 'left' | 'both'; rightEye: IntravitrealInjectionDemoEye | null; leftEye: IntravitrealInjectionDemoEye | null; note: string }
 export type LaserDemoDraftPayload = { recordMode: 'demo_laser'; profileCode: 'demo_laser_v1'; eyeMode: 'right' | 'left' | 'both'; rightEye: { procedureCode: string } | null; leftEye: { procedureCode: string } | null; siteCode: string; laserCode: string; operatorCode: string; treatmentDate: string; comment: string }
+export type OperationChecklistDemoDraftPayload = { recordMode: 'demo_operation_checklist'; profileCode: 'demo_operation_checklist_v1'; eyeMode: 'right' | 'left' | 'both'; questions: Array<{ code: 'identity_check' | 'procedure_confirmed' | 'escort_discussed'; answer: 'demo_yes' | 'demo_no' | 'demo_not_recorded' }>; note: string }
 export type DevelopmentReferralAppointment = {
   id: string
   syntheticPatientLabel: string
@@ -394,6 +395,8 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.intravitreal_injection_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
   createLaserDemoDraft: (episodeId: string, csrfToken: string, payload: LaserDemoDraftPayload) =>
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.laser_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
+  createOperationChecklistDemoDraft: (episodeId: string, csrfToken: string, payload: OperationChecklistDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.operation_checklist_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
 }
 
 export const developmentClinicFlowAPI = {

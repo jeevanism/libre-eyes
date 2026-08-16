@@ -26,6 +26,7 @@ type DraftRegistry struct {
 	biometryDemo              *BiometryDemoDraftRegistry
 	intravitrealInjectionDemo *IntravitrealInjectionDemoDraftRegistry
 	laserDemo                 *LaserDemoDraftRegistry
+	operationChecklistDemo    *OperationChecklistDemoDraftRegistry
 }
 
 func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment string) (*DraftRegistry, error) {
@@ -81,7 +82,11 @@ func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment strin
 	if err != nil {
 		return nil, err
 	}
-	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo, laserDemo: laserDemo}, nil
+	operationChecklistDemo, err := NewOperationChecklistDemoDraftRegistry(environment)
+	if err != nil {
+		return nil, err
+	}
+	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo, laserDemo: laserDemo, operationChecklistDemo: operationChecklistDemo}, nil
 }
 
 func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, intent episodes.DraftIntent, schemaVersion int64, payload json.RawMessage) error {
@@ -115,6 +120,8 @@ func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, inte
 		return r.intravitrealInjectionDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	case laserDemoEventType:
 		return r.laserDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
+	case operationChecklistDemoEventType:
+		return r.operationChecklistDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	default:
 		return episodes.ErrInvalidRequest
 	}

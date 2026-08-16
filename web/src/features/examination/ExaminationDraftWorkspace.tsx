@@ -13,6 +13,7 @@ import { VisualFieldsDraftDemo } from './VisualFieldsDraftDemo'
 import { BiometryDraftDemo } from './BiometryDraftDemo'
 import { IntravitrealInjectionDraftDemo } from './IntravitrealInjectionDraftDemo'
 import { LaserDraftDemo } from './LaserDraftDemo'
+import { OperationChecklistDraftDemo } from './OperationChecklistDraftDemo'
 import { ExaminationToolNavigation } from './ExaminationToolNavigation'
 import type { ExaminationTool } from './examinationNavigation'
 
@@ -44,6 +45,7 @@ export function ExaminationDraftWorkspace({ csrfToken, episodeId, selectedTool =
           {selectedTool === 'biometry' && <BiometryDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'intravitreal' && <IntravitrealInjectionDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'laser' && <LaserDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
+          {selectedTool === 'checklist' && <OperationChecklistDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'selection' && <DiagnosisDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'drawing' && <EyeDrawDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'operative-note' && <OperativeNoteDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
