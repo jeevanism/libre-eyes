@@ -379,6 +379,8 @@ export const episodesAPI = {
     }),
   createBiometryDemoDraft: (episodeId: string, csrfToken: string, payload: BiometryDemoDraftPayload) =>
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.biometry_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
+  updateBiometryDemoDraft: (draftId: string, csrfToken: string, expectedVersion: number, payload: BiometryDemoDraftPayload) =>
+    request<EventDraft>(`/event-drafts/${encodeURIComponent(draftId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ expectedVersion, schemaVersion: 1, payload }) }),
   updateEyeDrawDemoDraft: (draftId: string, csrfToken: string, expectedVersion: number, payload: EyeDrawDemoDraftPayload) =>
     request<EventDraft>(`/event-drafts/${encodeURIComponent(draftId)}`, {
       method: 'PATCH',
