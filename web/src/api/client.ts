@@ -114,6 +114,13 @@ export type LabResultDemoDraftPayload = {
   observedAt: string
   comment: string
 }
+export type VisualFieldsDemoDraftPayload = {
+  recordMode: 'demo_visual_fields'
+  strategyCode: 'demo_sita_standard'
+  patternCode: 'demo_24_2'
+  eyes: Array<{ eye: 'left' | 'right'; resultCode: 'demo_normal' | 'demo_generalised_reduction' | 'demo_field_defect' }>
+  comment: string
+}
 export type DevelopmentReferralAppointment = {
   id: string
   syntheticPatientLabel: string
@@ -362,6 +369,11 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       body: JSON.stringify({ eventTypeCode: 'ophthalmology.lab_result_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }),
+    }),
+  createVisualFieldsDemoDraft: (episodeId: string, csrfToken: string, payload: VisualFieldsDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify({ eventTypeCode: 'ophthalmology.visual_fields_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }),
     }),
   updateEyeDrawDemoDraft: (draftId: string, csrfToken: string, expectedVersion: number, payload: EyeDrawDemoDraftPayload) =>
     request<EventDraft>(`/event-drafts/${encodeURIComponent(draftId)}`, {
