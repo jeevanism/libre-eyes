@@ -3,7 +3,8 @@ import { FlaskConical, Save } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { ApiError, episodesAPI, type VisualAcuityDraftPayload } from '../../api/client'
+import { episodesAPI, type VisualAcuityDraftPayload } from '../../api/client'
+import { describeDraftSaveError } from './draftError'
 import {
   developmentVisualAcuityMethods,
   developmentVisualAcuityUnit,
@@ -47,9 +48,7 @@ export function VisualAcuityDraftDemo({ csrfToken, episodeId }: VisualAcuityDraf
     saveDraft.reset()
   }
 
-  const failure = saveDraft.error instanceof ApiError && saveDraft.error.status === 409
-    ? 'This draft could not be saved because the episode changed. Refresh and try again.'
-    : saveDraft.isError ? 'The demo draft could not be saved. No clinical observation was created.' : ''
+  const failure = saveDraft.isError ? describeDraftSaveError(saveDraft.error) : ''
 
   return (
     <section className="visual-acuity-demo" aria-labelledby={`visual-acuity-demo-${episodeId}`}>

@@ -3,7 +3,8 @@ import { CircleDot, Eraser, FlaskConical, Save } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { ApiError, episodesAPI, type EventDraft, type EyeDrawDemoDraftPayload } from '../../api/client'
+import { episodesAPI, type EventDraft, type EyeDrawDemoDraftPayload } from '../../api/client'
+import { describeDraftSaveError } from './draftError'
 import {
   eyeDrawPayloadObjects,
   eyeDrawSerializedDrawing,
@@ -111,9 +112,7 @@ export function EyeDrawDraftDemo({ csrfToken, episodeId }: EyeDrawDraftDemoProps
   })
 
   const failure = saveDraft.isError || reloadDraft.isError
-    ? (saveDraft.error instanceof ApiError && saveDraft.error.status === 409
-        ? 'This draft changed before it could be saved. Reload it and try again.'
-        : 'The EyeDraw demo draft could not be saved or recovered. No clinical record was created.')
+    ? (saveDraft.isError ? describeDraftSaveError(saveDraft.error, 'EyeDraw demo draft') : 'The saved EyeDraw demo draft could not be recovered. Reload the page and try again. No clinical record was created.')
     : ''
   const error = clientError || failure
 

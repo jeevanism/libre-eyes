@@ -2,11 +2,14 @@ import { Mail, Save } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ApiError, episodesAPI, type CorrespondenceDemoDraftPayload } from '../../api/client'
+import { episodesAPI, type CorrespondenceDemoDraftPayload } from '../../api/client'
+import { describeDraftSaveError } from './draftError'
 
 interface Props { csrfToken: string; episodeId: string }
 
 export function CorrespondenceDraftDemo({ csrfToken, episodeId }: Props) {
+  const today = new Date()
+  const todayISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   const [templateCode, setTemplateCode] = useState<CorrespondenceDemoDraftPayload['templateCode']>('demo_clinic_update')
   const [recipientRole, setRecipientRole] = useState<CorrespondenceDemoDraftPayload['recipientRole']>('demo_gp')
   const [subject, setSubject] = useState('')
@@ -16,12 +19,13 @@ export function CorrespondenceDraftDemo({ csrfToken, episodeId }: Props) {
   const [error, setError] = useState('')
   const alertRef = useRef<HTMLParagraphElement>(null)
   const save = useMutation({ mutationFn: (payload: CorrespondenceDemoDraftPayload) => episodesAPI.createCorrespondenceDemoDraft(episodeId, csrfToken, payload) })
-  const failure = save.error instanceof ApiError && save.error.status === 409 ? 'This draft could not be saved because the episode changed. Refresh and try again.' : save.isError ? 'The demo correspondence draft could not be saved. No clinical record was created.' : ''
+  const failure = save.isError ? describeDraftSaveError(save.error, 'demo correspondence draft') : ''
   const message = error || failure
   useEffect(() => { if (message) alertRef.current?.focus() }, [message])
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!subject.trim() || !body.trim()) { setError('Enter a demo subject and body before saving.'); save.reset(); return }
+    if (clinicDate > todayISO) { setError('Choose today or an earlier clinic date; future dates are not allowed.'); save.reset(); return }
     setError('')
     save.mutate({ recordMode: 'demo_correspondence', templateCode, recipientRole, subject: subject.trim(), body: body.trim(), footer: footer.trim(), clinicDate })
   }
@@ -34,7 +38,7 @@ export function CorrespondenceDraftDemo({ csrfToken, episodeId }: Props) {
       <label><span>Subject</span><input maxLength={200} value={subject} disabled={save.isPending} onChange={e => setSubject(e.target.value)} /></label>
       <label><span>Plain-text body</span><textarea maxLength={5000} rows={7} value={body} disabled={save.isPending} onChange={e => setBody(e.target.value)} /></label>
       <label><span>Demo footer</span><textarea maxLength={1000} rows={3} value={footer} disabled={save.isPending} onChange={e => setFooter(e.target.value)} /></label>
-      <label><span>Clinic date (optional)</span><input type="date" value={clinicDate} disabled={save.isPending} onChange={e => setClinicDate(e.target.value)} /></label>
+      <label><span>Clinic date (optional)</span><input aria-label="Clinic date (optional)" type="date" value={clinicDate} disabled={save.isPending} onChange={e => setClinicDate(e.target.value)} /><small>Today or an earlier date only; future clinic dates are not allowed.</small></label>
       <div className="examination-draft-demo-actions">{message && <p className="inline-error" ref={alertRef} role="alert" tabIndex={-1}>{message}</p>}{save.isSuccess && <p className="inline-success" role="status">Demo correspondence draft saved. It remains uncommitted.</p>}<button className="primary-button" type="submit" disabled={save.isPending}><Save size={16} aria-hidden="true" />{save.isPending ? 'Saving draft…' : 'Save demo correspondence draft'}</button></div>
     </form>
   </section>

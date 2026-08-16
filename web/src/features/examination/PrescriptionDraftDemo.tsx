@@ -3,7 +3,8 @@ import { ClipboardList, Save } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { ApiError, episodesAPI, type PrescriptionDemoDraftPayload } from '../../api/client'
+import { episodesAPI, type PrescriptionDemoDraftPayload } from '../../api/client'
+import { describeDraftSaveError } from './draftError'
 import { demoPrescriptionDurations, demoPrescriptionFrequencies, demoPrescriptionLateralities, demoPrescriptionMedicines, demoPrescriptionRoutes } from './demoPrescriptionCatalogue'
 
 interface Props { csrfToken: string; episodeId: string }
@@ -18,7 +19,7 @@ export function PrescriptionDraftDemo({ csrfToken, episodeId }: Props) {
   const save = useMutation({ mutationFn: (payload: PrescriptionDemoDraftPayload) => episodesAPI.createPrescriptionDemoDraft(episodeId, csrfToken, payload) })
   const update = (index: number, patch: Partial<Item>) => { setItems(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item)); setClientError(''); save.reset() }
   function submit(event: FormEvent) { event.preventDefault(); if (items.some(item => !item.dose.trim() || !item.doseUnit.trim())) { setClientError('Complete dose and unit for every medication item before saving.'); return }; setClientError(''); save.mutate({ recordMode: 'development_synthetic_medication_order', headerComment, items }) }
-  const failure = save.error instanceof ApiError && save.error.status === 409 ? 'This demo draft could not be saved because the episode changed. Refresh and try again.' : save.isError ? 'The demo medication draft could not be saved. No clinical medication record was created.' : ''
+  const failure = save.isError ? describeDraftSaveError(save.error, 'demo medication draft') : ''
   useEffect(() => { if (clientError || failure) alertRef.current?.focus() }, [clientError, failure])
   return <section className="examination-draft-demo" aria-labelledby={`prescription-demo-${episodeId}`}>
     <div className="examination-draft-demo-heading"><div><p>Demo</p><h3 id={`prescription-demo-${episodeId}`}>Medication-order draft</h3></div><ClipboardList size={18} aria-hidden="true" /></div>

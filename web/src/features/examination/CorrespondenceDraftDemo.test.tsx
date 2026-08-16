@@ -22,4 +22,13 @@ describe('CorrespondenceDraftDemo', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save demo correspondence draft' }))
     expect(screen.getByText(/synthetic, clinician-owned plain-text draft/i)).toBeVisible()
   })
+
+  it('explains that future clinic dates are not allowed', () => {
+    render(<CorrespondenceDraftDemo csrfToken="csrf" episodeId="episode" />)
+    fireEvent.change(screen.getByLabelText('Subject'), { target: { value: 'Demo update' } })
+    fireEvent.change(screen.getByLabelText('Plain-text body'), { target: { value: 'A plain text letter.' } })
+    fireEvent.change(screen.getByLabelText('Clinic date (optional)'), { target: { value: '2999-01-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save demo correspondence draft' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('future dates are not allowed')
+  })
 })

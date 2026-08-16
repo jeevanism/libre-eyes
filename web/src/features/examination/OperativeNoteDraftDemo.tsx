@@ -3,7 +3,8 @@ import { ClipboardPenLine, Save } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { ApiError, episodesAPI, type OperativeNoteDemoDraftPayload } from '../../api/client'
+import { episodesAPI, type OperativeNoteDemoDraftPayload } from '../../api/client'
+import { describeDraftSaveError } from './draftError'
 
 interface OperativeNoteDraftDemoProps { csrfToken: string; episodeId: string }
 
@@ -52,9 +53,7 @@ export function OperativeNoteDraftDemo({ csrfToken, episodeId }: OperativeNoteDr
     saveDraft.mutate({ recordMode: 'development_synthetic_operative_note', procedureCode, laterality, surgeonCode, anaestheticCode, deliveryCodes, comment })
   }
 
-  const failure = saveDraft.error instanceof ApiError && saveDraft.error.status === 409
-    ? 'This draft could not be saved because the episode changed. Refresh and try again.'
-    : saveDraft.isError ? 'The demo draft could not be saved. No clinical record was created.' : ''
+  const failure = saveDraft.isError ? describeDraftSaveError(saveDraft.error) : ''
   const error = clientError || failure
   useEffect(() => { if (error) alertRef.current?.focus() }, [error])
 

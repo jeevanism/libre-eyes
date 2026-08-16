@@ -2,7 +2,8 @@ import { useMutation } from '@tanstack/react-query'
 import { FileCheck2, Save } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ApiError, episodesAPI, type ConsentDemoDraftPayload } from '../../api/client'
+import { episodesAPI, type ConsentDemoDraftPayload } from '../../api/client'
+import { describeDraftSaveError } from './draftError'
 
 interface Props { csrfToken: string; episodeId: string }
 
@@ -15,7 +16,7 @@ export function ConsentDraftDemo({ csrfToken, episodeId }: Props) {
   const [error, setError] = useState('')
   const alertRef = useRef<HTMLParagraphElement>(null)
   const save = useMutation({ mutationFn: (payload: ConsentDemoDraftPayload) => episodesAPI.createConsentDemoDraft(episodeId, csrfToken, payload) })
-  const failure = save.error instanceof ApiError && save.error.status === 409 ? 'This draft could not be saved because the episode changed. Refresh and try again.' : save.isError ? 'The demo consent draft could not be saved. No clinical record was created.' : ''
+  const failure = save.isError ? describeDraftSaveError(save.error, 'demo consent draft') : ''
   const message = error || failure
   useEffect(() => { if (message) alertRef.current?.focus() }, [message])
   function clearFeedback() { setError(''); save.reset() }

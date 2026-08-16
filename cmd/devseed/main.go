@@ -341,6 +341,9 @@ func run(ctx context.Context) error {
 	if err := seedDevelopmentCorrespondenceCatalogue(ctx, tx); err != nil {
 		return err
 	}
+	if err := seedDevelopmentLabResultsCatalogue(ctx, tx); err != nil {
+		return err
+	}
 	if err := seedDevelopmentReferralAppointments(ctx, tx, institutionID, siteID, firmID, userID); err != nil {
 		return err
 	}
@@ -352,17 +355,37 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func seedDevelopmentReferralAppointments(ctx context.Context, tx pgx.Tx, institutionID, siteID, firmID, userID int64) error {
-	if _, err := tx.Exec(ctx, `DELETE FROM development_referral_appointments WHERE institution_id=$1 AND site_id=$2 AND firm_id=$3`, institutionID, siteID, firmID); err != nil {
-		return fmt.Errorf("reset synthetic referral appointments: %w", err)
+func seedDevelopmentLabResultsCatalogue(ctx context.Context, tx pgx.Tx) error {
+	if _, err := tx.Exec(ctx, `DELETE FROM development_lab_results_catalogue WHERE code LIKE 'demo_lab\_%'`); err != nil {
+		return fmt.Errorf("reset lab results catalogue: %w", err)
 	}
+	rows := []struct {
+		code, name, kind, unit, choices        string
+		hardMin, hardMax, normalMin, normalMax *float64
+		order                                  int
+	}{
+		{code: "demo_lab_hba1c", name: "Demo HbA1c", kind: "numeric", unit: "%", hardMin: ptrFloat(0), hardMax: ptrFloat(20), normalMin: ptrFloat(4), normalMax: ptrFloat(6), order: 0},
+		{code: "demo_lab_creatinine", name: "Demo serum creatinine", kind: "numeric", unit: "umol/L", hardMin: ptrFloat(0), hardMax: ptrFloat(2000), normalMin: ptrFloat(45), normalMax: ptrFloat(110), order: 1},
+		{code: "demo_lab_status", name: "Demo laboratory status", kind: "choice", choices: `["pending","complete","not available"]`, order: 2},
+	}
+	for _, row := range rows {
+		if _, err := tx.Exec(ctx, `INSERT INTO development_lab_results_catalogue (code,display_name,field_kind,default_unit,hard_min,hard_max,normal_min,normal_max,choices,display_order) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10)`, row.code, row.name, row.kind, row.unit, row.hardMin, row.hardMax, row.normalMin, row.normalMax, valueOrDefault(row.choices, `[]`), row.order); err != nil {
+			return fmt.Errorf("seed lab result catalogue: %w", err)
+		}
+	}
+	return nil
+}
+
+func ptrFloat(value float64) *float64 { return &value }
+
+func seedDevelopmentReferralAppointments(ctx context.Context, tx pgx.Tx, institutionID, siteID, firmID, userID int64) error {
 	rows := []struct{ id, label, role, clinic, date, priority string }{
 		{"77777777-7777-4777-8777-777777777771", "Demo referral to GP", "demo_gp", "demo_general_eye_clinic", "2026-08-18", "routine"},
 		{"77777777-7777-4777-8777-777777777772", "Demo optometry follow-up", "demo_optometrist", "demo_glaucoma_clinic", "2026-08-19", "soon"},
 		{"77777777-7777-4777-8777-777777777773", "Demo consultant review", "demo_consultant", "demo_retina_clinic", "2026-08-20", "urgent"},
 	}
 	for _, r := range rows {
-		if _, err := tx.Exec(ctx, `INSERT INTO development_referral_appointments (id,institution_id,site_id,firm_id,synthetic_patient_id,synthetic_patient_label,recipient_role,clinic_code,appointment_date,appointment_time,priority,notes,owner_user_id,expires_at) VALUES ($1::uuid,$2,$3,$4,'11111111-1111-4111-8111-111111111111',$5,$6,$7,$8::date,'09:00',$9,'Synthetic demonstration referral',$10,now()+interval '7 days')`, r.id, institutionID, siteID, firmID, r.label, r.role, r.clinic, r.date, r.priority, userID); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO development_referral_appointments (id,institution_id,site_id,firm_id,synthetic_patient_id,synthetic_patient_label,recipient_role,clinic_code,appointment_date,appointment_time,priority,notes,owner_user_id,expires_at) VALUES ($1::uuid,$2,$3,$4,'11111111-1111-4111-8111-111111111111',$5,$6,$7,$8::date,'09:00',$9,'Synthetic demonstration referral',$10,now()+interval '7 days') ON CONFLICT (id) DO UPDATE SET institution_id=EXCLUDED.institution_id,site_id=EXCLUDED.site_id,firm_id=EXCLUDED.firm_id,synthetic_patient_label=EXCLUDED.synthetic_patient_label,recipient_role=EXCLUDED.recipient_role,clinic_code=EXCLUDED.clinic_code,appointment_date=EXCLUDED.appointment_date,appointment_time=EXCLUDED.appointment_time,priority=EXCLUDED.priority,notes=EXCLUDED.notes,owner_user_id=EXCLUDED.owner_user_id,status='requested',version=1,expires_at=EXCLUDED.expires_at,updated_at=now()`, r.id, institutionID, siteID, firmID, r.label, r.role, r.clinic, r.date, r.priority, userID); err != nil {
 			return fmt.Errorf("seed synthetic referral appointment: %w", err)
 		}
 	}

@@ -1,4 +1,9 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+
+async function openExaminationTools(page: Page) {
+  const toggle = page.getByRole('button', { name: 'Examination tools' })
+  if (await toggle.isVisible()) await toggle.click()
+}
 
 const session = {
   user: { id: '1', displayName: 'Synthetic Clinician' },
@@ -145,45 +150,44 @@ test('keeps clinic flow in its own operational workspace', async ({ page }) => {
 test('keeps development examination demonstrations in a focused workspace', async ({ page }) => {
   await page.goto('/patients/11111111-1111-4111-8111-111111111111/examination')
   await expect(page.getByRole('heading', { name: 'Examination workspace' })).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Visual acuity', selected: true })).toBeVisible()
+  await openExaminationTools(page)
+  await expect(page.getByRole('button', { name: 'Visual acuity' })).toHaveAttribute('aria-current', 'page')
   const visualAcuityForm = page.locator('.visual-acuity-demo-form')
   await visualAcuityForm.getByLabel('Right eye demonstration value').selectOption('development_value_m028')
   await visualAcuityForm.getByLabel('Left eye demonstration value').selectOption('development_value_150')
-  await visualAcuityForm.getByRole('button', { name: 'Save demonstration draft' }).click()
-  await expect(visualAcuityForm.getByRole('status')).toHaveText('Development draft saved. It remains uncommitted.')
+  await visualAcuityForm.getByRole('button', { name: 'Save demo draft' }).click()
+  await expect(visualAcuityForm.getByRole('status')).toHaveText('Demo draft saved. It remains uncommitted.')
 
-  await page.getByRole('tab', { name: 'Intraocular pressure' }).click()
+  await page.getByRole('button', { name: 'Intraocular pressure' }).click()
   const iopForm = page.locator('.iop-draft-demo-form')
   await iopForm.getByLabel('Right eye development IOP value').selectOption('development_iop_14')
   await iopForm.getByLabel('Left eye development IOP value').selectOption('development_iop_18')
-  await iopForm.getByRole('button', { name: 'Save demonstration draft' }).click()
-  await expect(iopForm.getByRole('status')).toHaveText('Development draft saved. It remains uncommitted.')
+  await iopForm.getByRole('button', { name: 'Save demo draft' }).click()
+  await expect(iopForm.getByRole('status')).toHaveText('Demo draft saved. It remains uncommitted.')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
 
 test('saves only a synthetic diagnosis development draft', async ({ page }) => {
-  await page.goto('/patients/11111111-1111-4111-8111-111111111111/examination')
-  await page.getByRole('tab', { name: 'Ophthalmology selection' }).click()
+  await page.goto('/patients/11111111-1111-4111-8111-111111111111/examination?tool=selection')
   const form = page.locator('.diagnosis-draft-demo-form')
-  await form.getByLabel('Development example').selectOption('development_cataract')
+  await form.getByLabel('Demo example').selectOption('development_cataract')
   await form.getByLabel('Laterality').selectOption('bilateral')
-  await form.getByLabel('Development date').fill('2026-08-09')
-  await form.getByRole('button', { name: 'Save demonstration draft' }).click()
-  await expect(form.getByRole('status')).toHaveText('Development draft saved. It remains uncommitted.')
+  await form.getByLabel('Demo date').fill('2026-08-09')
+  await form.getByRole('button', { name: 'Save demo draft' }).click()
+  await expect(form.getByRole('status')).toHaveText('Demo draft saved. It remains uncommitted.')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
 
 test('saves and recovers only the approved EyeDraw development draft', async ({ page }) => {
-  await page.goto('/patients/11111111-1111-4111-8111-111111111111/examination')
-  await page.getByRole('tab', { name: 'Anterior segment drawing' }).click()
+  await page.goto('/patients/11111111-1111-4111-8111-111111111111/examination?tool=drawing')
   const demo = page.locator('.eyedraw-draft-demo')
   await expect(demo.getByRole('heading', { name: 'Anterior segment drawing draft' })).toBeVisible()
   await expect(demo.getByRole('button', { name: 'Add anterior segment' })).toBeEnabled()
   await demo.getByRole('button', { name: 'Add anterior segment' }).click()
   await demo.getByLabel('Anterior segment pupil size').selectOption('Small')
-  await demo.getByRole('button', { name: 'Save demonstration draft' }).click()
-  await expect(demo.getByRole('status')).toHaveText('Development drawing draft saved. It remains uncommitted.')
+  await demo.getByRole('button', { name: 'Save demo draft' }).click()
+  await expect(demo.getByRole('status')).toHaveText('Demo drawing draft saved. It remains uncommitted.')
   await demo.getByRole('button', { name: 'Reload saved draft' }).click()
-  await expect(demo.getByRole('button', { name: 'Update demonstration draft' })).toBeVisible()
+  await expect(demo.getByRole('button', { name: 'Update demo draft' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })

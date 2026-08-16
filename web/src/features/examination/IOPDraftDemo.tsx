@@ -3,7 +3,8 @@ import { FlaskConical, Save } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { ApiError, episodesAPI, type IOPDraftPayload } from '../../api/client'
+import { episodesAPI, type IOPDraftPayload } from '../../api/client'
+import { describeDraftSaveError } from './draftError'
 import { developmentIOPProfileCode, developmentIOPValues } from './demoIOPCatalogue'
 
 interface IOPDraftDemoProps {
@@ -39,9 +40,7 @@ export function IOPDraftDemo({ csrfToken, episodeId }: IOPDraftDemoProps) {
     saveDraft.mutate({ recordMode: 'development_raw_mmhg', profileCode: developmentIOPProfileCode, eyes })
   }
 
-  const failure = saveDraft.error instanceof ApiError && saveDraft.error.status === 409
-    ? 'This draft could not be saved because the episode changed. Refresh and try again.'
-    : saveDraft.isError ? 'The demo draft could not be saved. No clinical observation was created.' : ''
+  const failure = saveDraft.isError ? describeDraftSaveError(saveDraft.error) : ''
 
   useEffect(() => {
     if (clientError || failure) alertRef.current?.focus()
