@@ -37,6 +37,7 @@ func TestOperationChecklistDemoDraftRegistryValidate(t *testing.T) {
 		{name: "duplicate question", mutate: func(p *operationChecklistDemoPayload) { p.Questions[2].Code = p.Questions[0].Code }},
 		{name: "unknown answer", mutate: func(p *operationChecklistDemoPayload) { p.Questions[0].Answer = "clinical_yes" }},
 		{name: "untrimmed note", mutate: func(p *operationChecklistDemoPayload) { p.Note = " demo note" }},
+		{name: "invalid eye mode", mutate: func(p *operationChecklistDemoPayload) { p.EyeMode = "unknown" }},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -51,6 +52,18 @@ func TestOperationChecklistDemoDraftRegistryValidate(t *testing.T) {
 				t.Fatalf("expected invalid request, got %v", err)
 			}
 		})
+	}
+}
+
+func TestOperationChecklistDemoDraftRegistryRejectsInvalidEnvelope(t *testing.T) {
+	registry := OperationChecklistDemoDraftRegistry{}
+	payload := []byte(`{"recordMode":"demo_operation_checklist","profileCode":"demo_operation_checklist_v1","eyeMode":"both","questions":[{"code":"identity_check","answer":"demo_yes"},{"code":"procedure_confirmed","answer":"demo_yes"},{"code":"escort_discussed","answer":"demo_yes"}],"note":""}`)
+	ctx := context.Background()
+	if err := registry.Validate(ctx, operationChecklistDemoEventType, episodes.DraftIntentCreate, 2, payload); err != episodes.ErrInvalidRequest {
+		t.Fatalf("expected schema rejection, got %v", err)
+	}
+	if err := registry.Validate(ctx, operationChecklistDemoEventType, episodes.DraftIntent("delete"), 1, payload); err != episodes.ErrInvalidRequest {
+		t.Fatalf("expected intent rejection, got %v", err)
 	}
 }
 

@@ -27,7 +27,6 @@ export const examinationToolGroups: ExaminationToolGroup[] = [
       { id: 'biometry', label: 'Biometry', Icon: ScanEye },
       { id: 'intravitreal', label: 'Intravitreal injection', Icon: Syringe },
       { id: 'laser', label: 'Laser treatment', Icon: Zap },
-      { id: 'checklist', label: 'Operation checklist', Icon: ClipboardList },
     ],
   },
   {
@@ -46,6 +45,7 @@ export const examinationToolGroups: ExaminationToolGroup[] = [
       { id: 'prescription', label: 'Medication order', Icon: ClipboardList },
       { id: 'consent', label: 'Consent form', Icon: FileCheck2 },
       { id: 'correspondence', label: 'Correspondence', Icon: Mail },
+      { id: 'checklist', label: 'Operation checklist', Icon: ClipboardList },
     ],
   },
 ]

@@ -397,6 +397,8 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.laser_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
   createOperationChecklistDemoDraft: (episodeId: string, csrfToken: string, payload: OperationChecklistDemoDraftPayload) =>
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.operation_checklist_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
+  updateOperationChecklistDemoDraft: (draftId: string, csrfToken: string, expectedVersion: number, payload: OperationChecklistDemoDraftPayload) =>
+    request<EventDraft>(`/event-drafts/${encodeURIComponent(draftId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ expectedVersion, schemaVersion: 1, payload }) }),
 }
 
 export const developmentClinicFlowAPI = {
