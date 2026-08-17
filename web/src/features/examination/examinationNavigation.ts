@@ -1,7 +1,7 @@
 import { Activity, ClipboardList, Eye, FileCheck2, FileText, FlaskConical, Gauge, Mail, MessageSquare, ScanEye, Syringe, UserRoundX, Zap } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type ExaminationTool = 'acuity' | 'pressure' | 'lab-results' | 'visual-fields' | 'biometry' | 'intravitreal' | 'laser' | 'checklist' | 'did-not-attend' | 'document' | 'messaging' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
+export type ExaminationTool = 'acuity' | 'pressure' | 'phasing' | 'lab-results' | 'visual-fields' | 'biometry' | 'intravitreal' | 'laser' | 'checklist' | 'did-not-attend' | 'document' | 'messaging' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
 
 export type ExaminationToolItem = {
   id: ExaminationTool
@@ -22,6 +22,7 @@ export const examinationToolGroups: ExaminationToolGroup[] = [
     items: [
       { id: 'acuity', label: 'Visual acuity', Icon: Eye },
       { id: 'pressure', label: 'Intraocular pressure', Icon: Gauge },
+      { id: 'phasing', label: 'IOP phasing', Icon: Gauge },
       { id: 'lab-results', label: 'Lab results', Icon: FlaskConical },
       { id: 'visual-fields', label: 'Visual fields', Icon: ScanEye },
       { id: 'biometry', label: 'Biometry', Icon: ScanEye },

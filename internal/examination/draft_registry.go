@@ -30,6 +30,7 @@ type DraftRegistry struct {
 	didNotAttendDemo          *DidNotAttendDemoDraftRegistry
 	documentDemo              *DocumentDemoDraftRegistry
 	messagingDemo             *MessagingDemoDraftRegistry
+	iopPhasingDemo            *IOPPhasingDemoDraftRegistry
 }
 
 func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment string) (*DraftRegistry, error) {
@@ -101,7 +102,11 @@ func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment strin
 	if err != nil {
 		return nil, err
 	}
-	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo, laserDemo: laserDemo, operationChecklistDemo: operationChecklistDemo, didNotAttendDemo: didNotAttendDemo, documentDemo: documentDemo, messagingDemo: messagingDemo}, nil
+	iopPhasingDemo, err := NewIOPPhasingDemoDraftRegistry(environment)
+	if err != nil {
+		return nil, err
+	}
+	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo, laserDemo: laserDemo, operationChecklistDemo: operationChecklistDemo, didNotAttendDemo: didNotAttendDemo, documentDemo: documentDemo, messagingDemo: messagingDemo, iopPhasingDemo: iopPhasingDemo}, nil
 }
 
 func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, intent episodes.DraftIntent, schemaVersion int64, payload json.RawMessage) error {
@@ -143,6 +148,8 @@ func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, inte
 		return r.documentDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	case messagingDemoEventType:
 		return r.messagingDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
+	case iopPhasingDemoEventType:
+		return r.iopPhasingDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	default:
 		return episodes.ErrInvalidRequest
 	}

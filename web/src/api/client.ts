@@ -140,6 +140,8 @@ export type MessagingDemoDraftPayload = {
   body: string
   readState?: 'demo_unread' | 'demo_read'
 }
+export type IOPPhasingDemoEye = { instrumentCode: 'demo_goldmann' | 'demo_tono_pen' | 'demo_i_care' | 'demo_perkins' | 'demo_other'; dilated: boolean; comment: string; readings: Array<{ value: number; measurementTime: string }> }
+export type IOPPhasingDemoDraftPayload = { recordMode: 'demo_iop_phasing'; profileCode: 'demo_iop_phasing_v1'; eyeMode: 'right' | 'left' | 'both'; rightEye: IOPPhasingDemoEye | null; leftEye: IOPPhasingDemoEye | null }
 export type VisualFieldsDemoDraftPayload = {
   recordMode: 'demo_visual_fields'
   strategyCode: 'demo_sita_standard'
@@ -431,6 +433,8 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.document_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
   createMessagingDemoDraft: (episodeId: string, csrfToken: string, payload: MessagingDemoDraftPayload) =>
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.messaging_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
+  createIOPPhasingDemoDraft: (episodeId: string, csrfToken: string, payload: IOPPhasingDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.iop_phasing_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
 }
 
 export const developmentClinicFlowAPI = {

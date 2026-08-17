@@ -17,6 +17,7 @@ import { OperationChecklistDraftDemo } from './OperationChecklistDraftDemo'
 import { DidNotAttendDraftDemo } from './DidNotAttendDraftDemo'
 import { DocumentDraftDemo } from './DocumentDraftDemo'
 import { MessagingDraftDemo } from './MessagingDraftDemo'
+import { IOPPhasingDraftDemo } from './IOPPhasingDraftDemo'
 import { ExaminationToolNavigation } from './ExaminationToolNavigation'
 import type { ExaminationTool } from './examinationNavigation'
 
@@ -43,6 +44,7 @@ export function ExaminationDraftWorkspace({ csrfToken, episodeId, selectedTool =
         <div className="examination-tool-panel" aria-live="polite">
           {selectedTool === 'acuity' && <VisualAcuityDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'pressure' && <IOPDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
+          {selectedTool === 'phasing' && <IOPPhasingDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'lab-results' && <LabResultsDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'visual-fields' && <VisualFieldsDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'biometry' && <BiometryDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
