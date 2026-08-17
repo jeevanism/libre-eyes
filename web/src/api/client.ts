@@ -130,6 +130,16 @@ export type DocumentDemoDraftPayload = {
   documentDate: string
   comment?: string
 }
+export type MessagingDemoDraftPayload = {
+  recordMode: 'demo_messaging'
+  profileCode: 'demo_messaging_v1'
+  messageType: 'demo_clinic_update' | 'demo_review_request' | 'demo_task_note'
+  primaryRecipient: 'demo_gp' | 'demo_optometrist' | 'demo_consultant' | 'demo_clinic_staff'
+  ccRecipients: Array<'demo_gp' | 'demo_optometrist' | 'demo_consultant' | 'demo_clinic_staff'>
+  subject: string
+  body: string
+  readState?: 'demo_unread' | 'demo_read'
+}
 export type VisualFieldsDemoDraftPayload = {
   recordMode: 'demo_visual_fields'
   strategyCode: 'demo_sita_standard'
@@ -419,6 +429,8 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.did_not_attend_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
   createDocumentDemoDraft: (episodeId: string, csrfToken: string, payload: DocumentDemoDraftPayload) =>
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.document_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
+  createMessagingDemoDraft: (episodeId: string, csrfToken: string, payload: MessagingDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.messaging_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
 }
 
 export const developmentClinicFlowAPI = {
