@@ -15,6 +15,7 @@ import { IntravitrealInjectionDraftDemo } from './IntravitrealInjectionDraftDemo
 import { LaserDraftDemo } from './LaserDraftDemo'
 import { OperationChecklistDraftDemo } from './OperationChecklistDraftDemo'
 import { DidNotAttendDraftDemo } from './DidNotAttendDraftDemo'
+import { DocumentDraftDemo } from './DocumentDraftDemo'
 import { ExaminationToolNavigation } from './ExaminationToolNavigation'
 import type { ExaminationTool } from './examinationNavigation'
 
@@ -48,6 +49,7 @@ export function ExaminationDraftWorkspace({ csrfToken, episodeId, selectedTool =
           {selectedTool === 'laser' && <LaserDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'checklist' && <OperationChecklistDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'did-not-attend' && <DidNotAttendDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
+          {selectedTool === 'document' && <DocumentDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'selection' && <DiagnosisDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'drawing' && <EyeDrawDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'operative-note' && <OperativeNoteDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
