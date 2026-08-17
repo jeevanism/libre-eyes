@@ -56,7 +56,7 @@ func allowedMessagingType(value string) bool {
 }
 
 func allowedRecipient(value string) bool {
-	return value == "demo_gp" || value == "demo_optometrist" || value == "demo_consultant" || value == "demo_clinic_staff"
+	return value == "demo_gp" || value == "demo_optometrist" || value == "demo_consultant" || value == "demo_clinic_staff" || value == "demo_nurse" || value == "demo_orthoptist"
 }
 
 func validMessageText(value string, max int) bool {

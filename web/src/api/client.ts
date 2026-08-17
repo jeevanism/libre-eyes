@@ -134,8 +134,8 @@ export type MessagingDemoDraftPayload = {
   recordMode: 'demo_messaging'
   profileCode: 'demo_messaging_v1'
   messageType: 'demo_clinic_update' | 'demo_review_request' | 'demo_task_note'
-  primaryRecipient: 'demo_gp' | 'demo_optometrist' | 'demo_consultant' | 'demo_clinic_staff'
-  ccRecipients: Array<'demo_gp' | 'demo_optometrist' | 'demo_consultant' | 'demo_clinic_staff'>
+  primaryRecipient: 'demo_gp' | 'demo_optometrist' | 'demo_consultant' | 'demo_clinic_staff' | 'demo_nurse' | 'demo_orthoptist'
+  ccRecipients: Array<'demo_gp' | 'demo_optometrist' | 'demo_consultant' | 'demo_clinic_staff' | 'demo_nurse' | 'demo_orthoptist'>
   subject: string
   body: string
   readState?: 'demo_unread' | 'demo_read'

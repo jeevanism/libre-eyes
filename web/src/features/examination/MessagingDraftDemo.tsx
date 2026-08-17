@@ -4,8 +4,8 @@ import { useState, type FormEvent } from 'react'
 import { episodesAPI, type MessagingDemoDraftPayload } from '../../api/client'
 import { describeDraftSaveError } from './draftError'
 
-const recipients: Array<MessagingDemoDraftPayload['primaryRecipient']> = ['demo_gp', 'demo_optometrist', 'demo_consultant', 'demo_clinic_staff']
-const labels: Record<string, string> = { demo_gp: 'Demo GP', demo_optometrist: 'Demo optometrist', demo_consultant: 'Demo consultant', demo_clinic_staff: 'Demo clinic staff' }
+const recipients: Array<MessagingDemoDraftPayload['primaryRecipient']> = ['demo_gp', 'demo_optometrist', 'demo_consultant', 'demo_clinic_staff', 'demo_nurse', 'demo_orthoptist']
+const labels: Record<string, string> = { demo_gp: 'Demo GP', demo_optometrist: 'Demo optometrist', demo_consultant: 'Demo consultant', demo_clinic_staff: 'Demo clinic staff', demo_nurse: 'Demo nurse', demo_orthoptist: 'Demo orthoptist' }
 
 export function MessagingDraftDemo({ csrfToken, episodeId }: { csrfToken: string; episodeId: string }) {
   const [messageType, setMessageType] = useState<MessagingDemoDraftPayload['messageType']>('demo_clinic_update')
