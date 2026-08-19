@@ -21,6 +21,7 @@ import { IOPPhasingDraftDemo } from './IOPPhasingDraftDemo'
 import { CatpromDraftDemo } from './CatpromDraftDemo'
 import { DNAExtractionDraftDemo } from './DNAExtractionDraftDemo'
 import { DNASampleDraftDemo } from './DNASampleDraftDemo'
+import { CviDraftDemo } from './CviDraftDemo'
 import { ExaminationToolNavigation } from './ExaminationToolNavigation'
 import type { ExaminationTool } from './examinationNavigation'
 
@@ -51,6 +52,7 @@ export function ExaminationDraftWorkspace({ csrfToken, episodeId, selectedTool =
           {selectedTool === 'catprom' && <CatpromDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'dna-extraction' && <DNAExtractionDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'dna-sample' && <DNASampleDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
+          {selectedTool === 'cvi' && <CviDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'lab-results' && <LabResultsDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'visual-fields' && <VisualFieldsDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'biometry' && <BiometryDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
