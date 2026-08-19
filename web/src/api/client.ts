@@ -142,6 +142,7 @@ export type MessagingDemoDraftPayload = {
 }
 export type IOPPhasingDemoEye = { instrumentCode: 'demo_goldmann' | 'demo_tono_pen' | 'demo_i_care' | 'demo_perkins' | 'demo_other'; dilated: boolean; comment: string; readings: Array<{ value: number; measurementTime: string }> }
 export type IOPPhasingDemoDraftPayload = { recordMode: 'demo_iop_phasing'; profileCode: 'demo_iop_phasing_v1'; eyeMode: 'right' | 'left' | 'both'; rightEye: IOPPhasingDemoEye | null; leftEye: IOPPhasingDemoEye | null }
+export type CatpromDemoDraftPayload = { recordMode: 'demo_catprom'; profileCode: 'demo_catprom_v1'; laterality: 'not_applicable' | 'right' | 'left' | 'bilateral'; answers: Array<{ questionCode: string; answerCode: string }>; comment: string }
 export type VisualFieldsDemoDraftPayload = {
   recordMode: 'demo_visual_fields'
   strategyCode: 'demo_sita_standard'
@@ -435,6 +436,8 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.messaging_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
   createIOPPhasingDemoDraft: (episodeId: string, csrfToken: string, payload: IOPPhasingDemoDraftPayload) =>
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.iop_phasing_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
+  createCatpromDemoDraft: (episodeId: string, csrfToken: string, payload: CatpromDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.catprom_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
 }
 
 export const developmentClinicFlowAPI = {

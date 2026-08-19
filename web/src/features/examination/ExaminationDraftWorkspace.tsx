@@ -18,6 +18,7 @@ import { DidNotAttendDraftDemo } from './DidNotAttendDraftDemo'
 import { DocumentDraftDemo } from './DocumentDraftDemo'
 import { MessagingDraftDemo } from './MessagingDraftDemo'
 import { IOPPhasingDraftDemo } from './IOPPhasingDraftDemo'
+import { CatpromDraftDemo } from './CatpromDraftDemo'
 import { ExaminationToolNavigation } from './ExaminationToolNavigation'
 import type { ExaminationTool } from './examinationNavigation'
 
@@ -45,6 +46,7 @@ export function ExaminationDraftWorkspace({ csrfToken, episodeId, selectedTool =
           {selectedTool === 'acuity' && <VisualAcuityDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'pressure' && <IOPDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'phasing' && <IOPPhasingDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
+          {selectedTool === 'catprom' && <CatpromDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'lab-results' && <LabResultsDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'visual-fields' && <VisualFieldsDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'biometry' && <BiometryDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
