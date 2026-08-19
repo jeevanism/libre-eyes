@@ -33,6 +33,7 @@ type DraftRegistry struct {
 	iopPhasingDemo            *IOPPhasingDemoDraftRegistry
 	catpromDemo               *CatpromDemoDraftRegistry
 	dnaExtractionDemo         *DNAExtractionDemoDraftRegistry
+	dnaSampleDemo             *DNASampleDemoDraftRegistry
 }
 
 func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment string) (*DraftRegistry, error) {
@@ -116,7 +117,11 @@ func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment strin
 	if err != nil {
 		return nil, err
 	}
-	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo, laserDemo: laserDemo, operationChecklistDemo: operationChecklistDemo, didNotAttendDemo: didNotAttendDemo, documentDemo: documentDemo, messagingDemo: messagingDemo, iopPhasingDemo: iopPhasingDemo, catpromDemo: catpromDemo, dnaExtractionDemo: dnaExtractionDemo}, nil
+	dnaSampleDemo, err := NewDNASampleDemoDraftRegistry(environment)
+	if err != nil {
+		return nil, err
+	}
+	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo, laserDemo: laserDemo, operationChecklistDemo: operationChecklistDemo, didNotAttendDemo: didNotAttendDemo, documentDemo: documentDemo, messagingDemo: messagingDemo, iopPhasingDemo: iopPhasingDemo, catpromDemo: catpromDemo, dnaExtractionDemo: dnaExtractionDemo, dnaSampleDemo: dnaSampleDemo}, nil
 }
 
 func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, intent episodes.DraftIntent, schemaVersion int64, payload json.RawMessage) error {
@@ -164,6 +169,8 @@ func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, inte
 		return r.catpromDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	case dnaExtractionDemoEventType:
 		return r.dnaExtractionDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
+	case dnaSampleDemoEventType:
+		return r.dnaSampleDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	default:
 		return episodes.ErrInvalidRequest
 	}
