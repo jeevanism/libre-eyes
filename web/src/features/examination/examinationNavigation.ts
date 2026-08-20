@@ -1,7 +1,7 @@
 import { Activity, ClipboardList, Crosshair, Dna, Eye, FileCheck2, FileText, FlaskConical, Gauge, Mail, MessageSquare, ScanEye, Syringe, UserRoundX, Zap } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type ExaminationTool = 'acuity' | 'pressure' | 'phasing' | 'catprom' | 'dna-extraction' | 'dna-sample' | 'cvi' | 'lab-results' | 'genetic-results' | 'visual-fields' | 'biometry' | 'intravitreal' | 'laser' | 'therapy-intent' | 'pgd-psd' | 'checklist' | 'did-not-attend' | 'document' | 'messaging' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
+export type ExaminationTool = 'acuity' | 'pressure' | 'phasing' | 'catprom' | 'dna-extraction' | 'dna-sample' | 'cvi' | 'lab-results' | 'genetic-results' | 'visual-fields' | 'biometry' | 'intravitreal' | 'laser' | 'therapy-intent' | 'pgd-psd' | 'anaesthetic-feedback' | 'checklist' | 'did-not-attend' | 'document' | 'messaging' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
 
 export type ExaminationToolItem = {
   id: ExaminationTool
@@ -35,6 +35,7 @@ export const examinationToolGroups: ExaminationToolGroup[] = [
       { id: 'laser', label: 'Laser treatment', Icon: Zap },
       { id: 'therapy-intent', label: 'Therapy intent', Icon: Crosshair },
       { id: 'pgd-psd', label: 'PGD/PSD guidance', Icon: ClipboardList },
+      { id: 'anaesthetic-feedback', label: 'Anaesthetic feedback', Icon: ClipboardList },
     ],
   },
   {

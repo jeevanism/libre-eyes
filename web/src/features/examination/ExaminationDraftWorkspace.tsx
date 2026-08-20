@@ -25,6 +25,7 @@ import { CviDraftDemo } from './CviDraftDemo'
 import { TherapyIntentDraftDemo } from './TherapyIntentDraftDemo'
 import { PGDPSDGuidanceDraftDemo } from './PGDPSDGuidanceDraftDemo'
 import { GeneticResultDraftDemo } from './GeneticResultDraftDemo'
+import { AnaestheticFeedbackDraftDemo } from './AnaestheticFeedbackDraftDemo'
 import { ExaminationToolNavigation } from './ExaminationToolNavigation'
 import type { ExaminationTool } from './examinationNavigation'
 
@@ -59,6 +60,7 @@ export function ExaminationDraftWorkspace({ csrfToken, episodeId, selectedTool =
           {selectedTool === 'therapy-intent' && <TherapyIntentDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'pgd-psd' && <PGDPSDGuidanceDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'genetic-results' && <GeneticResultDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
+          {selectedTool === 'anaesthetic-feedback' && <AnaestheticFeedbackDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'lab-results' && <LabResultsDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'visual-fields' && <VisualFieldsDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
           {selectedTool === 'biometry' && <BiometryDraftDemo csrfToken={csrfToken} episodeId={episodeId} />}
