@@ -1,7 +1,7 @@
-import { Activity, ClipboardList, Dna, Eye, FileCheck2, FileText, FlaskConical, Gauge, Mail, MessageSquare, ScanEye, Syringe, UserRoundX, Zap } from 'lucide-react'
+import { Activity, ClipboardList, Crosshair, Dna, Eye, FileCheck2, FileText, FlaskConical, Gauge, Mail, MessageSquare, ScanEye, Syringe, UserRoundX, Zap } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type ExaminationTool = 'acuity' | 'pressure' | 'phasing' | 'catprom' | 'dna-extraction' | 'dna-sample' | 'cvi' | 'lab-results' | 'visual-fields' | 'biometry' | 'intravitreal' | 'laser' | 'checklist' | 'did-not-attend' | 'document' | 'messaging' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
+export type ExaminationTool = 'acuity' | 'pressure' | 'phasing' | 'catprom' | 'dna-extraction' | 'dna-sample' | 'cvi' | 'lab-results' | 'visual-fields' | 'biometry' | 'intravitreal' | 'laser' | 'therapy-intent' | 'checklist' | 'did-not-attend' | 'document' | 'messaging' | 'selection' | 'drawing' | 'operative-note' | 'prescription' | 'consent' | 'correspondence'
 
 export type ExaminationToolItem = {
   id: ExaminationTool
@@ -32,6 +32,7 @@ export const examinationToolGroups: ExaminationToolGroup[] = [
       { id: 'biometry', label: 'Biometry', Icon: ScanEye },
       { id: 'intravitreal', label: 'Intravitreal injection', Icon: Syringe },
       { id: 'laser', label: 'Laser treatment', Icon: Zap },
+      { id: 'therapy-intent', label: 'Therapy intent', Icon: Crosshair },
     ],
   },
   {
