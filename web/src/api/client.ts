@@ -147,6 +147,7 @@ export type DNAExtractionDemoDraftPayload = { recordMode: 'demo_dna_extraction';
 export type DNASampleDemoDraftPayload = { recordMode: 'demo_dna_sample'; profileCode: 'demo_dna_sample_v1'; sampleType: 'demo_blood' | 'demo_saliva' | 'demo_other'; consentedBy: 'demo_clinician' | 'demo_patient' | 'demo_guardian'; sampleDate: string; volume: number; comment: string }
 export type CviDemoDraftPayload = { recordMode: 'demo_cvi'; profileCode: 'demo_cvi_v1'; status: 'demo_new' | 'demo_in_review' | 'demo_ready_for_discussion'; preferredFormat: 'demo_large_print' | 'demo_audio' | 'demo_digital'; note: string }
 export type TherapyIntentDemoDraftPayload = { recordMode: 'demo_therapy_intent'; profileCode: 'demo_therapy_intent_v1'; treatment: 'demo_anti_vegf' | 'demo_steroid' | 'demo_observation'; laterality: 'right' | 'left' | 'bilateral' | 'not_applicable'; note: string }
+export type PGDPSDGuidanceDemoDraftPayload = { recordMode: 'demo_pgd_psd_guidance'; profileCode: 'demo_pgd_psd_guidance_v1'; pathway: 'demo_pgd' | 'demo_psd'; medicationLabel: string; laterality: 'right' | 'left' | 'bilateral' | 'not_applicable'; note: string }
 export type VisualFieldsDemoDraftPayload = {
   recordMode: 'demo_visual_fields'
   strategyCode: 'demo_sita_standard'
@@ -450,6 +451,8 @@ export const episodesAPI = {
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.cvi_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
   createTherapyIntentDemoDraft: (episodeId: string, csrfToken: string, payload: TherapyIntentDemoDraftPayload) =>
     request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.therapy_intent_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
+  createPGDPSDGuidanceDemoDraft: (episodeId: string, csrfToken: string, payload: PGDPSDGuidanceDemoDraftPayload) =>
+    request<EventDraft>(`/episodes/${encodeURIComponent(episodeId)}/event-drafts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ eventTypeCode: 'ophthalmology.pgd_psd_guidance_demo', intent: 'create', mode: 'manual', schemaVersion: 1, payload }) }),
 }
 
 export const developmentClinicFlowAPI = {
