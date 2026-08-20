@@ -1,6 +1,9 @@
 package referralappointment
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestTransition(t *testing.T) {
 	tests := []struct {
@@ -31,7 +34,7 @@ func TestTransition(t *testing.T) {
 }
 
 func TestValidCreateRejectsClinicalOrUnboundedInput(t *testing.T) {
-	base := CreateRequest{SyntheticPatientID: "11111111-1111-4111-8111-111111111111", SyntheticPatientLabel: "Demo referral", RecipientRole: "demo_gp", ClinicCode: "demo_general_eye_clinic", AppointmentDate: "2026-08-18", Priority: "routine"}
+	base := CreateRequest{SyntheticPatientID: "11111111-1111-4111-8111-111111111111", SyntheticPatientLabel: "Demo referral", RecipientRole: "demo_gp", ClinicCode: "demo_general_eye_clinic", AppointmentDate: time.Now().UTC().Add(24 * time.Hour).Format("2006-01-02"), Priority: "routine"}
 	if !validCreate(base) {
 		t.Fatal("expected demo request to be valid")
 	}
