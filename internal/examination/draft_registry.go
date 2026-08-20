@@ -37,6 +37,7 @@ type DraftRegistry struct {
 	cviDemo                   *CviDemoDraftRegistry
 	therapyIntentDemo         *TherapyIntentDemoDraftRegistry
 	pgdPSDGuidanceDemo        *PGDPSDGuidanceDemoDraftRegistry
+	geneticResultDemo         *GeneticResultDemoDraftRegistry
 }
 
 func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment string) (*DraftRegistry, error) {
@@ -136,7 +137,11 @@ func NewDraftRegistry(ctx context.Context, pool *pgxpool.Pool, environment strin
 	if err != nil {
 		return nil, err
 	}
-	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo, laserDemo: laserDemo, operationChecklistDemo: operationChecklistDemo, didNotAttendDemo: didNotAttendDemo, documentDemo: documentDemo, messagingDemo: messagingDemo, iopPhasingDemo: iopPhasingDemo, catpromDemo: catpromDemo, dnaExtractionDemo: dnaExtractionDemo, dnaSampleDemo: dnaSampleDemo, cviDemo: cviDemo, therapyIntentDemo: therapyIntentDemo, pgdPSDGuidanceDemo: pgdPSDGuidanceDemo}, nil
+	geneticResultDemo, err := NewGeneticResultDemoDraftRegistry(environment)
+	if err != nil {
+		return nil, err
+	}
+	return &DraftRegistry{visualAcuity: visualAcuity, iop: iop, diagnosisDemo: diagnosisDemo, eyeDrawDemo: eyeDrawDemo, operativeNoteDemo: operativeNoteDemo, prescriptionDemo: prescriptionDemo, consentDemo: consentDemo, correspondenceDemo: correspondenceDemo, labResultsDemo: labResultsDemo, visualFieldsDemo: visualFieldsDemo, biometryDemo: biometryDemo, intravitrealInjectionDemo: intravitrealInjectionDemo, laserDemo: laserDemo, operationChecklistDemo: operationChecklistDemo, didNotAttendDemo: didNotAttendDemo, documentDemo: documentDemo, messagingDemo: messagingDemo, iopPhasingDemo: iopPhasingDemo, catpromDemo: catpromDemo, dnaExtractionDemo: dnaExtractionDemo, dnaSampleDemo: dnaSampleDemo, cviDemo: cviDemo, therapyIntentDemo: therapyIntentDemo, pgdPSDGuidanceDemo: pgdPSDGuidanceDemo, geneticResultDemo: geneticResultDemo}, nil
 }
 
 func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, intent episodes.DraftIntent, schemaVersion int64, payload json.RawMessage) error {
@@ -192,6 +197,8 @@ func (r *DraftRegistry) Validate(ctx context.Context, eventTypeCode string, inte
 		return r.therapyIntentDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	case pgdPSDGuidanceDemoEventType:
 		return r.pgdPSDGuidanceDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
+	case geneticResultDemoEventType:
+		return r.geneticResultDemo.Validate(ctx, eventTypeCode, intent, schemaVersion, payload)
 	default:
 		return episodes.ErrInvalidRequest
 	}
