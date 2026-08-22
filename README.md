@@ -19,6 +19,9 @@ light, dark, and system themes.
 See the [current project status](doc/project-status.md) for completed work,
 validation results, current gates, and next steps.
 
+For a repeatable clinic walkthrough, reset the synthetic database and follow
+the [demo walkthrough](doc/demo-walkthrough.md).
+
 The first planned walking skeleton is:
 
 ```text

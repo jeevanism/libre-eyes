@@ -1,4 +1,4 @@
-.PHONY: api check db-down db-up dev dev-seed fmt migrate-up spec-check test test-race web-build web-check web-dev web-e2e web-install web-test
+.PHONY: api check db-down db-up demo-reset dev dev-seed fmt migrate-up spec-check test test-race web-build web-check web-dev web-e2e web-install web-test
 
 spec-check:
 	./scripts/validate-slices
@@ -20,6 +20,9 @@ db-down:
 
 dev:
 	./scripts/dev
+
+demo-reset:
+	./scripts/demo-reset
 
 migrate-up:
 	go run ./cmd/migrate up
