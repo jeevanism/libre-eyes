@@ -24,6 +24,7 @@ describe('ExaminationToolNavigation', () => {
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
+    fireEvent.click(screen.getByRole('button', { name: 'Documentation' }))
     fireEvent.click(screen.getByRole('button', { name: 'Consent form' }))
     expect(onSelect).toHaveBeenCalledWith('consent')
     expect(toggle).toHaveAttribute('aria-expanded', 'false')

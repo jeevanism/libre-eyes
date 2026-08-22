@@ -423,11 +423,14 @@ a:focus-visible {
 .examination-workspace-heading p { margin: 0 0 3px; color: var(--text-subtle); font-size: 12px; font-weight: 700; text-transform: uppercase; }
 .examination-workspace-heading h3 { margin: 0; color: var(--text-primary); font-size: 17px; }
 .examination-tool-layout { display: grid; grid-template-columns: minmax(190px, 220px) minmax(0, 1fr); gap: 22px; align-items: start; }
-.examination-tool-rail { position: sticky; top: 16px; min-width: 0; padding-right: 14px; border-right: 1px solid var(--border-subtle); }
+.examination-tool-rail { position: sticky; top: 16px; min-width: 0; max-height: calc(100vh - 32px); overflow-y: auto; padding-right: 14px; border-right: 1px solid var(--border-subtle); scrollbar-width: thin; }
 .examination-tool-rail-heading { display: flex; align-items: center; gap: 7px; margin: 0 0 14px; color: var(--text-secondary); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .examination-tool-rail nav { display: grid; gap: 14px; }
 .examination-tool-group { display: grid; gap: 5px; }
-.examination-tool-group h4 { margin: 0; padding: 0 9px; color: var(--text-subtle); font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.examination-tool-group-toggle { display: flex; width: 100%; min-height: 30px; align-items: center; justify-content: space-between; padding: 4px 9px; border: 0; color: var(--text-subtle); text-align: left; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; background: transparent; }
+.examination-tool-group-toggle:hover { color: var(--text-primary); background: var(--surface-subtle); }
+.examination-tool-group-chevron { transition: transform .16s ease; }
+.examination-tool-group-toggle[aria-expanded="true"] .examination-tool-group-chevron { transform: rotate(180deg); }
 .examination-tool-group ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .examination-tool-link { display: flex; width: 100%; min-height: 38px; align-items: center; gap: 8px; padding: 8px 9px; border: 1px solid transparent; border-radius: 5px; color: var(--text-secondary); text-align: left; font-size: 13px; font-weight: 700; background: transparent; }
 .examination-tool-link:hover { color: var(--text-primary); background: var(--surface-subtle); }
@@ -450,7 +453,7 @@ a:focus-visible {
   .examination-page-title { align-items: flex-start; flex-direction: column; }
   .examination-tool-layout { grid-template-columns: 1fr; gap: 12px; }
   .examination-tool-drawer-toggle { display: inline-flex; justify-self: start; }
-  .examination-tool-rail { display: none; position: static; padding: 12px 0 0; border-right: 0; border-top: 1px solid var(--border-subtle); }
+  .examination-tool-rail { display: none; position: static; max-height: min(70vh, 620px); padding: 12px 0 0; border-right: 0; border-top: 1px solid var(--border-subtle); }
   .examination-tool-rail-open { display: block; }
   .examination-tool-rail nav { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 }

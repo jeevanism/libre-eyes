@@ -1,4 +1,4 @@
-import { ChevronRight, Menu, Stethoscope, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Menu, Stethoscope, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 
 import { examinationToolGroups, type ExaminationTool } from './examinationNavigation'
@@ -10,6 +10,8 @@ interface ExaminationToolNavigationProps {
 
 export function ExaminationToolNavigation({ selectedTool, onSelect }: ExaminationToolNavigationProps) {
   const [open, setOpen] = useState(false)
+  const selectedGroup = examinationToolGroups.find((group) => group.items.some((tool) => tool.id === selectedTool))?.id ?? 'measurements'
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([selectedGroup])
   const drawerID = useId().replace(/[:]/g, '')
   const toggleRef = useRef<HTMLButtonElement>(null)
 
@@ -26,8 +28,18 @@ export function ExaminationToolNavigation({ selectedTool, onSelect }: Examinatio
   }, [open])
 
   function selectTool(tool: ExaminationTool) {
+    const groupID = examinationToolGroups.find((group) => group.items.some((item) => item.id === tool))?.id
+    if (groupID) {
+      setExpandedGroups((current) => current.includes(groupID) ? current : [...current, groupID])
+    }
     onSelect(tool)
     setOpen(false)
+  }
+
+  function toggleGroup(groupID: string) {
+    setExpandedGroups((current) => current.includes(groupID)
+      ? current.filter((id) => id !== groupID)
+      : [...current, groupID])
   }
 
   return (
@@ -51,8 +63,17 @@ export function ExaminationToolNavigation({ selectedTool, onSelect }: Examinatio
         <nav aria-label="Examination tool navigation">
           {examinationToolGroups.map((group) => (
             <section className="examination-tool-group" key={group.id}>
-              <h4>{group.label}</h4>
-              <ul>
+              <button
+                aria-controls={`${drawerID}-${group.id}`}
+                aria-expanded={expandedGroups.includes(group.id)}
+                className="examination-tool-group-toggle"
+                onClick={() => toggleGroup(group.id)}
+                type="button"
+              >
+                <span>{group.label}</span>
+                <ChevronDown className="examination-tool-group-chevron" size={14} aria-hidden="true" />
+              </button>
+              {expandedGroups.includes(group.id) && <ul id={`${drawerID}-${group.id}`}>
                 {group.items.map(({ id, label, Icon }) => (
                   <li key={id}>
                     <button
@@ -67,7 +88,7 @@ export function ExaminationToolNavigation({ selectedTool, onSelect }: Examinatio
                     </button>
                   </li>
                 ))}
-              </ul>
+              </ul>}
             </section>
           ))}
         </nav>
