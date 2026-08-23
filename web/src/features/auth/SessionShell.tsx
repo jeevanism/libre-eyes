@@ -52,7 +52,7 @@ export function SessionShell({ session, children }: SessionShellProps) {
         <Link to="/clinic-flow"><ClipboardList size={16} aria-hidden="true" />Clinic flow</Link>
         <Link to="/theatre-booking"><CalendarDays size={16} aria-hidden="true" />Theatre schedule</Link>
         <Link to="/referral-appointments"><CalendarPlus size={16} aria-hidden="true" />Referrals</Link>
-        <Link to="/admin"><ShieldCheck size={16} aria-hidden="true" />Admin</Link>
+        {session.permissions.includes('admin.development.read') && <Link to="/admin"><ShieldCheck size={16} aria-hidden="true" />Admin</Link>}
       </nav>
       <main className="workspace">{children}</main>
     </div>

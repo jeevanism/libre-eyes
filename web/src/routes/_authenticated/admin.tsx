@@ -16,6 +16,9 @@ function AdminPage() {
   const queryClient = useQueryClient()
   const userMutation = useMutation({ mutationFn: ({ id, version, active }: { id: string; version: number; active: boolean }) => adminAPI.setUserActive(id, version, active, session?.csrfToken ?? ''), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }) })
   const settingMutation = useMutation({ mutationFn: ({ key, value, version }: { key: string; value: string; version: number }) => adminAPI.updateSetting(key, value, version, session?.csrfToken ?? ''), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }) })
+  if (!session?.permissions.includes('admin.development.read')) {
+    return <div className="admin-workspace"><div className="workspace-title"><p>Administration demonstration</p><h1>Access restricted</h1><span>Your current role cannot view administration settings.</span></div></div>
+  }
 
   return <div className="admin-workspace">
     <div className="workspace-title"><p>Administration demonstration</p><h1>Admin &amp; configuration</h1><span>Seeded synthetic settings and users only. No production records are changed.</span></div>

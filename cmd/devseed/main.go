@@ -92,6 +92,28 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// Keep the seeded organization rich enough to demonstrate context-aware
+	// administration while the login seed remains focused on one active site.
+	if _, err := findOrInsert(ctx, tx,
+		"SELECT id FROM sites WHERE institution_id = $1 AND name = $2",
+		"INSERT INTO sites (institution_id, name) VALUES ($1, $2) RETURNING id",
+		institutionID, "Development Imaging Site"); err != nil {
+		return err
+	}
+	if _, err := findOrInsert(ctx, tx,
+		"SELECT id FROM sites WHERE institution_id = $1 AND name = $2",
+		"INSERT INTO sites (institution_id, name) VALUES ($1, $2) RETURNING id",
+		institutionID, "Development Retina Clinic"); err != nil {
+		return err
+	}
+	for _, name := range []string{"Development Retina", "Development Glaucoma"} {
+		if _, err := findOrInsert(ctx, tx,
+			"SELECT id FROM firms WHERE institution_id = $1 AND name = $2",
+			"INSERT INTO firms (institution_id, name) VALUES ($1, $2) RETURNING id",
+			institutionID, name); err != nil {
+			return err
+		}
+	}
 	profileID, err := findOrInsert(ctx, tx,
 		"SELECT id FROM authentication_profiles WHERE institution_id = $1 AND method = 'LOCAL' AND name = $2",
 		"INSERT INTO authentication_profiles (institution_id, method, name) VALUES ($1, 'LOCAL', $2) RETURNING id",
@@ -183,7 +205,7 @@ func run(ctx context.Context) error {
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO user_role_assignments (user_id, role_id, role_scope, institution_id)
 		SELECT $1, id, scope, $2 FROM roles
-		WHERE name IN ('VisionOpus User', 'Development Patient Search Tester')
+		WHERE name IN ('VisionOpus User', 'Development Patient Search Tester', 'Institution Administrator')
 		ON CONFLICT (user_id, role_id, institution_id) DO UPDATE SET active = TRUE`, userID, institutionID); err != nil {
 		return fmt.Errorf("upsert development roles: %w", err)
 	}
@@ -412,7 +434,7 @@ func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO role_permissions (role_id, permission_id, active)
 		SELECT r.id, p.id, TRUE FROM roles r CROSS JOIN permissions p
-		WHERE r.name = 'Development Patient Search Tester'
+		WHERE r.name = 'Institution Administrator'
 		  AND p.name IN ('admin.development.read','admin.development.manage')
 		ON CONFLICT (role_id, permission_id) DO UPDATE SET active = TRUE`); err != nil {
 		return fmt.Errorf("grant development admin permissions: %w", err)
@@ -426,7 +448,7 @@ func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID
 		return fmt.Errorf("seed development admin users: %w", err)
 	}
 	for key, value := range map[string]string{"default_site": "Development Eye Clinic", "default_firm": "Development Ophthalmology", "appointment_slot_minutes": "30", "demo_retention_days": "7"} {
-		if _, err := tx.Exec(ctx, `INSERT INTO development_admin_settings (key,institution_id,value) VALUES ($1,$2,$3) ON CONFLICT (key) DO UPDATE SET institution_id=EXCLUDED.institution_id,value=EXCLUDED.value,updated_at=now()`, key, institutionID, value); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO development_admin_settings (key,institution_id,value) VALUES ($1,$2,$3) ON CONFLICT (institution_id,key) DO UPDATE SET value=EXCLUDED.value,updated_at=now()`, key, institutionID, value); err != nil {
 			return fmt.Errorf("seed development admin setting: %w", err)
 		}
 	}
