@@ -350,11 +350,50 @@ func run(ctx context.Context) error {
 	if err := seedDevelopmentAdmin(ctx, tx, institutionID, userID); err != nil {
 		return err
 	}
+	if err := seedDemoLoginUsers(ctx, tx, institutionID, siteID, firmID, profileID, passwordHash); err != nil {
+		return err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit development seed: %w", err)
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "seeded synthetic user %q for institution %d, site %d, firm %d\n", username, institutionID, siteID, firmID)
+	return nil
+}
+
+func seedDemoLoginUsers(ctx context.Context, tx pgx.Tx, institutionID, siteID, firmID, profileID int64, passwordHash string) error {
+	for i := 1; i <= 5; i++ {
+		username := fmt.Sprintf("demo-user-%d", i)
+		displayName := fmt.Sprintf("Demo User %d", i)
+		userID, err := findOrInsert(ctx, tx,
+			"SELECT id FROM users WHERE display_name = $1 ORDER BY id LIMIT 1",
+			"INSERT INTO users (display_name) VALUES ($1) RETURNING id", displayName)
+		if err != nil {
+			return fmt.Errorf("seed %s user: %w", username, err)
+		}
+		if _, err := tx.Exec(ctx, `UPDATE users SET active=TRUE, updated_at=now() WHERE id=$1`, userID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO user_credentials (user_id,authentication_profile_id,canonical_username,password_hash,hash_scheme,hash_version) VALUES ($1,$2,$3,$4,'argon2id',19) ON CONFLICT (canonical_username) DO UPDATE SET user_id=EXCLUDED.user_id,authentication_profile_id=EXCLUDED.authentication_profile_id,password_hash=EXCLUDED.password_hash,state='active',failed_attempts=0,soft_locked_until=NULL,active=TRUE,version=user_credentials.version+1,updated_at=now()`, userID, profileID, username, passwordHash); err != nil {
+			return fmt.Errorf("seed %s credential: %w", username, err)
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO user_institution_memberships (user_id,institution_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, userID, institutionID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO user_site_memberships (user_id,site_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, userID, siteID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO user_firm_memberships (user_id,firm_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, userID, firmID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO user_role_assignments (user_id,role_id,role_scope,institution_id) SELECT $1,id,scope,$2 FROM roles WHERE name IN ('VisionOpus User','Development Patient Search Tester') ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE`, userID, institutionID); err != nil {
+			return fmt.Errorf("seed %s roles: %w", username, err)
+		}
+		publicID := fmt.Sprintf("90000000-0000-4000-8000-%012d", i+10)
+		if _, err := tx.Exec(ctx, `INSERT INTO development_admin_users (public_id,institution_id,user_id,username,display_name,role_code) VALUES ($1::uuid,$2,$3,$4,$5,'clinical_user') ON CONFLICT (public_id) DO UPDATE SET institution_id=EXCLUDED.institution_id,user_id=EXCLUDED.user_id,username=EXCLUDED.username,display_name=EXCLUDED.display_name,active=TRUE,version=development_admin_users.version+1,updated_at=now()`, publicID, institutionID, userID, username, displayName); err != nil {
+			return fmt.Errorf("seed %s admin profile: %w", username, err)
+		}
+	}
 	return nil
 }
 
