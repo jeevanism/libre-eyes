@@ -8,15 +8,15 @@ import { sessionQuery } from '../../features/auth/queries'
 export const Route = createFileRoute('/_authenticated/admin')({ component: AdminPage })
 
 function AdminPage() {
-  const { data: users = [] } = useQuery({ queryKey: ['admin', 'users'], queryFn: adminAPI.users })
-  const { data: contexts } = useQuery({ queryKey: ['admin', 'contexts'], queryFn: adminAPI.contexts })
-  const { data: settings = [] } = useQuery({ queryKey: ['admin', 'settings'], queryFn: adminAPI.settings })
-  const { data: audit = [] } = useQuery({ queryKey: ['admin', 'audit'], queryFn: adminAPI.audit })
+  const { data: users = [], isError: usersError } = useQuery({ queryKey: ['admin', 'users'], queryFn: adminAPI.users })
+  const { data: contexts, isError: contextsError } = useQuery({ queryKey: ['admin', 'contexts'], queryFn: adminAPI.contexts })
+  const { data: settings = [], isError: settingsError } = useQuery({ queryKey: ['admin', 'settings'], queryFn: adminAPI.settings })
+  const { data: audit = [], isError: auditError } = useQuery({ queryKey: ['admin', 'audit'], queryFn: adminAPI.audit })
   const { data: session } = useQuery(sessionQuery)
   const queryClient = useQueryClient()
   const userMutation = useMutation({ mutationFn: ({ id, version, active }: { id: string; version: number; active: boolean }) => adminAPI.setUserActive(id, version, active, session?.csrfToken ?? ''), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }) })
   const settingMutation = useMutation({ mutationFn: ({ key, value, version }: { key: string; value: string; version: number }) => adminAPI.updateSetting(key, value, version, session?.csrfToken ?? ''), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }) })
-  if (!session?.permissions.includes('admin.development.read')) {
+  if (!session?.permissions.includes('admin.development.read') || usersError || contextsError || settingsError || auditError) {
     return <div className="admin-workspace"><div className="workspace-title"><p>Administration demonstration</p><h1>Access restricted</h1><span>Your current role cannot view administration settings.</span></div></div>
   }
 
