@@ -411,6 +411,18 @@ func seedDemoLoginUsers(ctx context.Context, tx pgx.Tx, institutionID, siteID, f
 		if _, err := tx.Exec(ctx, `INSERT INTO user_role_assignments (user_id,role_id,role_scope,institution_id) SELECT $1,id,scope,$2 FROM roles WHERE name IN ('VisionOpus User','Development Patient Search Tester') ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE`, userID, institutionID); err != nil {
 			return fmt.Errorf("seed %s roles: %w", username, err)
 		}
+		// Keep demo login accounts clinical-only even when an older seed assigned
+		// an administrator role before the RBAC boundary was tightened.
+		if _, err := tx.Exec(ctx, `
+			UPDATE user_role_assignments ura
+			SET active = FALSE
+			FROM roles r
+			WHERE ura.role_id = r.id
+			  AND ura.user_id = $1
+			  AND ura.institution_id = $2
+			  AND r.name IN ('Institution Administrator', 'System Administrator')`, userID, institutionID); err != nil {
+			return fmt.Errorf("remove %s administrator roles: %w", username, err)
+		}
 		publicID := fmt.Sprintf("90000000-0000-4000-8000-%012d", i+10)
 		if _, err := tx.Exec(ctx, `INSERT INTO development_admin_users (public_id,institution_id,user_id,username,display_name,role_code) VALUES ($1::uuid,$2,$3,$4,$5,'clinical_user') ON CONFLICT (public_id) DO UPDATE SET institution_id=EXCLUDED.institution_id,user_id=EXCLUDED.user_id,username=EXCLUDED.username,display_name=EXCLUDED.display_name,active=TRUE,version=development_admin_users.version+1,updated_at=now()`, publicID, institutionID, userID, username, displayName); err != nil {
 			return fmt.Errorf("seed %s admin profile: %w", username, err)
