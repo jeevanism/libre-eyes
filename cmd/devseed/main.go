@@ -359,6 +359,17 @@ func run(ctx context.Context) error {
 }
 
 func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID int64) error {
+	clinicalUserID, err := findOrInsert(ctx, tx,
+		"SELECT id FROM users WHERE display_name = $1 ORDER BY id LIMIT 1",
+		"INSERT INTO users (display_name) VALUES ($1) RETURNING id",
+		"Demo Clinical User",
+	)
+	if err != nil {
+		return fmt.Errorf("seed development clinical admin user: %w", err)
+	}
+	if _, err := tx.Exec(ctx, "UPDATE users SET active = TRUE, updated_at = now() WHERE id = $1", clinicalUserID); err != nil {
+		return fmt.Errorf("activate development clinical admin user: %w", err)
+	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO role_permissions (role_id, permission_id, active)
 		SELECT r.id, p.id, TRUE FROM roles r CROSS JOIN permissions p
@@ -371,8 +382,8 @@ func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID
 		INSERT INTO development_admin_users (public_id, institution_id, user_id, username, display_name, role_code)
 		VALUES
 		 ('90000000-0000-4000-8000-000000000001',$1,$2,'admin.demo','Demo Institution Administrator','institution_administrator'),
-		 ('90000000-0000-4000-8000-000000000002',$1,$2,'clinical.demo','Demo Clinical User','clinical_user')
-		ON CONFLICT (public_id) DO UPDATE SET institution_id=EXCLUDED.institution_id,user_id=EXCLUDED.user_id,display_name=EXCLUDED.display_name,active=TRUE,version=development_admin_users.version+1,updated_at=now()`, institutionID, actorID); err != nil {
+		 ('90000000-0000-4000-8000-000000000002',$1,$3,'clinical.demo','Demo Clinical User','clinical_user')
+		ON CONFLICT (public_id) DO UPDATE SET institution_id=EXCLUDED.institution_id,user_id=EXCLUDED.user_id,display_name=EXCLUDED.display_name,active=TRUE,version=development_admin_users.version+1,updated_at=now()`, institutionID, actorID, clinicalUserID); err != nil {
 		return fmt.Errorf("seed development admin users: %w", err)
 	}
 	for key, value := range map[string]string{"default_site": "Development Eye Clinic", "default_firm": "Development Ophthalmology", "appointment_slot_minutes": "30", "demo_retention_days": "7"} {
