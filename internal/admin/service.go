@@ -126,4 +126,63 @@ func (s *Service) Audit(ctx context.Context, a Authorization) ([]AuditEvent, err
 	return out, rows.Err()
 }
 
+func (s *Service) SetUserActive(ctx context.Context, a Authorization, cmd UserCommand) (User, error) {
+	if cmd.PublicID == "" || cmd.ExpectedVersion < 1 {
+		return User{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return User{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var u User
+	err = tx.QueryRow(ctx, `UPDATE development_admin_users SET active=$1, version=version+1, updated_at=now() WHERE public_id=$2::uuid AND institution_id=$3 AND version=$4 RETURNING public_id::text,username,display_name,role_code,active,version`, cmd.Active, cmd.PublicID, a.principal.InstitutionID, cmd.ExpectedVersion).Scan(&u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Active, &u.Version)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return User{}, ErrConflict
+	}
+	if err != nil {
+		return User{}, err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_public_id,changed_fields,outcome,correlation_id) VALUES($1,$2,$3,'user',$4::uuid,'["active"]'::jsonb,'success',$5)`, a.principal.UserID, a.principal.InstitutionID, "user.active", cmd.PublicID, a.metadata.CorrelationID); err != nil {
+		return User{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
+
+func (s *Service) UpdateSetting(ctx context.Context, a Authorization, in SettingUpdate) (Setting, error) {
+	if in.ExpectedVersion < 1 || in.Key == "" || in.Value == "" || !validSettingKey(in.Key) {
+		return Setting{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return Setting{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var out Setting
+	err = tx.QueryRow(ctx, `UPDATE development_admin_settings SET value=$1,version=version+1,updated_at=now() WHERE key=$2 AND institution_id=$3 AND version=$4 RETURNING key,value,version`, in.Value, in.Key, a.principal.InstitutionID, in.ExpectedVersion).Scan(&out.Key, &out.Value, &out.Version)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Setting{}, ErrConflict
+	}
+	if err != nil {
+		return Setting{}, err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,changed_fields,outcome,correlation_id) VALUES($1,$2,'setting.update','setting','["value"]'::jsonb,'success',$3)`, a.principal.UserID, a.principal.InstitutionID, a.metadata.CorrelationID); err != nil {
+		return Setting{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return Setting{}, err
+	}
+	return out, nil
+}
+func validSettingKey(k string) bool {
+	switch k {
+	case "default_site", "default_firm", "appointment_slot_minutes", "demo_retention_days":
+		return true
+	}
+	return false
+}
+
 var _ = pgx.ErrNoRows

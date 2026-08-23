@@ -16,6 +16,8 @@ type Service interface {
 	Contexts(context.Context, admin.Authorization) (admin.Contexts, error)
 	Settings(context.Context, admin.Authorization) ([]admin.Setting, error)
 	Audit(context.Context, admin.Authorization) ([]admin.AuditEvent, error)
+	SetUserActive(context.Context, admin.Authorization, admin.UserCommand) (admin.User, error)
+	UpdateSetting(context.Context, admin.Authorization, admin.SettingUpdate) (admin.Setting, error)
 }
 type Handler struct {
 	service      Service
@@ -28,6 +30,65 @@ func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/admin/contexts", h.contexts)
 	m.HandleFunc("GET /api/v1/admin/settings", h.settings)
 	m.HandleFunc("GET /api/v1/admin/audit", h.audit)
+	m.HandleFunc("POST /api/v1/admin/users/{userId}/deactivate", h.userCommand(false))
+	m.HandleFunc("POST /api/v1/admin/users/{userId}/reactivate", h.userCommand(true))
+	m.HandleFunc("PATCH /api/v1/admin/settings", h.updateSetting)
+}
+
+func (h *Handler) userCommand(active bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		a, ok := h.auth(w, r, true)
+		if !ok {
+			return
+		}
+		var b struct {
+			ExpectedVersion int64 `json:"expectedVersion"`
+		}
+		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&b) != nil {
+			http.Error(w, "invalid request", 400)
+			return
+		}
+		u, err := h.service.SetUserActive(r.Context(), a, admin.UserCommand{PublicID: r.PathValue("userId"), ExpectedVersion: b.ExpectedVersion, Active: active})
+		if err == admin.ErrConflict {
+			http.Error(w, "conflict", 409)
+			return
+		}
+		if err != nil {
+			http.Error(w, "request failed", 400)
+			return
+		}
+		writeJSON(w, u)
+	}
+}
+func (h *Handler) updateSetting(w http.ResponseWriter, r *http.Request) {
+	a, ok := h.auth(w, r, true)
+	if !ok {
+		return
+	}
+	var b struct {
+		Key             string `json:"key"`
+		Value           string `json:"value"`
+		ExpectedVersion int64  `json:"expectedVersion"`
+	}
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&b) != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	v, err := h.service.UpdateSetting(r.Context(), a, admin.SettingUpdate{Key: b.Key, Value: b.Value, ExpectedVersion: b.ExpectedVersion})
+	if err == admin.ErrConflict {
+		http.Error(w, "conflict", 409)
+		return
+	}
+	if err != nil {
+		http.Error(w, "request failed", 400)
+		return
+	}
+	writeJSON(w, v)
+}
+func writeJSON(w http.ResponseWriter, v any) {
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(v)
 }
 func (h *Handler) auth(w http.ResponseWriter, r *http.Request, write bool) (admin.Authorization, bool) {
 	c, err := r.Cookie("visionopus_session")

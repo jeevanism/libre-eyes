@@ -286,6 +286,8 @@ export const adminAPI = {
   contexts: () => request<AdminContexts>('/admin/contexts'),
   settings: () => request<AdminSetting[]>('/admin/settings'),
   audit: () => request<AdminAuditEvent[]>('/admin/audit'),
+  setUserActive: (id: string, expectedVersion: number, active: boolean, csrfToken: string) => request<AdminUser>(`/admin/users/${id}/${active ? 'reactivate' : 'deactivate'}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ expectedVersion }) }),
+  updateSetting: (key: string, value: string, expectedVersion: number, csrfToken: string) => request<AdminSetting>('/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ key, value, expectedVersion }) }),
 }
 
 export const patientSearchAPI = {

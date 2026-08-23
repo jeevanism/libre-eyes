@@ -10,6 +10,7 @@ const (
 var (
 	ErrInvalidRequest = errors.New("invalid administration request")
 	ErrForbidden      = errors.New("administration permission denied")
+	ErrConflict       = errors.New("administration row changed")
 )
 
 type User struct {
@@ -41,4 +42,14 @@ type AuditEvent struct {
 	TargetType    string   `json:"targetType"`
 	ChangedFields []string `json:"changedFields"`
 	Outcome       string   `json:"outcome"`
+}
+
+type UserCommand struct {
+	PublicID        string
+	ExpectedVersion int64
+	Active          bool
+}
+type SettingUpdate struct {
+	Key, Value      string
+	ExpectedVersion int64
 }
