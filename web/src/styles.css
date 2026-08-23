@@ -85,6 +85,15 @@ body {
 .admin-user-form strong, .admin-user-form > span { grid-column: 1 / -1; }
 .admin-user-form label { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 600; }
 .admin-user-form input, .admin-user-form select { min-width: 0; padding: 7px 8px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); }
+.admin-audit-panel { grid-column: 1 / -1; }
+.admin-audit-list { display: grid; gap: 10px; }
+.admin-audit-event { border-top: 1px solid var(--border-subtle); padding-top: 12px; }
+.admin-audit-event > div { display: flex; align-items: center; gap: 10px; }
+.admin-audit-event p { margin: 6px 0 0; }
+.admin-audit-event small { color: var(--text-subtle); display: block; margin-top: 8px; }
+.audit-outcome { border-radius: 4px; font-size: 0.78rem; padding: 2px 6px; text-transform: capitalize; }
+.audit-success { background: var(--surface-success); color: var(--success); }
+.audit-failure, .audit-denied { background: var(--surface-danger); color: var(--danger); }
 .admin-row small { display: block; margin-top: 3px; color: var(--text-secondary); font-size: 0.75rem; font-weight: 400; text-transform: none; }
 .admin-row input { width: 100%; min-width: 120px; padding: 6px 8px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); }
 @media (max-width: 800px) { .admin-workspace { padding: 18px; } .admin-grid { grid-template-columns: 1fr; } }

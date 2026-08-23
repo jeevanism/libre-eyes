@@ -185,7 +185,18 @@ func (s *Service) Settings(ctx context.Context, a Authorization) ([]Setting, err
 	return out, rows.Err()
 }
 func (s *Service) Audit(ctx context.Context, a Authorization) ([]AuditEvent, error) {
-	rows, err := s.pool.Query(ctx, `SELECT command,target_type,changed_fields,outcome FROM development_admin_audit WHERE institution_id=$1 ORDER BY created_at DESC,id DESC LIMIT 100`, a.principal.InstitutionID)
+	rows, err := s.pool.Query(ctx, `
+		SELECT a.actor_user_id, u.display_name, a.command, a.target_type,
+		       a.target_public_id::text, a.target_key, target_user.display_name,
+		       a.changed_fields, a.outcome,
+		       a.correlation_id, a.created_at
+		FROM development_admin_audit a
+		JOIN users u ON u.id=a.actor_user_id
+		LEFT JOIN development_admin_users target_admin ON target_admin.public_id=a.target_public_id
+		LEFT JOIN users target_user ON target_user.id=target_admin.user_id
+		WHERE a.institution_id=$1
+		ORDER BY a.created_at DESC,a.id DESC
+		LIMIT 100`, a.principal.InstitutionID)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +205,7 @@ func (s *Service) Audit(ctx context.Context, a Authorization) ([]AuditEvent, err
 	for rows.Next() {
 		var v AuditEvent
 		var raw []byte
-		if err := rows.Scan(&v.Command, &v.TargetType, &raw, &v.Outcome); err != nil {
+		if err := rows.Scan(&v.ActorUserID, &v.ActorDisplayName, &v.Command, &v.TargetType, &v.TargetPublicID, &v.TargetKey, &v.TargetDisplayName, &raw, &v.Outcome, &v.CorrelationID, &v.CreatedAt); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal(raw, &v.ChangedFields)

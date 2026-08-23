@@ -180,7 +180,7 @@ export type AdminUser = { id: string; username: string; displayName: string; rol
 export type AdminReference = { id: number; name: string }
 export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
 export type AdminSetting = { key: string; value: string; version: number }
-export type AdminAuditEvent = { command: string; targetType: string; changedFields: string[]; outcome: string }
+export type AdminAuditEvent = { actorUserId: number; actorDisplayName: string; command: string; targetType: string; targetPublicId?: string; targetKey?: string; targetDisplayName?: string; changedFields: string[]; outcome: string; correlationId: string; createdAt: string }
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null

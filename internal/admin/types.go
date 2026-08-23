@@ -1,6 +1,9 @@
 package admin
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 const (
 	PermissionRead   = "admin.development.read"
@@ -41,10 +44,17 @@ type Setting struct {
 	Version int64  `json:"version"`
 }
 type AuditEvent struct {
-	Command       string   `json:"command"`
-	TargetType    string   `json:"targetType"`
-	ChangedFields []string `json:"changedFields"`
-	Outcome       string   `json:"outcome"`
+	ActorUserID       int64     `json:"actorUserId"`
+	ActorDisplayName  string    `json:"actorDisplayName"`
+	Command           string    `json:"command"`
+	TargetType        string    `json:"targetType"`
+	TargetPublicID    *string   `json:"targetPublicId,omitempty"`
+	TargetKey         *string   `json:"targetKey,omitempty"`
+	TargetDisplayName *string   `json:"targetDisplayName,omitempty"`
+	ChangedFields     []string  `json:"changedFields"`
+	Outcome           string    `json:"outcome"`
+	CorrelationID     string    `json:"correlationId"`
+	CreatedAt         time.Time `json:"createdAt"`
 }
 
 type UserCommand struct {
