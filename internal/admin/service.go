@@ -42,6 +42,21 @@ func (s *Service) Authorize(ctx context.Context, token, csrf string, metadata au
 	if err != nil {
 		return Authorization{}, err
 	}
+	// Keep the administration boundary explicit in addition to the generic
+	// permission check. This prevents stale or over-broad role permissions
+	// from granting clinical users access to the admin workspace.
+	var role string
+	if err := s.pool.QueryRow(ctx, `
+		SELECT role_code
+		FROM development_admin_users
+		WHERE user_id=$1 AND institution_id=$2 AND active
+		  AND role_code IN ('system_administrator','institution_administrator')
+		LIMIT 1`, p.UserID, p.InstitutionID).Scan(&role); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Authorization{}, ErrForbidden
+		}
+		return Authorization{}, fmt.Errorf("check administration role: %w", err)
+	}
 	return Authorization{principal: p, metadata: metadata, service: s}, nil
 }
 func (s *Service) Users(ctx context.Context, a Authorization) ([]User, error) {
