@@ -169,7 +169,7 @@ func (s *Service) UpdateSetting(ctx context.Context, a Authorization, in Setting
 	if err != nil {
 		return Setting{}, err
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,changed_fields,outcome,correlation_id) VALUES($1,$2,'setting.update','setting','["value"]'::jsonb,'success',$3)`, a.principal.UserID, a.principal.InstitutionID, a.metadata.CorrelationID); err != nil {
+	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_key,changed_fields,outcome,correlation_id) VALUES($1,$2,'setting.update','setting',$3,'["value"]'::jsonb,'success',$4)`, a.principal.UserID, a.principal.InstitutionID, in.Key, a.metadata.CorrelationID); err != nil {
 		return Setting{}, err
 	}
 	if err = tx.Commit(ctx); err != nil {
