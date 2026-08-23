@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedClinicFlowRouteImport } from './routes/_authenticated/clinic-flow'
 import { Route as AuthenticatedReferralAppointmentsRouteImport } from './routes/_authenticated/referral-appointments'
 import { Route as AuthenticatedTheatreBookingRouteImport } from './routes/_authenticated/theatre-booking'
@@ -32,6 +33,11 @@ const LoginRoute = LoginRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedClinicFlowRoute = AuthenticatedClinicFlowRouteImport.update({
@@ -79,6 +85,7 @@ const AuthenticatedPatientsPatientIdExaminationRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/clinic-flow': typeof AuthenticatedClinicFlowRoute
   '/referral-appointments': typeof AuthenticatedReferralAppointmentsRoute
   '/theatre-booking': typeof AuthenticatedTheatreBookingRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/clinic-flow': typeof AuthenticatedClinicFlowRoute
   '/referral-appointments': typeof AuthenticatedReferralAppointmentsRoute
   '/theatre-booking': typeof AuthenticatedTheatreBookingRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/clinic-flow': typeof AuthenticatedClinicFlowRoute
   '/_authenticated/referral-appointments': typeof AuthenticatedReferralAppointmentsRoute
   '/_authenticated/theatre-booking': typeof AuthenticatedTheatreBookingRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/admin'
     | '/clinic-flow'
     | '/referral-appointments'
     | '/theatre-booking'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/admin'
     | '/clinic-flow'
     | '/referral-appointments'
     | '/theatre-booking'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/admin'
     | '/_authenticated/clinic-flow'
     | '/_authenticated/referral-appointments'
     | '/_authenticated/theatre-booking'
@@ -172,6 +184,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/clinic-flow': {
@@ -245,6 +264,7 @@ const AuthenticatedPatientsPatientIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedClinicFlowRoute: typeof AuthenticatedClinicFlowRoute
   AuthenticatedReferralAppointmentsRoute: typeof AuthenticatedReferralAppointmentsRoute
   AuthenticatedTheatreBookingRoute: typeof AuthenticatedTheatreBookingRoute
@@ -254,6 +274,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedClinicFlowRoute: AuthenticatedClinicFlowRoute,
   AuthenticatedReferralAppointmentsRoute:
     AuthenticatedReferralAppointmentsRoute,

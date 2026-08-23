@@ -176,6 +176,11 @@ export type DevelopmentReferralAppointment = {
   version: number
   retentionKind?: 'autosave' | 'manual'
 }
+export type AdminUser = { id: string; username: string; displayName: string; role: string; active: boolean; version: number }
+export type AdminReference = { id: number; name: string }
+export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
+export type AdminSetting = { key: string; value: string; version: number }
+export type AdminAuditEvent = { command: string; targetType: string; changedFields: string[]; outcome: string }
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null
@@ -274,6 +279,13 @@ export const authAPI = {
       },
       body: JSON.stringify(body),
     }),
+}
+
+export const adminAPI = {
+  users: () => request<AdminUser[]>('/admin/users'),
+  contexts: () => request<AdminContexts>('/admin/contexts'),
+  settings: () => request<AdminSetting[]>('/admin/settings'),
+  audit: () => request<AdminAuditEvent[]>('/admin/audit'),
 }
 
 export const patientSearchAPI = {

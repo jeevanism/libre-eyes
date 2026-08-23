@@ -11,6 +11,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jeevanism/visionopus/internal/admin"
+	adminhttp "github.com/jeevanism/visionopus/internal/admin/http"
 	"github.com/jeevanism/visionopus/internal/auth"
 	authhttp "github.com/jeevanism/visionopus/internal/auth/http"
 	"github.com/jeevanism/visionopus/internal/config"
@@ -96,7 +98,12 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	developmentReferralHTTP := referralappointmenthttp.NewHandler(developmentReferral, cfg.CookieSecure)
-	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP, developmentFlowHTTP, developmentTheatreBookingHTTP, developmentReferralHTTP)
+	adminService, err := admin.NewService(database, authentication)
+	if err != nil {
+		return err
+	}
+	adminHTTP := adminhttp.NewHandler(adminService, cfg.CookieSecure)
+	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP, developmentFlowHTTP, developmentTheatreBookingHTTP, developmentReferralHTTP, adminHTTP)
 	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("api listening", "address", cfg.HTTPAddr, "environment", cfg.Environment)

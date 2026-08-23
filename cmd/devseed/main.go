@@ -347,11 +347,39 @@ func run(ctx context.Context) error {
 	if err := seedDevelopmentReferralAppointments(ctx, tx, institutionID, siteID, firmID, userID); err != nil {
 		return err
 	}
+	if err := seedDevelopmentAdmin(ctx, tx, institutionID, userID); err != nil {
+		return err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit development seed: %w", err)
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "seeded synthetic user %q for institution %d, site %d, firm %d\n", username, institutionID, siteID, firmID)
+	return nil
+}
+
+func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID int64) error {
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO role_permissions (role_id, permission_id, active)
+		SELECT r.id, p.id, TRUE FROM roles r CROSS JOIN permissions p
+		WHERE r.name = 'Development Patient Search Tester'
+		  AND p.name IN ('admin.development.read','admin.development.manage')
+		ON CONFLICT (role_id, permission_id) DO UPDATE SET active = TRUE`); err != nil {
+		return fmt.Errorf("grant development admin permissions: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO development_admin_users (public_id, institution_id, user_id, username, display_name, role_code)
+		VALUES
+		 ('90000000-0000-4000-8000-000000000001',$1,$2,'admin.demo','Demo Institution Administrator','institution_administrator'),
+		 ('90000000-0000-4000-8000-000000000002',$1,$2,'clinical.demo','Demo Clinical User','clinical_user')
+		ON CONFLICT (public_id) DO UPDATE SET institution_id=EXCLUDED.institution_id,user_id=EXCLUDED.user_id,display_name=EXCLUDED.display_name,active=TRUE,version=development_admin_users.version+1,updated_at=now()`, institutionID, actorID); err != nil {
+		return fmt.Errorf("seed development admin users: %w", err)
+	}
+	for key, value := range map[string]string{"default_site": "Development Eye Clinic", "default_firm": "Development Ophthalmology", "appointment_slot_minutes": "30", "demo_retention_days": "7"} {
+		if _, err := tx.Exec(ctx, `INSERT INTO development_admin_settings (key,institution_id,value) VALUES ($1,$2,$3) ON CONFLICT (key) DO UPDATE SET institution_id=EXCLUDED.institution_id,value=EXCLUDED.value,updated_at=now()`, key, institutionID, value); err != nil {
+			return fmt.Errorf("seed development admin setting: %w", err)
+		}
+	}
 	return nil
 }
 

@@ -74,6 +74,14 @@ body {
   background: var(--surface-app);
 }
 
+.admin-workspace { max-width: 1280px; margin: 0 auto; padding: 28px; }
+.admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
+.admin-panel { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 18px; }
+.admin-panel h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; }
+.admin-row { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border-subtle); text-transform: capitalize; }
+.muted { color: var(--text-secondary); }
+@media (max-width: 800px) { .admin-workspace { padding: 18px; } .admin-grid { grid-template-columns: 1fr; } }
+
 button,
 input,
 select {
