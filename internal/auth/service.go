@@ -697,6 +697,17 @@ func loadPermissions(ctx context.Context, tx pgx.Tx, userID, institutionID int64
 		JOIN permissions p ON p.id = rp.permission_id AND p.active
 		WHERE ura.user_id = $1 AND ura.active
 			AND (ura.institution_id = $2 OR ura.institution_id IS NULL)
+			AND (
+				p.name NOT LIKE 'admin.development.%'
+				OR EXISTS (
+					SELECT 1
+					FROM development_admin_users dau
+					WHERE dau.user_id = ura.user_id
+					  AND dau.institution_id = $2
+					  AND dau.active
+					  AND dau.role_code IN ('system_administrator','institution_administrator')
+				)
+			)
 		ORDER BY p.name`, userID, institutionID)
 	if err != nil {
 		return nil, fmt.Errorf("load permissions: %w", err)
