@@ -419,7 +419,7 @@ func seedDemoLoginUsers(ctx context.Context, tx pgx.Tx, institutionID, siteID, f
 			FROM roles r
 			WHERE ura.role_id = r.id
 			  AND ura.user_id = $1
-			  AND ura.institution_id = $2
+			  AND (ura.institution_id = $2 OR ura.institution_id IS NULL)
 			  AND r.name IN ('Institution Administrator', 'System Administrator')`, userID, institutionID); err != nil {
 			return fmt.Errorf("remove %s administrator roles: %w", username, err)
 		}
