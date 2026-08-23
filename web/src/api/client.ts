@@ -176,7 +176,7 @@ export type DevelopmentReferralAppointment = {
   version: number
   retentionKind?: 'autosave' | 'manual'
 }
-export type AdminUser = { id: string; username: string; displayName: string; role: string; active: boolean; version: number }
+export type AdminUser = { id: string; username: string; displayName: string; role: string; active: boolean; version: number; permissions: string[]; sites: AdminReference[]; firms: AdminReference[] }
 export type AdminReference = { id: number; name: string }
 export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
 export type AdminSetting = { key: string; value: string; version: number }
@@ -287,6 +287,8 @@ export const adminAPI = {
   settings: () => request<AdminSetting[]>('/admin/settings'),
   audit: () => request<AdminAuditEvent[]>('/admin/audit'),
   setUserActive: (id: string, expectedVersion: number, active: boolean, csrfToken: string) => request<AdminUser>(`/admin/users/${id}/${active ? 'reactivate' : 'deactivate'}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ expectedVersion }) }),
+  createUser: (body: { username: string; displayName: string; password: string; role: string; siteIds: number[]; firmIds: number[] }, csrfToken: string) => request<AdminUser>('/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
+  updateUser: (id: string, body: { username: string; displayName: string; password?: string | undefined; role: string; siteIds: number[]; firmIds: number[]; expectedVersion: number }, csrfToken: string) => request<AdminUser>(`/admin/users/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
   updateSetting: (key: string, value: string, expectedVersion: number, csrfToken: string) => request<AdminSetting>('/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ key, value, expectedVersion }) }),
 }
 

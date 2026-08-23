@@ -102,7 +102,7 @@ func run(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	adminHTTP := adminhttp.NewHandler(adminService, cfg.CookieSecure)
+	adminHTTP := adminhttp.NewHandler(adminService, cfg.CookieSecure, logger)
 	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP, developmentFlowHTTP, developmentTheatreBookingHTTP, developmentReferralHTTP, adminHTTP)
 	serveErr := make(chan error, 1)
 	go func() {

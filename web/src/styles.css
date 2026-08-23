@@ -81,6 +81,11 @@ body {
 .admin-row { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border-subtle); text-transform: capitalize; }
 .muted { color: var(--text-secondary); }
 .small-action { margin-left: 8px; padding: 4px 8px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); }
+.admin-user-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 12px 0 16px; }
+.admin-user-form strong, .admin-user-form > span { grid-column: 1 / -1; }
+.admin-user-form label { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 600; }
+.admin-user-form input, .admin-user-form select { min-width: 0; padding: 7px 8px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); }
+.admin-row small { display: block; margin-top: 3px; color: var(--text-secondary); font-size: 0.75rem; font-weight: 400; text-transform: none; }
 .admin-row input { width: 100%; min-width: 120px; padding: 6px 8px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); }
 @media (max-width: 800px) { .admin-workspace { padding: 18px; } .admin-grid { grid-template-columns: 1fr; } }
 

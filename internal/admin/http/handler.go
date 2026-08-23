@@ -3,16 +3,22 @@ package adminhttp
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jeevanism/visionopus/internal/admin"
 	"github.com/jeevanism/visionopus/internal/auth"
+	"github.com/jeevanism/visionopus/internal/platform/httpx"
 )
 
 type Service interface {
 	Authorize(context.Context, string, string, auth.RequestMetadata, bool) (admin.Authorization, error)
 	Users(context.Context, admin.Authorization) ([]admin.User, error)
+	CreateUser(context.Context, admin.Authorization, admin.UserUpsert) (admin.User, error)
+	UpdateUser(context.Context, admin.Authorization, admin.UserUpsert) (admin.User, error)
 	Contexts(context.Context, admin.Authorization) (admin.Contexts, error)
 	Settings(context.Context, admin.Authorization) ([]admin.Setting, error)
 	Audit(context.Context, admin.Authorization) ([]admin.AuditEvent, error)
@@ -22,17 +28,119 @@ type Service interface {
 type Handler struct {
 	service      Service
 	cookieSecure bool
+	logger       *slog.Logger
 }
 
-func NewHandler(s Service, secure bool) *Handler { return &Handler{service: s, cookieSecure: secure} }
+func NewHandler(s Service, secure bool, loggers ...*slog.Logger) *Handler {
+	logger := slog.Default()
+	if len(loggers) > 0 && loggers[0] != nil {
+		logger = loggers[0]
+	}
+	return &Handler{service: s, cookieSecure: secure, logger: logger}
+}
 func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/admin/users", h.users)
+	m.HandleFunc("POST /api/v1/admin/users", h.createUser)
+	m.HandleFunc("PATCH /api/v1/admin/users/{userId}", h.updateUser)
 	m.HandleFunc("GET /api/v1/admin/contexts", h.contexts)
 	m.HandleFunc("GET /api/v1/admin/settings", h.settings)
 	m.HandleFunc("GET /api/v1/admin/audit", h.audit)
 	m.HandleFunc("POST /api/v1/admin/users/{userId}/deactivate", h.userCommand(false))
 	m.HandleFunc("POST /api/v1/admin/users/{userId}/reactivate", h.userCommand(true))
 	m.HandleFunc("PATCH /api/v1/admin/settings", h.updateSetting)
+}
+
+type userBody struct {
+	Username        string  `json:"username"`
+	DisplayName     string  `json:"displayName"`
+	Password        string  `json:"password"`
+	Role            string  `json:"role"`
+	SiteIDs         []int64 `json:"siteIds"`
+	FirmIDs         []int64 `json:"firmIds"`
+	ExpectedVersion int64   `json:"expectedVersion"`
+}
+
+func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
+	a, ok := h.auth(w, r, true)
+	if !ok {
+		return
+	}
+	var b userBody
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&b) != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	u, err := h.service.CreateUser(r.Context(), a, admin.UserUpsert{Username: b.Username, DisplayName: b.DisplayName, Password: b.Password, Role: b.Role, SiteIDs: b.SiteIDs, FirmIDs: b.FirmIDs})
+	if err == admin.ErrConflict {
+		h.writeProblem(w, r, http.StatusConflict, "The user could not be created because another change won the update.", "conflict", err)
+		return
+	}
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, u)
+}
+
+func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
+	a, ok := h.auth(w, r, true)
+	if !ok {
+		return
+	}
+	var b userBody
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&b) != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	u, err := h.service.UpdateUser(r.Context(), a, admin.UserUpsert{PublicID: r.PathValue("userId"), Username: b.Username, DisplayName: b.DisplayName, Password: b.Password, Role: b.Role, SiteIDs: b.SiteIDs, FirmIDs: b.FirmIDs, ExpectedVersion: b.ExpectedVersion})
+	if err == admin.ErrConflict {
+		h.writeProblem(w, r, http.StatusConflict, "The user was changed by someone else. Reload the list and try again.", "conflict", err)
+		return
+	}
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, u)
+}
+
+func (h *Handler) writeProblem(w http.ResponseWriter, r *http.Request, status int, title, code string, err error) {
+	h.logger.ErrorContext(r.Context(), "admin operation failed", "operation", r.Method+" "+r.URL.Path, "status", status, "code", code, "error", err, "correlation_id", httpx.CorrelationID(r.Context()))
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]any{"type": "about:blank", "title": title, "status": status, "code": code, "correlationId": httpx.CorrelationID(r.Context())})
+}
+
+func adminStatus(err error) int {
+	if errors.Is(err, admin.ErrInvalidRequest) {
+		return http.StatusBadRequest
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return http.StatusConflict
+	}
+	return http.StatusInternalServerError
+}
+func adminCode(err error) string {
+	if errors.Is(err, admin.ErrInvalidRequest) {
+		return "invalid_request"
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return "duplicate"
+	}
+	return "admin_failure"
+}
+func adminMessage(err error) string {
+	if errors.Is(err, admin.ErrInvalidRequest) {
+		return "Review the username, display name, password, role, and selected context."
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return "That username is already in use. Choose another username."
+	}
+	return "The administration change could not be completed. Use the correlation ID when reporting this problem."
 }
 
 func (h *Handler) userCommand(active bool) http.HandlerFunc {
@@ -96,7 +204,7 @@ func (h *Handler) auth(w http.ResponseWriter, r *http.Request, write bool) (admi
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return admin.Authorization{}, false
 	}
-	meta := auth.RequestMetadata{CorrelationID: r.Header.Get("X-Correlation-ID"), SourceIPClass: "local"}
+	meta := auth.RequestMetadata{CorrelationID: httpx.CorrelationID(r.Context()), SourceIPClass: "local"}
 	if meta.CorrelationID == "" {
 		meta.CorrelationID = "admin-demo"
 	}

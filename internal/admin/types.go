@@ -14,12 +14,15 @@ var (
 )
 
 type User struct {
-	ID          string `json:"id"`
-	Username    string `json:"username"`
-	DisplayName string `json:"displayName"`
-	Role        string `json:"role"`
-	Active      bool   `json:"active"`
-	Version     int64  `json:"version"`
+	ID          string      `json:"id"`
+	Username    string      `json:"username"`
+	DisplayName string      `json:"displayName"`
+	Role        string      `json:"role"`
+	Active      bool        `json:"active"`
+	Version     int64       `json:"version"`
+	Permissions []string    `json:"permissions"`
+	Sites       []Reference `json:"sites"`
+	Firms       []Reference `json:"firms"`
 }
 
 type Contexts struct {
@@ -48,6 +51,16 @@ type UserCommand struct {
 	PublicID        string
 	ExpectedVersion int64
 	Active          bool
+}
+type UserUpsert struct {
+	PublicID        string
+	Username        string
+	DisplayName     string
+	Password        string
+	Role            string
+	SiteIDs         []int64
+	FirmIDs         []int64
+	ExpectedVersion int64
 }
 type SettingUpdate struct {
 	Key, Value      string

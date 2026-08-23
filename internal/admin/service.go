@@ -2,9 +2,11 @@ package admin
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -71,9 +73,69 @@ func (s *Service) Users(ctx context.Context, a Authorization) ([]User, error) {
 		if err := rows.Scan(&u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Active, &u.Version); err != nil {
 			return nil, err
 		}
+		if err := s.loadUserDetails(ctx, a, &u); err != nil {
+			return nil, err
+		}
 		out = append(out, u)
 	}
 	return out, rows.Err()
+}
+
+func (s *Service) loadUserDetails(ctx context.Context, a Authorization, u *User) error {
+	u.Permissions = []string{}
+	u.Sites = []Reference{}
+	u.Firms = []Reference{}
+	rows, err := s.pool.Query(ctx, `SELECT DISTINCT p.name
+		FROM user_role_assignments ura
+		JOIN roles r ON r.id=ura.role_id AND r.scope=ura.role_scope AND r.active
+		JOIN role_permissions rp ON rp.role_id=r.id AND rp.active
+		JOIN permissions p ON p.id=rp.permission_id AND p.active
+		WHERE ura.user_id=(SELECT user_id FROM development_admin_users WHERE public_id=$1::uuid)
+		  AND ura.active AND (ura.institution_id=$2 OR ura.institution_id IS NULL)
+		  AND (p.name NOT LIKE 'admin.development.%' OR EXISTS (
+			SELECT 1 FROM development_admin_users dau
+			WHERE dau.user_id=ura.user_id AND dau.institution_id=$2 AND dau.active
+			  AND dau.role_code IN ('system_administrator','institution_administrator')
+		  ))
+		ORDER BY p.name`, u.ID, a.principal.InstitutionID)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var p string
+		if err := rows.Scan(&p); err != nil {
+			rows.Close()
+			return err
+		}
+		u.Permissions = append(u.Permissions, p)
+	}
+	rows.Close()
+	rows, err = s.pool.Query(ctx, `SELECT s.id,s.name FROM user_site_memberships m JOIN sites s ON s.id=m.site_id WHERE m.user_id=(SELECT user_id FROM development_admin_users WHERE public_id=$1::uuid) AND m.active AND s.institution_id=$2 AND s.active ORDER BY s.name`, u.ID, a.principal.InstitutionID)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var v Reference
+		if err := rows.Scan(&v.ID, &v.Name); err != nil {
+			rows.Close()
+			return err
+		}
+		u.Sites = append(u.Sites, v)
+	}
+	rows.Close()
+	rows, err = s.pool.Query(ctx, `SELECT f.id,f.name FROM user_firm_memberships m JOIN firms f ON f.id=m.firm_id WHERE m.user_id=(SELECT user_id FROM development_admin_users WHERE public_id=$1::uuid) AND m.active AND (f.institution_id=$2 OR f.global_access) AND f.active ORDER BY f.name`, u.ID, a.principal.InstitutionID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v Reference
+		if err := rows.Scan(&v.ID, &v.Name); err != nil {
+			return err
+		}
+		u.Firms = append(u.Firms, v)
+	}
+	return rows.Err()
 }
 func (s *Service) Contexts(ctx context.Context, a Authorization) (Contexts, error) {
 	var out Contexts
@@ -151,12 +213,35 @@ func (s *Service) SetUserActive(ctx context.Context, a Authorization, cmd UserCo
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	var u User
-	err = tx.QueryRow(ctx, `UPDATE development_admin_users SET active=$1, version=version+1, updated_at=now() WHERE public_id=$2::uuid AND institution_id=$3 AND version=$4 RETURNING public_id::text,username,display_name,role_code,active,version`, cmd.Active, cmd.PublicID, a.principal.InstitutionID, cmd.ExpectedVersion).Scan(&u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Active, &u.Version)
+	var userID int64
+	err = tx.QueryRow(ctx, `UPDATE development_admin_users SET active=$1, version=version+1, updated_at=now() WHERE public_id=$2::uuid AND institution_id=$3 AND version=$4 RETURNING user_id,public_id::text,username,display_name,role_code,active,version`, cmd.Active, cmd.PublicID, a.principal.InstitutionID, cmd.ExpectedVersion).Scan(&userID, &u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Active, &u.Version)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, ErrConflict
 	}
 	if err != nil {
 		return User{}, err
+	}
+	if _, err = tx.Exec(ctx, `
+		UPDATE users
+		SET active=$1, authorization_version=authorization_version+1, updated_at=now()
+		WHERE id=$2`, cmd.Active, userID); err != nil {
+		return User{}, fmt.Errorf("update user authentication state: %w", err)
+	}
+	credentialState := "disabled"
+	if cmd.Active {
+		credentialState = "active"
+	}
+	if _, err = tx.Exec(ctx, `
+		UPDATE user_credentials
+		SET active=$1, state=$2::credential_state, updated_at=now(), version=version+1
+		WHERE user_id=$3`, cmd.Active, credentialState, userID); err != nil {
+		return User{}, fmt.Errorf("update user credentials state: %w", err)
+	}
+	if _, err = tx.Exec(ctx, `
+		UPDATE sessions
+		SET revoked_at=now(), revocation_reason='account_disabled', version=version+1
+		WHERE user_id=$1 AND revoked_at IS NULL AND NOT $2`, userID, cmd.Active); err != nil {
+		return User{}, fmt.Errorf("revoke disabled-user sessions: %w", err)
 	}
 	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_public_id,changed_fields,outcome,correlation_id) VALUES($1,$2,$3,'user',$4::uuid,'["active"]'::jsonb,'success',$5)`, a.principal.UserID, a.principal.InstitutionID, "user.active", cmd.PublicID, a.metadata.CorrelationID); err != nil {
 		return User{}, err
@@ -165,6 +250,195 @@ func (s *Service) SetUserActive(ctx context.Context, a Authorization, cmd UserCo
 		return User{}, err
 	}
 	return u, nil
+}
+
+func (s *Service) CreateUser(ctx context.Context, a Authorization, in UserUpsert) (User, error) {
+	if err := validateUserInput(in, false); err != nil || in.Password == "" {
+		return User{}, ErrInvalidRequest
+	}
+	hash, err := (auth.PasswordManager{}).Hash(in.Password)
+	if err != nil {
+		return User{}, err
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return User{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := validateMemberships(ctx, tx, a.principal.InstitutionID, in.SiteIDs, in.FirmIDs); err != nil {
+		return User{}, err
+	}
+	var userID, profileID int64
+	if err := tx.QueryRow(ctx, `INSERT INTO users(display_name,created_by_user_id,updated_by_user_id) VALUES($1,$2,$2) RETURNING id`, in.DisplayName, a.principal.UserID).Scan(&userID); err != nil {
+		return User{}, err
+	}
+	if err := tx.QueryRow(ctx, `SELECT id FROM authentication_profiles WHERE institution_id=$1 AND method='LOCAL' AND active ORDER BY id LIMIT 1`, a.principal.InstitutionID).Scan(&profileID); err != nil {
+		return User{}, err
+	}
+	username := strings.ToLower(strings.TrimSpace(in.Username))
+	if _, err := tx.Exec(ctx, `INSERT INTO user_credentials(user_id,authentication_profile_id,canonical_username,password_hash,hash_scheme,hash_version,password_changed_at) VALUES($1,$2,$3,$4,'argon2id',19,now())`, userID, profileID, username, hash); err != nil {
+		return User{}, err
+	}
+	if err := assignUserContext(ctx, tx, a.principal.InstitutionID, a.principal.UserID, userID, in.Role, in.SiteIDs, in.FirmIDs); err != nil {
+		return User{}, err
+	}
+	publicID, err := newPublicID()
+	if err != nil {
+		return User{}, err
+	}
+	var u User
+	if err := tx.QueryRow(ctx, `INSERT INTO development_admin_users(public_id,institution_id,user_id,username,display_name,role_code) VALUES($1::uuid,$2,$3,$4,$5,$6) RETURNING public_id::text,username,display_name,role_code,active,version`, publicID, a.principal.InstitutionID, userID, username, in.DisplayName, in.Role).Scan(&u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Active, &u.Version); err != nil {
+		return User{}, err
+	}
+	if err := auditTx(ctx, tx, a, "user.create", "user", publicID, `["username","display_name","role","context"]`); err != nil {
+		return User{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return User{}, err
+	}
+	if err := s.loadUserDetails(ctx, a, &u); err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
+
+func (s *Service) UpdateUser(ctx context.Context, a Authorization, in UserUpsert) (User, error) {
+	if in.PublicID == "" || validateUserInput(in, true) != nil {
+		return User{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return User{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := validateMemberships(ctx, tx, a.principal.InstitutionID, in.SiteIDs, in.FirmIDs); err != nil {
+		return User{}, err
+	}
+	var userID int64
+	var u User
+	err = tx.QueryRow(ctx, `UPDATE development_admin_users SET username=$1,display_name=$2,role_code=$3,version=version+1,updated_at=now() WHERE public_id=$4::uuid AND institution_id=$5 AND version=$6 RETURNING user_id,public_id::text,username,display_name,role_code,active,version`, strings.ToLower(strings.TrimSpace(in.Username)), strings.TrimSpace(in.DisplayName), in.Role, in.PublicID, a.principal.InstitutionID, in.ExpectedVersion).Scan(&userID, &u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Active, &u.Version)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return User{}, ErrConflict
+	}
+	if err != nil {
+		return User{}, err
+	}
+	if _, err = tx.Exec(ctx, `UPDATE users SET display_name=$1,updated_by_user_id=$2,updated_at=now() WHERE id=$3`, in.DisplayName, a.principal.UserID, userID); err != nil {
+		return User{}, err
+	}
+	if _, err = tx.Exec(ctx, `UPDATE user_credentials SET canonical_username=$1,updated_at=now(),version=version+1 WHERE user_id=$2`, strings.ToLower(strings.TrimSpace(in.Username)), userID); err != nil {
+		return User{}, err
+	}
+	if in.Password != "" {
+		if len(in.Password) < 6 {
+			return User{}, ErrInvalidRequest
+		}
+		hash, e := (auth.PasswordManager{}).Hash(in.Password)
+		if e != nil {
+			return User{}, e
+		}
+		if _, e = tx.Exec(ctx, `UPDATE user_credentials SET password_hash=$1,hash_scheme='argon2id',hash_version=19,password_changed_at=now(),state='active',active=TRUE,failed_attempts=0,soft_locked_until=NULL,version=version+1,updated_at=now() WHERE user_id=$2`, hash, userID); e != nil {
+			return User{}, e
+		}
+	}
+	if _, err = tx.Exec(ctx, `UPDATE user_role_assignments ura SET active=FALSE FROM roles r WHERE ura.role_id=r.id AND ura.role_scope=r.scope AND ura.user_id=$1 AND ura.institution_id=$2 AND r.scope='institution'`, userID, a.principal.InstitutionID); err != nil {
+		return User{}, err
+	}
+	if _, err = tx.Exec(ctx, `UPDATE user_site_memberships m SET active=FALSE FROM sites s WHERE m.site_id=s.id AND m.user_id=$1 AND s.institution_id=$2`, userID, a.principal.InstitutionID); err != nil {
+		return User{}, err
+	}
+	if _, err = tx.Exec(ctx, `UPDATE user_firm_memberships m SET active=FALSE FROM firms f WHERE m.firm_id=f.id AND m.user_id=$1 AND (f.institution_id=$2 OR f.global_access)`, userID, a.principal.InstitutionID); err != nil {
+		return User{}, err
+	}
+	if err = assignUserContext(ctx, tx, a.principal.InstitutionID, a.principal.UserID, userID, in.Role, in.SiteIDs, in.FirmIDs); err != nil {
+		return User{}, err
+	}
+	if err = auditTx(ctx, tx, a, "user.update", "user", in.PublicID, `["username","display_name","role","context"]`); err != nil {
+		return User{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return User{}, err
+	}
+	if err = s.loadUserDetails(ctx, a, &u); err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
+
+func validateUserInput(in UserUpsert, update bool) error {
+	if update && in.ExpectedVersion < 1 {
+		return ErrInvalidRequest
+	}
+	username := strings.TrimSpace(in.Username)
+	if username == "" || len(username) > 80 || username != strings.ToLower(username) || strings.ContainsAny(username, " \t\r\n") {
+		return ErrInvalidRequest
+	}
+	if strings.TrimSpace(in.DisplayName) == "" || len(strings.TrimSpace(in.DisplayName)) > 120 {
+		return ErrInvalidRequest
+	}
+	if in.Role != "clinical_user" && in.Role != "institution_administrator" {
+		return ErrInvalidRequest
+	}
+	if !update && len(in.Password) < 6 {
+		return ErrInvalidRequest
+	}
+	return nil
+}
+
+func validateMemberships(ctx context.Context, tx pgx.Tx, institutionID int64, siteIDs, firmIDs []int64) error {
+	for _, id := range siteIDs {
+		var ok bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM sites WHERE id=$1 AND institution_id=$2 AND active)`, id, institutionID).Scan(&ok); err != nil || !ok {
+			return ErrInvalidRequest
+		}
+	}
+	for _, id := range firmIDs {
+		var ok bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM firms WHERE id=$1 AND (institution_id=$2 OR global_access) AND active)`, id, institutionID).Scan(&ok); err != nil || !ok {
+			return ErrInvalidRequest
+		}
+	}
+	return nil
+}
+
+func assignUserContext(ctx context.Context, tx pgx.Tx, institutionID, actorID, userID int64, role string, siteIDs, firmIDs []int64) error {
+	if _, err := tx.Exec(ctx, `INSERT INTO user_institution_memberships(user_id,institution_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, userID, institutionID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO user_role_assignments(user_id,role_id,role_scope,institution_id,assigned_by_user_id) SELECT $1,id,scope,$2,$3 FROM roles WHERE name IN ('VisionOpus User','Development Patient Search Tester') AND scope='institution' ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE`, userID, institutionID, actorID); err != nil {
+		return err
+	}
+	if role == "institution_administrator" {
+		if _, err := tx.Exec(ctx, `INSERT INTO user_role_assignments(user_id,role_id,role_scope,institution_id,assigned_by_user_id) SELECT $1,id,scope,$2,$3 FROM roles WHERE name='Institution Administrator' AND scope='institution' ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE`, userID, institutionID, actorID); err != nil {
+			return err
+		}
+	}
+	for _, id := range siteIDs {
+		if _, err := tx.Exec(ctx, `INSERT INTO user_site_memberships(user_id,site_id) VALUES($1,$2) ON CONFLICT (user_id,site_id) DO UPDATE SET active=TRUE`, userID, id); err != nil {
+			return err
+		}
+	}
+	for _, id := range firmIDs {
+		if _, err := tx.Exec(ctx, `INSERT INTO user_firm_memberships(user_id,firm_id) VALUES($1,$2) ON CONFLICT (user_id,firm_id) DO UPDATE SET active=TRUE`, userID, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func newPublicID() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	b[6] = (b[6] & 0x0f) | 0x40
+	b[8] = (b[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16]), nil
+}
+
+func auditTx(ctx context.Context, tx pgx.Tx, a Authorization, command, targetType, targetID, fields string) error {
+	_, err := tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_public_id,changed_fields,outcome,correlation_id) VALUES($1,$2,$3,$4,$5::uuid,$6::jsonb,'success',$7)`, a.principal.UserID, a.principal.InstitutionID, command, targetType, targetID, fields, a.metadata.CorrelationID)
+	return err
 }
 
 func (s *Service) UpdateSetting(ctx context.Context, a Authorization, in SettingUpdate) (Setting, error) {
