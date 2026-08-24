@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -24,6 +26,8 @@ type Service interface {
 	Audit(context.Context, admin.Authorization) ([]admin.AuditEvent, error)
 	SetUserActive(context.Context, admin.Authorization, admin.UserCommand) (admin.User, error)
 	UpdateSetting(context.Context, admin.Authorization, admin.SettingUpdate) (admin.Setting, error)
+	UpsertSite(context.Context, admin.Authorization, admin.ContextUpsert) (admin.Reference, error)
+	UpsertFirm(context.Context, admin.Authorization, admin.ContextUpsert) (admin.Reference, error)
 }
 type Handler struct {
 	service      Service
@@ -48,6 +52,14 @@ func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/admin/users/{userId}/deactivate", h.userCommand(false))
 	m.HandleFunc("POST /api/v1/admin/users/{userId}/reactivate", h.userCommand(true))
 	m.HandleFunc("PATCH /api/v1/admin/settings", h.updateSetting)
+	m.HandleFunc("POST /api/v1/admin/sites", h.createSite)
+	m.HandleFunc("PATCH /api/v1/admin/sites/{siteId}", h.updateSite)
+	m.HandleFunc("POST /api/v1/admin/sites/{siteId}/deactivate", h.deactivateSite)
+	m.HandleFunc("POST /api/v1/admin/sites/{siteId}/reactivate", h.reactivateSite)
+	m.HandleFunc("POST /api/v1/admin/firms", h.createFirm)
+	m.HandleFunc("PATCH /api/v1/admin/firms/{firmId}", h.updateFirm)
+	m.HandleFunc("POST /api/v1/admin/firms/{firmId}/deactivate", h.deactivateFirm)
+	m.HandleFunc("POST /api/v1/admin/firms/{firmId}/reactivate", h.reactivateFirm)
 }
 
 type userBody struct {
@@ -134,10 +146,13 @@ func adminCode(err error) string {
 }
 func adminMessage(err error) string {
 	if errors.Is(err, admin.ErrInvalidRequest) {
-		return "Review the username, display name, password, role, and selected context."
+		return "Review the submitted administration values and try again."
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		if strings.Contains(pgErr.ConstraintName, "site") || strings.Contains(pgErr.ConstraintName, "firm") {
+			return "That site or firm name is already in use in this institution. Choose another name."
+		}
 		return "That username is already in use. Choose another username."
 	}
 	return "The administration change could not be completed. Use the correlation ID when reporting this problem."
@@ -192,6 +207,85 @@ func (h *Handler) updateSetting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, v)
+}
+
+type contextBody struct {
+	Name            string `json:"name"`
+	Active          bool   `json:"active"`
+	ExpectedVersion int64  `json:"expectedVersion"`
+}
+
+func (h *Handler) createSite(w http.ResponseWriter, r *http.Request) {
+	h.contextMutation(w, r, false, 0, false)
+}
+func (h *Handler) updateSite(w http.ResponseWriter, r *http.Request) {
+	h.contextMutation(w, r, false, 0, true)
+}
+func (h *Handler) deactivateSite(w http.ResponseWriter, r *http.Request) {
+	h.contextMutation(w, r, false, 0, false)
+}
+func (h *Handler) reactivateSite(w http.ResponseWriter, r *http.Request) {
+	h.contextMutation(w, r, false, 0, false)
+}
+func (h *Handler) createFirm(w http.ResponseWriter, r *http.Request) {
+	h.contextMutation(w, r, true, 0, false)
+}
+func (h *Handler) updateFirm(w http.ResponseWriter, r *http.Request) {
+	h.contextMutation(w, r, true, 0, true)
+}
+func (h *Handler) deactivateFirm(w http.ResponseWriter, r *http.Request) {
+	h.contextMutation(w, r, true, 0, false)
+}
+func (h *Handler) reactivateFirm(w http.ResponseWriter, r *http.Request) {
+	h.contextMutation(w, r, true, 0, false)
+}
+
+func (h *Handler) contextMutation(w http.ResponseWriter, r *http.Request, firm bool, ignoredID int64, update bool) {
+	a, ok := h.auth(w, r, true)
+	if !ok {
+		return
+	}
+	var b contextBody
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&b) != nil {
+		h.writeProblem(w, r, http.StatusBadRequest, "Review the context name and version.", "invalid_request", admin.ErrInvalidRequest)
+		return
+	}
+	id := ignoredID
+	param := "siteId"
+	if firm {
+		param = "firmId"
+	}
+	if update || r.PathValue(param) != "" {
+		parsed, err := strconv.ParseInt(r.PathValue(param), 10, 64)
+		if err != nil || parsed < 1 {
+			h.writeProblem(w, r, http.StatusBadRequest, "The context identifier is invalid.", "invalid_request", admin.ErrInvalidRequest)
+			return
+		}
+		id = parsed
+	}
+	if strings.HasSuffix(r.URL.Path, "/deactivate") {
+		b.Active = false
+	}
+	if strings.HasSuffix(r.URL.Path, "/reactivate") {
+		b.Active = true
+	}
+	in := admin.ContextUpsert{ID: id, Name: b.Name, Active: b.Active, ExpectedVersion: b.ExpectedVersion}
+	var value admin.Reference
+	var err error
+	if firm {
+		value, err = h.service.UpsertFirm(r.Context(), a, in)
+	} else {
+		value, err = h.service.UpsertSite(r.Context(), a, in)
+	}
+	if err == admin.ErrConflict {
+		h.writeProblem(w, r, http.StatusConflict, "The context was changed by someone else. Reload and try again.", "conflict", err)
+		return
+	}
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, value)
 }
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Cache-Control", "no-store")

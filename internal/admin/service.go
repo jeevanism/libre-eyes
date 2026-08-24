@@ -142,26 +142,26 @@ func (s *Service) Contexts(ctx context.Context, a Authorization) (Contexts, erro
 	if err := s.pool.QueryRow(ctx, `SELECT id,name FROM institutions WHERE id=$1`, a.principal.InstitutionID).Scan(&out.Institution.ID, &out.Institution.Name); err != nil {
 		return out, err
 	}
-	rows, err := s.pool.Query(ctx, `SELECT id,name FROM sites WHERE institution_id=$1 AND active ORDER BY name`, a.principal.InstitutionID)
+	rows, err := s.pool.Query(ctx, `SELECT id,name,active,version FROM sites WHERE institution_id=$1 ORDER BY name`, a.principal.InstitutionID)
 	if err != nil {
 		return out, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var r Reference
-		if err := rows.Scan(&r.ID, &r.Name); err != nil {
+		if err := rows.Scan(&r.ID, &r.Name, &r.Active, &r.Version); err != nil {
 			return out, err
 		}
 		out.Sites = append(out.Sites, r)
 	}
-	rows, err = s.pool.Query(ctx, `SELECT id,name FROM firms WHERE institution_id=$1 AND active ORDER BY name`, a.principal.InstitutionID)
+	rows, err = s.pool.Query(ctx, `SELECT id,name,active,version FROM firms WHERE institution_id=$1 ORDER BY name`, a.principal.InstitutionID)
 	if err != nil {
 		return out, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var r Reference
-		if err := rows.Scan(&r.ID, &r.Name); err != nil {
+		if err := rows.Scan(&r.ID, &r.Name, &r.Active, &r.Version); err != nil {
 			return out, err
 		}
 		out.Firms = append(out.Firms, r)
@@ -461,6 +461,9 @@ func (s *Service) UpdateSetting(ctx context.Context, a Authorization, in Setting
 		return Setting{}, err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
+	if err := validateDefaultContext(ctx, tx, a.principal.InstitutionID, in.Key, in.Value); err != nil {
+		return Setting{}, err
+	}
 	var out Setting
 	err = tx.QueryRow(ctx, `UPDATE development_admin_settings SET value=$1,version=version+1,updated_at=now() WHERE key=$2 AND institution_id=$3 AND version=$4 RETURNING key,value,version`, in.Value, in.Key, a.principal.InstitutionID, in.ExpectedVersion).Scan(&out.Key, &out.Value, &out.Version)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -476,6 +479,98 @@ func (s *Service) UpdateSetting(ctx context.Context, a Authorization, in Setting
 		return Setting{}, err
 	}
 	return out, nil
+}
+
+func validateDefaultContext(ctx context.Context, tx pgx.Tx, institutionID int64, key, value string) error {
+	if key != "default_site" && key != "default_firm" {
+		return nil
+	}
+	table := "sites"
+	if key == "default_firm" {
+		table = "firms"
+	}
+	var exists bool
+	query := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE institution_id=$1 AND name=$2 AND active)", table)
+	if err := tx.QueryRow(ctx, query, institutionID, strings.TrimSpace(value)).Scan(&exists); err != nil {
+		return err
+	}
+	if !exists {
+		return ErrInvalidRequest
+	}
+	return nil
+}
+
+func (s *Service) UpsertSite(ctx context.Context, a Authorization, in ContextUpsert) (Reference, error) {
+	return s.upsertContext(ctx, a, in, false)
+}
+
+func (s *Service) UpsertFirm(ctx context.Context, a Authorization, in ContextUpsert) (Reference, error) {
+	return s.upsertContext(ctx, a, in, true)
+}
+
+func (s *Service) upsertContext(ctx context.Context, a Authorization, in ContextUpsert, firm bool) (Reference, error) {
+	name := strings.TrimSpace(in.Name)
+	if len(name) > 120 || (in.ID > 0 && in.ExpectedVersion < 1) {
+		return Reference{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return Reference{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var out Reference
+	command := "site.create"
+	targetType := "site"
+	if firm {
+		command, targetType = "firm.create", "firm"
+	}
+	if in.ID == 0 {
+		if name == "" {
+			return Reference{}, ErrInvalidRequest
+		}
+		if firm {
+			err = tx.QueryRow(ctx, `INSERT INTO firms(institution_id,name,active) VALUES($1,$2,$3) RETURNING id,name,active,version`, a.principal.InstitutionID, name, in.Active).Scan(&out.ID, &out.Name, &out.Active, &out.Version)
+		} else {
+			err = tx.QueryRow(ctx, `INSERT INTO sites(institution_id,name,active) VALUES($1,$2,$3) RETURNING id,name,active,version`, a.principal.InstitutionID, name, in.Active).Scan(&out.ID, &out.Name, &out.Active, &out.Version)
+		}
+	} else {
+		command = strings.TrimSuffix(command, ".create") + ".update"
+		if name == "" {
+			table := "sites"
+			if firm {
+				table = "firms"
+			}
+			if err = tx.QueryRow(ctx, fmt.Sprintf("SELECT name FROM %s WHERE id=$1 AND institution_id=$2", table), in.ID, a.principal.InstitutionID).Scan(&name); err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return Reference{}, ErrConflict
+				}
+				return Reference{}, err
+			}
+		}
+		if firm {
+			err = tx.QueryRow(ctx, `UPDATE firms SET name=$1,active=$2,version=version+1,updated_at=now() WHERE id=$3 AND institution_id=$4 AND version=$5 RETURNING id,name,active,version`, name, in.Active, in.ID, a.principal.InstitutionID, in.ExpectedVersion).Scan(&out.ID, &out.Name, &out.Active, &out.Version)
+		} else {
+			err = tx.QueryRow(ctx, `UPDATE sites SET name=$1,active=$2,version=version+1,updated_at=now() WHERE id=$3 AND institution_id=$4 AND version=$5 RETURNING id,name,active,version`, name, in.Active, in.ID, a.principal.InstitutionID, in.ExpectedVersion).Scan(&out.ID, &out.Name, &out.Active, &out.Version)
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Reference{}, ErrConflict
+		}
+	}
+	if err != nil {
+		return Reference{}, err
+	}
+	if err := auditContextTx(ctx, tx, a, command, targetType, out.ID, `["name","active"]`); err != nil {
+		return Reference{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return Reference{}, err
+	}
+	return out, nil
+}
+
+func auditContextTx(ctx context.Context, tx pgx.Tx, a Authorization, command, targetType string, targetID int64, fields string) error {
+	_, err := tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_key,changed_fields,outcome,correlation_id) VALUES($1,$2,$3,$4,$5,$6::jsonb,'success',$7)`, a.principal.UserID, a.principal.InstitutionID, command, targetType, fmt.Sprintf("%s:%d", targetType, targetID), fields, a.metadata.CorrelationID)
+	return err
 }
 func validSettingKey(k string) bool {
 	switch k {

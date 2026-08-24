@@ -177,7 +177,7 @@ export type DevelopmentReferralAppointment = {
   retentionKind?: 'autosave' | 'manual'
 }
 export type AdminUser = { id: string; username: string; displayName: string; role: string; active: boolean; version: number; permissions: string[]; sites: AdminReference[]; firms: AdminReference[] }
-export type AdminReference = { id: number; name: string }
+export type AdminReference = { id: number; name: string; active?: boolean; version?: number }
 export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
 export type AdminSetting = { key: string; value: string; version: number }
 export type AdminAuditEvent = { actorUserId: number; actorDisplayName: string; command: string; targetType: string; targetPublicId?: string; targetKey?: string; targetDisplayName?: string; changedFields: string[]; outcome: string; correlationId: string; createdAt: string }
@@ -290,6 +290,12 @@ export const adminAPI = {
   createUser: (body: { username: string; displayName: string; password: string; role: string; siteIds: number[]; firmIds: number[] }, csrfToken: string) => request<AdminUser>('/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
   updateUser: (id: string, body: { username: string; displayName: string; password?: string | undefined; role: string; siteIds: number[]; firmIds: number[]; expectedVersion: number }, csrfToken: string) => request<AdminUser>(`/admin/users/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
   updateSetting: (key: string, value: string, expectedVersion: number, csrfToken: string) => request<AdminSetting>('/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ key, value, expectedVersion }) }),
+  createSite: (name: string, csrfToken: string) => request<AdminReference>('/admin/sites', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, active: true }) }),
+  updateSite: (id: number, name: string, active: boolean, version: number, csrfToken: string) => request<AdminReference>(`/admin/sites/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, active, expectedVersion: version }) }),
+  setSiteActive: (id: number, name: string, version: number, active: boolean, csrfToken: string) => request<AdminReference>(`/admin/sites/${id}/${active ? 'reactivate' : 'deactivate'}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, expectedVersion: version }) }),
+  createFirm: (name: string, csrfToken: string) => request<AdminReference>('/admin/firms', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, active: true }) }),
+  updateFirm: (id: number, name: string, active: boolean, version: number, csrfToken: string) => request<AdminReference>(`/admin/firms/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, active, expectedVersion: version }) }),
+  setFirmActive: (id: number, name: string, version: number, active: boolean, csrfToken: string) => request<AdminReference>(`/admin/firms/${id}/${active ? 'reactivate' : 'deactivate'}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, expectedVersion: version }) }),
 }
 
 export const patientSearchAPI = {

@@ -35,8 +35,10 @@ type Contexts struct {
 }
 
 type Reference struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	Active  bool   `json:"active,omitempty"`
+	Version int64  `json:"version,omitempty"`
 }
 type Setting struct {
 	Key     string `json:"key"`
@@ -74,5 +76,12 @@ type UserUpsert struct {
 }
 type SettingUpdate struct {
 	Key, Value      string
+	ExpectedVersion int64
+}
+
+type ContextUpsert struct {
+	ID              int64
+	Name            string
+	Active          bool
 	ExpectedVersion int64
 }
