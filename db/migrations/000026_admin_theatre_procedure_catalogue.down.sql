@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS development_theatre_procedure_catalogue_admin_idx;
+DROP TABLE IF EXISTS development_theatre_procedure_catalogue;
