@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -453,7 +454,7 @@ func auditTx(ctx context.Context, tx pgx.Tx, a Authorization, command, targetTyp
 }
 
 func (s *Service) UpdateSetting(ctx context.Context, a Authorization, in SettingUpdate) (Setting, error) {
-	if in.ExpectedVersion < 1 || in.Key == "" || in.Value == "" || !validSettingKey(in.Key) {
+	if in.ExpectedVersion < 1 || !validSettingValue(in.Key, in.Value) {
 		return Setting{}, ErrInvalidRequest
 	}
 	tx, err := s.pool.Begin(ctx)
@@ -574,10 +575,42 @@ func auditContextTx(ctx context.Context, tx pgx.Tx, a Authorization, command, ta
 }
 func validSettingKey(k string) bool {
 	switch k {
-	case "default_site", "default_firm", "appointment_slot_minutes", "demo_retention_days":
+	case "default_site", "default_firm", "appointment_slot_minutes", "demo_retention_days",
+		"clinic_flow_queue_name", "clinic_flow_priorities", "theatre_default_room",
+		"theatre_session_minutes", "theatre_capacity_minutes", "referral_default_recipient",
+		"referral_default_priority", "correspondence_default_template", "correspondence_footer",
+		"messaging_default_type", "messaging_mailbox":
 		return true
 	}
 	return false
+}
+
+func validSettingValue(key, value string) bool {
+	value = strings.TrimSpace(value)
+	if key == "" || value == "" || len(value) > 80 || !validSettingKey(key) {
+		return false
+	}
+	switch key {
+	case "appointment_slot_minutes", "demo_retention_days", "theatre_session_minutes", "theatre_capacity_minutes":
+		n, err := strconv.Atoi(value)
+		if err != nil || n < 1 || n > 1440 {
+			return false
+		}
+	case "clinic_flow_priorities":
+		for _, priority := range strings.Split(value, ",") {
+			priority = strings.TrimSpace(priority)
+			if priority == "" || (priority != "routine" && priority != "urgent") {
+				return false
+			}
+		}
+	case "default_site", "default_firm":
+		return true
+	default:
+		if strings.Contains(value, "\n") || strings.Contains(value, "\r") {
+			return false
+		}
+	}
+	return true
 }
 
 var _ = pgx.ErrNoRows

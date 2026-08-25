@@ -459,7 +459,15 @@ func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID
 		ON CONFLICT (public_id) DO UPDATE SET institution_id=EXCLUDED.institution_id,user_id=EXCLUDED.user_id,display_name=EXCLUDED.display_name,active=TRUE,version=development_admin_users.version+1,updated_at=now()`, institutionID, actorID, clinicalUserID); err != nil {
 		return fmt.Errorf("seed development admin users: %w", err)
 	}
-	for key, value := range map[string]string{"default_site": "Development Eye Clinic", "default_firm": "Development Ophthalmology", "appointment_slot_minutes": "30", "demo_retention_days": "7"} {
+	for key, value := range map[string]string{
+		"default_site": "Development Eye Clinic", "default_firm": "Development Ophthalmology",
+		"appointment_slot_minutes": "30", "demo_retention_days": "7",
+		"clinic_flow_queue_name": "Demo clinic flow", "clinic_flow_priorities": "routine,urgent",
+		"theatre_default_room": "Demo theatre room", "theatre_session_minutes": "60", "theatre_capacity_minutes": "240",
+		"referral_default_recipient": "demo_gp", "referral_default_priority": "routine",
+		"correspondence_default_template": "demo_clinic_update", "correspondence_footer": "VisionOpus demonstration clinic",
+		"messaging_default_type": "demo_internal_message", "messaging_mailbox": "Demo clinical mailbox",
+	} {
 		if _, err := tx.Exec(ctx, `INSERT INTO development_admin_settings (key,institution_id,value) VALUES ($1,$2,$3) ON CONFLICT (institution_id,key) DO UPDATE SET value=EXCLUDED.value,updated_at=now()`, key, institutionID, value); err != nil {
 			return fmt.Errorf("seed development admin setting: %w", err)
 		}

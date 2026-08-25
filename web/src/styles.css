@@ -100,6 +100,7 @@ body {
 .admin-context-form select, .admin-context-form input, .admin-row select { min-height: 34px; padding: 6px 8px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); }
 .admin-context-list { display: grid; gap: 4px; }
 .admin-context-list > strong { margin-top: 10px; color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.admin-setting-group { margin: 18px 0 0; color: var(--text-secondary); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
 @media (max-width: 760px) {
   .admin-context-form { grid-template-columns: 1fr 1fr; }
   .admin-context-form strong, .admin-context-form input { grid-column: 1 / -1; }
