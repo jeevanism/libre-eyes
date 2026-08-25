@@ -101,6 +101,10 @@ body {
 .admin-context-list { display: grid; gap: 4px; }
 .admin-context-list > strong { margin-top: 10px; color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .admin-setting-group { margin: 18px 0 0; color: var(--text-secondary); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.admin-catalogue-form { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(160px, 1.3fr) minmax(160px, 1.4fr) 90px auto auto; gap: 8px; margin: 14px 0 18px; }
+.admin-catalogue-form input, .admin-catalogue-form select { min-height: 34px; padding: 6px 8px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); }
+.admin-catalogue-list { display: grid; gap: 4px; }
+@media (max-width: 760px) { .admin-catalogue-form { grid-template-columns: 1fr 1fr; } .admin-catalogue-form input:nth-of-type(2) { grid-column: 1 / -1; } }
 @media (max-width: 760px) {
   .admin-context-form { grid-template-columns: 1fr 1fr; }
   .admin-context-form strong, .admin-context-form input { grid-column: 1 / -1; }

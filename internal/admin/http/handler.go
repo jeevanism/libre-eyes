@@ -28,6 +28,8 @@ type Service interface {
 	UpdateSetting(context.Context, admin.Authorization, admin.SettingUpdate) (admin.Setting, error)
 	UpsertSite(context.Context, admin.Authorization, admin.ContextUpsert) (admin.Reference, error)
 	UpsertFirm(context.Context, admin.Authorization, admin.ContextUpsert) (admin.Reference, error)
+	PrescriptionCatalogue(context.Context, admin.Authorization) ([]admin.CatalogueItem, error)
+	UpsertPrescriptionCatalogue(context.Context, admin.Authorization, admin.CatalogueUpsert) (admin.CatalogueItem, error)
 }
 type Handler struct {
 	service      Service
@@ -60,6 +62,9 @@ func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("PATCH /api/v1/admin/firms/{firmId}", h.updateFirm)
 	m.HandleFunc("POST /api/v1/admin/firms/{firmId}/deactivate", h.deactivateFirm)
 	m.HandleFunc("POST /api/v1/admin/firms/{firmId}/reactivate", h.reactivateFirm)
+	m.HandleFunc("GET /api/v1/admin/catalogues/prescription", h.prescriptionCatalogue)
+	m.HandleFunc("POST /api/v1/admin/catalogues/prescription", h.createPrescriptionCatalogue)
+	m.HandleFunc("PATCH /api/v1/admin/catalogues/prescription/{itemId}", h.updatePrescriptionCatalogue)
 }
 
 type userBody struct {
@@ -152,6 +157,9 @@ func adminMessage(err error) string {
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 		if strings.Contains(pgErr.ConstraintName, "site") || strings.Contains(pgErr.ConstraintName, "firm") {
 			return "That site or firm name is already in use in this institution. Choose another name."
+		}
+		if strings.Contains(pgErr.ConstraintName, "prescription_catalogue") || strings.Contains(pgErr.ConstraintName, "catalogue") {
+			return "That catalogue code or display order is already in use. Choose another value."
 		}
 		return "That username is already in use. Choose another username."
 	}
@@ -286,6 +294,63 @@ func (h *Handler) contextMutation(w http.ResponseWriter, r *http.Request, firm b
 		return
 	}
 	writeJSON(w, value)
+}
+
+type catalogueBody struct {
+	Category        string `json:"category"`
+	Code            string `json:"code"`
+	DisplayName     string `json:"displayName"`
+	Active          bool   `json:"active"`
+	DisplayOrder    int    `json:"displayOrder"`
+	ExpectedVersion int64  `json:"expectedVersion"`
+}
+
+func (h *Handler) prescriptionCatalogue(w http.ResponseWriter, r *http.Request) {
+	a, ok := h.auth(w, r, false)
+	if !ok {
+		return
+	}
+	items, err := h.service.PrescriptionCatalogue(r.Context(), a)
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), "The prescription catalogue could not be loaded.", adminCode(err), err)
+		return
+	}
+	writeJSON(w, items)
+}
+
+func (h *Handler) createPrescriptionCatalogue(w http.ResponseWriter, r *http.Request) {
+	h.mutatePrescriptionCatalogue(w, r, 0)
+}
+
+func (h *Handler) updatePrescriptionCatalogue(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("itemId"), 10, 64)
+	if err != nil || id < 1 {
+		h.writeProblem(w, r, http.StatusBadRequest, "The catalogue item identifier is invalid.", "invalid_request", admin.ErrInvalidRequest)
+		return
+	}
+	h.mutatePrescriptionCatalogue(w, r, id)
+}
+
+func (h *Handler) mutatePrescriptionCatalogue(w http.ResponseWriter, r *http.Request, id int64) {
+	a, ok := h.auth(w, r, true)
+	if !ok {
+		return
+	}
+	var b catalogueBody
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&b) != nil {
+		h.writeProblem(w, r, http.StatusBadRequest, "Review the catalogue item values.", "invalid_request", admin.ErrInvalidRequest)
+		return
+	}
+	item, err := h.service.UpsertPrescriptionCatalogue(r.Context(), a, admin.CatalogueUpsert{ID: id, Category: b.Category, Code: b.Code, DisplayName: b.DisplayName, Active: b.Active, DisplayOrder: b.DisplayOrder, ExpectedVersion: b.ExpectedVersion})
+	if err == admin.ErrConflict {
+		h.writeProblem(w, r, http.StatusConflict, "The catalogue item was changed by someone else. Reload and try again.", "conflict", err)
+		return
+	}
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, item)
 }
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Cache-Control", "no-store")

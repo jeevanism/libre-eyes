@@ -509,6 +509,67 @@ func (s *Service) UpsertFirm(ctx context.Context, a Authorization, in ContextUps
 	return s.upsertContext(ctx, a, in, true)
 }
 
+func (s *Service) PrescriptionCatalogue(ctx context.Context, a Authorization) ([]CatalogueItem, error) {
+	rows, err := s.pool.Query(ctx, `SELECT id,category,code,display_name,active,display_order,version FROM development_prescription_catalogue ORDER BY category,display_order,id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []CatalogueItem{}
+	for rows.Next() {
+		var item CatalogueItem
+		if err := rows.Scan(&item.ID, &item.Category, &item.Code, &item.DisplayName, &item.Active, &item.DisplayOrder, &item.Version); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
+}
+
+func (s *Service) UpsertPrescriptionCatalogue(ctx context.Context, a Authorization, in CatalogueUpsert) (CatalogueItem, error) {
+	if !validCatalogueItem(in) {
+		return CatalogueItem{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return CatalogueItem{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var out CatalogueItem
+	command := "prescription_catalogue.create"
+	if in.ID == 0 {
+		err = tx.QueryRow(ctx, `INSERT INTO development_prescription_catalogue(category,code,display_name,active,display_order) VALUES($1,$2,$3,$4,$5) RETURNING id,category,code,display_name,active,display_order,version`, in.Category, in.Code, in.DisplayName, in.Active, in.DisplayOrder).Scan(&out.ID, &out.Category, &out.Code, &out.DisplayName, &out.Active, &out.DisplayOrder, &out.Version)
+	} else {
+		command = "prescription_catalogue.update"
+		err = tx.QueryRow(ctx, `UPDATE development_prescription_catalogue SET category=$1,code=$2,display_name=$3,active=$4,display_order=$5,version=version+1 WHERE id=$6 AND version=$7 RETURNING id,category,code,display_name,active,display_order,version`, in.Category, in.Code, in.DisplayName, in.Active, in.DisplayOrder, in.ID, in.ExpectedVersion).Scan(&out.ID, &out.Category, &out.Code, &out.DisplayName, &out.Active, &out.DisplayOrder, &out.Version)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return CatalogueItem{}, ErrConflict
+		}
+	}
+	if err != nil {
+		return CatalogueItem{}, err
+	}
+	if err := auditContextTx(ctx, tx, a, command, "prescription_catalogue", out.ID, `["category","code","display_name","active","display_order"]`); err != nil {
+		return CatalogueItem{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return CatalogueItem{}, err
+	}
+	return out, nil
+}
+
+func validCatalogueItem(in CatalogueUpsert) bool {
+	if in.ID > 0 && in.ExpectedVersion < 1 || in.DisplayOrder < 0 || len(in.DisplayName) == 0 || len(in.DisplayName) > 200 || len(in.Code) == 0 || len(in.Code) > 120 || !strings.HasPrefix(in.Code, "development_") {
+		return false
+	}
+	switch in.Category {
+	case "medication", "route", "frequency", "duration", "laterality":
+		return true
+	default:
+		return false
+	}
+}
+
 func (s *Service) upsertContext(ctx context.Context, a Authorization, in ContextUpsert, firm bool) (Reference, error) {
 	name := strings.TrimSpace(in.Name)
 	if len(name) > 120 || (in.ID > 0 && in.ExpectedVersion < 1) {

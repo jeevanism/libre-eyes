@@ -178,6 +178,7 @@ export type DevelopmentReferralAppointment = {
 }
 export type AdminUser = { id: string; username: string; displayName: string; role: string; active: boolean; version: number; permissions: string[]; sites: AdminReference[]; firms: AdminReference[] }
 export type AdminReference = { id: number; name: string; active?: boolean; version?: number }
+export type AdminCatalogueItem = { id: number; category: 'medication' | 'route' | 'frequency' | 'duration' | 'laterality'; code: string; displayName: string; active: boolean; displayOrder: number; version: number }
 export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
 export type AdminSetting = { key: string; value: string; version: number }
 export type AdminAuditEvent = { actorUserId: number; actorDisplayName: string; command: string; targetType: string; targetPublicId?: string; targetKey?: string; targetDisplayName?: string; changedFields: string[]; outcome: string; correlationId: string; createdAt: string }
@@ -286,6 +287,9 @@ export const adminAPI = {
   contexts: () => request<AdminContexts>('/admin/contexts'),
   settings: () => request<AdminSetting[]>('/admin/settings'),
   audit: () => request<AdminAuditEvent[]>('/admin/audit'),
+  prescriptionCatalogue: () => request<AdminCatalogueItem[]>('/admin/catalogues/prescription'),
+  createPrescriptionCatalogue: (body: Omit<AdminCatalogueItem, 'id' | 'version'>, csrfToken: string) => request<AdminCatalogueItem>('/admin/catalogues/prescription', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
+  updatePrescriptionCatalogue: (id: number, body: Omit<AdminCatalogueItem, 'id' | 'version'> & { expectedVersion: number }, csrfToken: string) => request<AdminCatalogueItem>(`/admin/catalogues/prescription/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
   setUserActive: (id: string, expectedVersion: number, active: boolean, csrfToken: string) => request<AdminUser>(`/admin/users/${id}/${active ? 'reactivate' : 'deactivate'}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ expectedVersion }) }),
   createUser: (body: { username: string; displayName: string; password: string; role: string; siteIds: number[]; firmIds: number[] }, csrfToken: string) => request<AdminUser>('/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
   updateUser: (id: string, body: { username: string; displayName: string; password?: string | undefined; role: string; siteIds: number[]; firmIds: number[]; expectedVersion: number }, csrfToken: string) => request<AdminUser>(`/admin/users/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),

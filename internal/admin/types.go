@@ -85,3 +85,23 @@ type ContextUpsert struct {
 	Active          bool
 	ExpectedVersion int64
 }
+
+type CatalogueItem struct {
+	ID           int64  `json:"id"`
+	Category     string `json:"category"`
+	Code         string `json:"code"`
+	DisplayName  string `json:"displayName"`
+	Active       bool   `json:"active"`
+	DisplayOrder int    `json:"displayOrder"`
+	Version      int64  `json:"version"`
+}
+
+type CatalogueUpsert struct {
+	ID              int64
+	Category        string
+	Code            string
+	DisplayName     string
+	Active          bool
+	DisplayOrder    int
+	ExpectedVersion int64
+}
