@@ -34,3 +34,21 @@ func TestValidSettingValue(t *testing.T) {
 		t.Fatal("expected unsupported priority to be rejected")
 	}
 }
+
+func TestValidClinicalReference(t *testing.T) {
+	base := CatalogueUpsert{Category: "biometry", Code: "development_demo_lens", DisplayName: "Demo lens", Active: true, DisplayOrder: 0}
+	if !validClinicalReference(base) {
+		t.Fatal("expected clinical reference item to be valid")
+	}
+	for name, item := range map[string]CatalogueUpsert{
+		"unknown domain":  {Category: "drug", Code: "development_demo", DisplayName: "Demo"},
+		"production code": {Category: "lab", Code: "lab_hba1c", DisplayName: "Demo"},
+		"negative order":  {Category: "consent", Code: "development_demo", DisplayName: "Demo", DisplayOrder: -1},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if validClinicalReference(item) {
+				t.Fatal("expected clinical reference item to be rejected")
+			}
+		})
+	}
+}

@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS development_admin_clinical_catalogue_admin_idx;
+DROP TABLE IF EXISTS development_admin_clinical_catalogue;

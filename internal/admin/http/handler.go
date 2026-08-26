@@ -32,6 +32,8 @@ type Service interface {
 	UpsertPrescriptionCatalogue(context.Context, admin.Authorization, admin.CatalogueUpsert) (admin.CatalogueItem, error)
 	TheatreProcedureCatalogue(context.Context, admin.Authorization) ([]admin.CatalogueItem, error)
 	UpsertTheatreProcedureCatalogue(context.Context, admin.Authorization, admin.CatalogueUpsert) (admin.CatalogueItem, error)
+	ClinicalReferenceCatalogue(context.Context, admin.Authorization) ([]admin.CatalogueItem, error)
+	UpsertClinicalReferenceCatalogue(context.Context, admin.Authorization, admin.CatalogueUpsert) (admin.CatalogueItem, error)
 }
 type Handler struct {
 	service      Service
@@ -70,6 +72,9 @@ func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/admin/catalogues/theatre-procedure", h.theatreProcedureCatalogue)
 	m.HandleFunc("POST /api/v1/admin/catalogues/theatre-procedure", h.createTheatreProcedureCatalogue)
 	m.HandleFunc("PATCH /api/v1/admin/catalogues/theatre-procedure/{itemId}", h.updateTheatreProcedureCatalogue)
+	m.HandleFunc("GET /api/v1/admin/catalogues/clinical", h.clinicalReferenceCatalogue)
+	m.HandleFunc("POST /api/v1/admin/catalogues/clinical", h.createClinicalReferenceCatalogue)
+	m.HandleFunc("PATCH /api/v1/admin/catalogues/clinical/{itemId}", h.updateClinicalReferenceCatalogue)
 }
 
 type userBody struct {
@@ -397,6 +402,54 @@ func (h *Handler) mutateTheatreProcedureCatalogue(w http.ResponseWriter, r *http
 	item, err := h.service.UpsertTheatreProcedureCatalogue(r.Context(), a, admin.CatalogueUpsert{ID: id, Category: "procedure", Code: b.Code, DisplayName: b.DisplayName, Active: b.Active, DisplayOrder: b.DisplayOrder, ExpectedVersion: b.ExpectedVersion})
 	if err == admin.ErrConflict {
 		h.writeProblem(w, r, http.StatusConflict, "The theatre procedure was changed by someone else. Reload and try again.", "conflict", err)
+		return
+	}
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, item)
+}
+
+func (h *Handler) clinicalReferenceCatalogue(w http.ResponseWriter, r *http.Request) {
+	a, ok := h.auth(w, r, false)
+	if !ok {
+		return
+	}
+	items, err := h.service.ClinicalReferenceCatalogue(r.Context(), a)
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), "The clinical reference catalogues could not be loaded.", adminCode(err), err)
+		return
+	}
+	writeJSON(w, items)
+}
+
+func (h *Handler) createClinicalReferenceCatalogue(w http.ResponseWriter, r *http.Request) {
+	h.mutateClinicalReferenceCatalogue(w, r, 0)
+}
+
+func (h *Handler) updateClinicalReferenceCatalogue(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("itemId"), 10, 64)
+	if err != nil || id < 1 {
+		h.writeProblem(w, r, http.StatusBadRequest, "The catalogue item identifier is invalid.", "invalid_request", admin.ErrInvalidRequest)
+		return
+	}
+	h.mutateClinicalReferenceCatalogue(w, r, id)
+}
+
+func (h *Handler) mutateClinicalReferenceCatalogue(w http.ResponseWriter, r *http.Request, id int64) {
+	a, ok := h.auth(w, r, true)
+	if !ok {
+		return
+	}
+	var b catalogueBody
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&b) != nil {
+		h.writeProblem(w, r, http.StatusBadRequest, "Review the clinical catalogue values.", "invalid_request", admin.ErrInvalidRequest)
+		return
+	}
+	item, err := h.service.UpsertClinicalReferenceCatalogue(r.Context(), a, admin.CatalogueUpsert{ID: id, Category: b.Category, Code: b.Code, DisplayName: b.DisplayName, Active: b.Active, DisplayOrder: b.DisplayOrder, ExpectedVersion: b.ExpectedVersion})
+	if err == admin.ErrConflict {
+		h.writeProblem(w, r, http.StatusConflict, "The clinical catalogue item was changed by someone else. Reload and try again.", "conflict", err)
 		return
 	}
 	if err != nil {
