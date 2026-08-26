@@ -18,8 +18,8 @@ export const developmentVisualAcuityValues = Array.from({ length: 91 }, (_, inde
 })
 
 export const developmentVisualAcuityMethods = [
-  ['development_unaided', 'Development unaided'],
+  ['development_unaided', 'Demo unaided'],
   ['development_habitual', 'Demo habitual correction'],
   ['development_best_corrected', 'Demo best-corrected'],
-  ['development_pinhole', 'Development pinhole'],
+  ['development_pinhole', 'Demo pinhole'],
 ] as const

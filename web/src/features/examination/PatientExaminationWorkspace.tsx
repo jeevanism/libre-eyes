@@ -5,6 +5,7 @@ import { ArrowLeft, Stethoscope } from 'lucide-react'
 import { patientSummaryAPI, type Session } from '../../api/client'
 import { EpisodeTimeline } from '../episodes/EpisodeTimeline'
 import type { ExaminationTool } from './examinationNavigation'
+import { presentationTerminology } from '../../config/terminology'
 
 interface PatientExaminationWorkspaceProps {
   patientId: string
@@ -36,7 +37,7 @@ export function PatientExaminationWorkspace({ patientId, session, selectedTool, 
       </div>
       <div className="examination-page-intro">
         <Stethoscope size={20} aria-hidden="true" />
-        <div><h2>Examination workspace</h2><span>Select an active care episode, then work in one development demonstration tool at a time.</span></div>
+        <div><h2>Examination workspace</h2><span>Select an active care episode, then work in one {presentationTerminology.environmentLabel.toLowerCase()} tool at a time.</span></div>
       </div>
       <EpisodeTimeline
         allowed={session.permissions.includes('episode.read')}

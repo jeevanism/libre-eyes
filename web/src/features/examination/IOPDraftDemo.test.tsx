@@ -29,7 +29,7 @@ describe('IOPDraftDemo', () => {
     vi.stubGlobal('fetch', fetchMock)
     const { container } = renderDemo()
 
-    fireEvent.change(screen.getByLabelText('Right eye development IOP value'), { target: { value: 'development_iop_14' } })
+    fireEvent.change(screen.getByLabelText('Right eye demo IOP value'), { target: { value: 'development_iop_14' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save demo draft' }))
 
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Demo draft saved'))
@@ -48,7 +48,7 @@ describe('IOPDraftDemo', () => {
     vi.stubGlobal('fetch', fetchMock)
     renderDemo()
     fireEvent.click(screen.getByRole('button', { name: 'Save demo draft' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Select a development demonstration value for at least one eye')
+    expect(screen.getByRole('alert')).toHaveTextContent('Select a demonstration value for at least one eye')
     expect(document.activeElement).toBe(screen.getByRole('alert'))
     expect(fetchMock).not.toHaveBeenCalled()
   })
@@ -58,8 +58,8 @@ describe('IOPDraftDemo', () => {
       type: 'about:blank', title: 'Request failed', status: 409, code: 'conflict', correlationId: 'synthetic-correlation',
     }), { status: 409, headers: { 'Content-Type': 'application/problem+json' } })))
     renderDemo()
-    fireEvent.change(screen.getByLabelText('Right eye development IOP value'), { target: { value: 'development_iop_14' } })
-    fireEvent.change(screen.getByLabelText('Left eye development IOP value'), { target: { value: 'development_iop_18' } })
+    fireEvent.change(screen.getByLabelText('Right eye demo IOP value'), { target: { value: 'development_iop_14' } })
+    fireEvent.change(screen.getByLabelText('Left eye demo IOP value'), { target: { value: 'development_iop_18' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save demo draft' }))
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('episode changed'))
     expect(screen.getByRole('alert')).not.toHaveTextContent('development_iop_14')

@@ -75,7 +75,13 @@ body {
 }
 
 .admin-workspace { max-width: 1280px; margin: 0 auto; padding: 28px; }
+.admin-section-nav { display: flex; gap: 4px; margin-top: 22px; padding: 4px; overflow-x: auto; border-bottom: 1px solid var(--border-subtle); }
+.admin-section-nav button { border: 0; border-bottom: 3px solid transparent; padding: 10px 14px; background: transparent; color: var(--text-secondary); white-space: nowrap; font-weight: 650; }
+.admin-section-nav button:hover, .admin-section-nav button.active { color: var(--accent); background: var(--surface); border-bottom-color: var(--accent); }
 .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
+.admin-grid > .admin-panel { display: none; }
+.admin-view-users .admin-grid > :nth-child(1), .admin-view-organization .admin-grid > :nth-child(2), .admin-view-settings .admin-grid > :nth-child(3), .admin-view-audit .admin-grid > :nth-child(5) { display: block; grid-column: 1 / -1; }
+.admin-view-catalogues .admin-grid > :nth-child(4), .admin-view-catalogues .admin-grid > :nth-child(6), .admin-view-catalogues .admin-grid > :nth-child(7) { display: block; }
 .admin-panel { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 18px; }
 .admin-panel h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; }
 .admin-row { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border-subtle); text-transform: capitalize; }

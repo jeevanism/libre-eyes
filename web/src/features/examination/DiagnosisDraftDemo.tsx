@@ -44,12 +44,12 @@ export function DiagnosisDraftDemo({ csrfToken, episodeId }: DiagnosisDraftDemoP
     event.preventDefault()
     if (!selectionCode || !laterality || !diagnosisDate) {
       saveDraft.reset()
-      setClientError('Select a development example, laterality, and date before saving the draft.')
+      setClientError('Select a demonstration example, laterality, and date before saving the draft.')
       return
     }
     if (diagnosisDate > developmentToday()) {
       saveDraft.reset()
-      setClientError('The development demonstration date cannot be in the future.')
+      setClientError('The demonstration date cannot be in the future.')
       return
     }
     clearFeedback()

@@ -160,7 +160,7 @@ export function EyeDrawDraftDemo({ csrfToken, episodeId }: EyeDrawDraftDemoProps
       clearFeedback()
       saveDraft.mutate({ recordMode, canvasCode, laterality, drawing })
     } catch {
-      setClientError('The EyeDraw canvas returned an invalid development drawing. No clinical record was created.')
+      setClientError('The EyeDraw canvas returned an invalid demonstration drawing. No clinical record was created.')
     }
   }
 

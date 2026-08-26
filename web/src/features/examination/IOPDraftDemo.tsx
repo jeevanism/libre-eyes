@@ -33,7 +33,7 @@ export function IOPDraftDemo({ csrfToken, episodeId }: IOPDraftDemoProps) {
     if (leftValueCode) eyes.push({ eye: 'left', valueCode: leftValueCode })
     if (eyes.length === 0) {
       saveDraft.reset()
-      setClientError('Select a development demonstration value for at least one eye before saving the draft.')
+      setClientError('Select a demonstration value for at least one eye before saving the draft.')
       return
     }
     setClientError('')
@@ -72,7 +72,7 @@ function EyeSelect({ eye, valueCode, disabled, onChange }: { eye: string, valueC
       <legend>{eye}</legend>
       <label>
         <span>Demo IOP value</span>
-        <select aria-label={`${eye} development IOP value`} disabled={disabled} onChange={(event) => onChange(event.target.value)} value={valueCode}>
+        <select aria-label={`${eye} demo IOP value`} disabled={disabled} onChange={(event) => onChange(event.target.value)} value={valueCode}>
           <option value="">Not recorded in this demonstration draft</option>
           {developmentIOPValues.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
         </select>

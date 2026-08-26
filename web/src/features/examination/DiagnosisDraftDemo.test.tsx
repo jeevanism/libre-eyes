@@ -34,7 +34,7 @@ describe('DiagnosisDraftDemo', () => {
     vi.stubGlobal('fetch', fetchMock)
     renderDemo()
     fireEvent.click(screen.getByRole('button', { name: 'Save demo draft' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Select a development example')
+    expect(screen.getByRole('alert')).toHaveTextContent('Select a demonstration example')
     expect(screen.getByLabelText('Demo example')).toHaveAttribute('aria-invalid', 'true')
     expect(screen.getByLabelText('Demo example')).toHaveAttribute('aria-describedby', 'diagnosis-demo-error-22222222-2222-4222-8222-222222222222')
     expect(document.activeElement).toBe(screen.getByRole('alert'))

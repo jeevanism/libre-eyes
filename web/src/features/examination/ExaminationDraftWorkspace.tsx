@@ -28,6 +28,7 @@ import { GeneticResultDraftDemo } from './GeneticResultDraftDemo'
 import { AnaestheticFeedbackDraftDemo } from './AnaestheticFeedbackDraftDemo'
 import { ExaminationToolNavigation } from './ExaminationToolNavigation'
 import type { ExaminationTool } from './examinationNavigation'
+import { presentationTerminology } from '../../config/terminology'
 
 interface ExaminationDraftWorkspaceProps {
   csrfToken: string
@@ -36,13 +37,13 @@ interface ExaminationDraftWorkspaceProps {
   onToolChange?: ((tool: ExaminationTool) => void) | undefined
 }
 
-// Development-only clinical demonstrations stay isolated to one selected tool.
+// Demo-only clinical demonstrations stay isolated to one selected tool.
 export function ExaminationDraftWorkspace({ csrfToken, episodeId, selectedTool = 'acuity', onToolChange }: ExaminationDraftWorkspaceProps) {
   return (
     <section className="examination-draft-workspace" aria-labelledby={`examination-tools-${episodeId}`}>
       <div className="examination-workspace-heading">
         <div>
-          <p>Demo</p>
+          <p>{presentationTerminology.environmentLabel}</p>
           <h3 id={`examination-tools-${episodeId}`}>Examination tools</h3>
         </div>
         <Stethoscope size={18} aria-hidden="true" />
