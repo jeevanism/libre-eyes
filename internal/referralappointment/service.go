@@ -28,7 +28,7 @@ func NewService(pool *pgxpool.Pool, authorizer operationAuthorizer) (*Service, e
 	return &Service{pool: pool, authorizer: authorizer}, nil
 }
 func (s *Service) Authorize(ctx context.Context, token, csrf string, metadata auth.RequestMetadata) (Authorization, error) {
-	p, e := s.authorizer.AuthorizeOperation(ctx, auth.OperationAuthorizationRequest{Token: token, CSRFToken: csrf, Permission: PermissionManage, DeniedEventType: "referral.development_appointment.denied", Metadata: metadata})
+	p, e := s.authorizer.AuthorizeOperation(ctx, auth.OperationAuthorizationRequest{Token: token, CSRFToken: csrf, Permission: PermissionManage, Capability: "referrals", DeniedEventType: "referral.development_appointment.denied", Metadata: metadata})
 	if e != nil {
 		return Authorization{}, e
 	}

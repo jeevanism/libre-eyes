@@ -60,8 +60,12 @@ func (s *Service) Authorize(ctx context.Context, token, csrf, permission string,
 	if !ok {
 		return Authorization{}, ErrInvalidRequest
 	}
+	capability := ""
+	if strings.HasPrefix(permission, "event_draft.") {
+		capability = "examination"
+	}
 	principal, err := s.authorizer.AuthorizeOperation(ctx, auth.OperationAuthorizationRequest{
-		Token: token, CSRFToken: csrf, Permission: permission, DeniedEventType: deniedEvent, Metadata: metadata,
+		Token: token, CSRFToken: csrf, Permission: permission, Capability: capability, DeniedEventType: deniedEvent, Metadata: metadata,
 	})
 	if err != nil {
 		return Authorization{}, err

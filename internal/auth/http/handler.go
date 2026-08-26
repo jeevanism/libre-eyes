@@ -374,6 +374,7 @@ type sessionResponse struct {
 	User              userResponse    `json:"user"`
 	Context           contextResponse `json:"context"`
 	Permissions       []string        `json:"permissions"`
+	Capabilities      []string        `json:"capabilities"`
 	CSRFToken         string          `json:"csrfToken"`
 	IdleExpiresAt     time.Time       `json:"idleExpiresAt"`
 	AbsoluteExpiresAt time.Time       `json:"absoluteExpiresAt"`
@@ -392,7 +393,7 @@ func mapSession(value auth.Session) sessionResponse {
 			Site:        mapReference(value.Context.Site),
 			Firm:        mapReference(value.Context.Firm),
 		},
-		Permissions: value.Permissions, CSRFToken: value.CSRFToken,
+		Permissions: value.Permissions, Capabilities: value.Capabilities, CSRFToken: value.CSRFToken,
 		IdleExpiresAt: value.IdleExpiresAt, AbsoluteExpiresAt: value.AbsoluteExpiresAt,
 		ContextVersion: value.ContextVersion,
 	}

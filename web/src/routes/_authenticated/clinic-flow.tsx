@@ -8,6 +8,7 @@ export const Route = createFileRoute('/_authenticated/clinic-flow')({
 
 function ClinicFlowRoute() {
   const { session } = Route.useRouteContext()
+  if (session.capabilities && !session.capabilities.includes('clinic_flow')) return <section className="workspace-title"><p>Demo</p><h1>Capability unavailable</h1><span>Clinic flow is disabled for this clinic profile.</span></section>
   return (
     <section className="clinic-flow-page" aria-labelledby="clinic-flow-page-title">
       <div className="workspace-title">

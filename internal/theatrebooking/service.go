@@ -52,7 +52,7 @@ func (s *Service) AuthorizeRead(ctx context.Context, token string, metadata auth
 
 func (s *Service) AuthorizeCommand(ctx context.Context, token, csrf string, metadata auth.RequestMetadata) (Authorization, error) {
 	principal, err := s.authorizer.AuthorizeOperation(ctx, auth.OperationAuthorizationRequest{
-		Token: token, CSRFToken: csrf, Permission: PermissionManage, DeniedEventType: "theatre.development_booking.denied", Metadata: metadata,
+		Token: token, CSRFToken: csrf, Permission: PermissionManage, Capability: "theatre_booking", DeniedEventType: "theatre.development_booking.denied", Metadata: metadata,
 	})
 	if err != nil {
 		return Authorization{}, err

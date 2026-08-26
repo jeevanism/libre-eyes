@@ -39,6 +39,7 @@ func NewService(pool *pgxpool.Pool, authorizer operationAuthorizer) (*Service, e
 func (s *Service) Authorize(ctx context.Context, token, csrf string, metadata auth.RequestMetadata) (Authorization, error) {
 	principal, err := s.authorizer.AuthorizeOperation(ctx, auth.OperationAuthorizationRequest{
 		Token: token, CSRFToken: csrf, Permission: PermissionManage,
+		Capability:      "clinic_flow",
 		DeniedEventType: "worklist.development_flow.denied", Metadata: metadata,
 	})
 	if err != nil {
