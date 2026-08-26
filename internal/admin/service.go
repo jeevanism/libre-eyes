@@ -86,6 +86,7 @@ func (s *Service) loadUserDetails(ctx context.Context, a Authorization, u *User)
 	u.Permissions = []string{}
 	u.Sites = []Reference{}
 	u.Firms = []Reference{}
+	u.Roles = []RoleAssignment{}
 	rows, err := s.pool.Query(ctx, `SELECT DISTINCT p.name
 		FROM user_role_assignments ura
 		JOIN roles r ON r.id=ura.role_id AND r.scope=ura.role_scope AND r.active
@@ -136,7 +137,124 @@ func (s *Service) loadUserDetails(ctx context.Context, a Authorization, u *User)
 		}
 		u.Firms = append(u.Firms, v)
 	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	rows, err = s.pool.Query(ctx, `SELECT ura.id, r.id, r.name, ura.role_scope, ura.institution_id, ura.active
+		FROM user_role_assignments ura JOIN roles r ON r.id=ura.role_id AND r.scope=ura.role_scope
+		WHERE ura.user_id=(SELECT user_id FROM development_admin_users WHERE public_id=$1::uuid)
+		  AND ura.institution_id=$2 ORDER BY r.name`, u.ID, a.principal.InstitutionID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v RoleAssignment
+		if err := rows.Scan(&v.ID, &v.RoleID, &v.RoleName, &v.Scope, &v.InstitutionID, &v.Active); err != nil {
+			return err
+		}
+		u.Roles = append(u.Roles, v)
+	}
 	return rows.Err()
+}
+
+func (s *Service) Roles(ctx context.Context, a Authorization) ([]Role, error) {
+	rows, err := s.pool.Query(ctx, `SELECT r.id,r.name,r.description,r.scope,
+		COALESCE(array_agg(p.name ORDER BY p.name) FILTER (WHERE p.active), '{}')
+		FROM roles r LEFT JOIN role_permissions rp ON rp.role_id=r.id AND rp.active
+		LEFT JOIN permissions p ON p.id=rp.permission_id
+		WHERE r.active AND r.scope IN ('institution','global') GROUP BY r.id ORDER BY r.scope,r.name`)
+	if err != nil {
+		return nil, fmt.Errorf("list roles: %w", err)
+	}
+	defer rows.Close()
+	out := []Role{}
+	for rows.Next() {
+		var v Role
+		if err := rows.Scan(&v.ID, &v.Name, &v.Description, &v.Scope, &v.Permissions); err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+func (s *Service) AssignRole(ctx context.Context, a Authorization, cmd RoleCommand) (User, error) {
+	if cmd.UserPublicID == "" || cmd.RoleID < 1 {
+		return User{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return User{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var userID int64
+	var u User
+	err = tx.QueryRow(ctx, `SELECT user_id,public_id::text,username,display_name,role_code,active,version FROM development_admin_users WHERE public_id=$1::uuid AND institution_id=$2`, cmd.UserPublicID, a.principal.InstitutionID).Scan(&userID, &u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Active, &u.Version)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return User{}, ErrInvalidRequest
+	}
+	if err != nil {
+		return User{}, err
+	}
+	var scope string
+	err = tx.QueryRow(ctx, `SELECT scope FROM roles WHERE id=$1 AND active`, cmd.RoleID).Scan(&scope)
+	if errors.Is(err, pgx.ErrNoRows) || scope != "institution" {
+		return User{}, ErrInvalidRequest
+	}
+	if err != nil {
+		return User{}, err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO user_role_assignments(user_id,role_id,role_scope,institution_id,assigned_by_user_id,active) VALUES($1,$2,'institution',$3,$4,TRUE) ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE,assigned_by_user_id=EXCLUDED.assigned_by_user_id`, userID, cmd.RoleID, a.principal.InstitutionID, a.principal.UserID); err != nil {
+		return User{}, err
+	}
+	if err = auditTx(ctx, tx, a, "role.assign", "user", cmd.UserPublicID, `["role"]`); err != nil {
+		return User{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return User{}, err
+	}
+	if err = s.loadUserDetails(ctx, a, &u); err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
+
+func (s *Service) RevokeRole(ctx context.Context, a Authorization, cmd RoleCommand) (User, error) {
+	if cmd.UserPublicID == "" || cmd.RoleID < 1 {
+		return User{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return User{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var userID int64
+	var u User
+	err = tx.QueryRow(ctx, `SELECT user_id,public_id::text,username,display_name,role_code,active,version FROM development_admin_users WHERE public_id=$1::uuid AND institution_id=$2`, cmd.UserPublicID, a.principal.InstitutionID).Scan(&userID, &u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Active, &u.Version)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return User{}, ErrInvalidRequest
+	}
+	if err != nil {
+		return User{}, err
+	}
+	var changed int64
+	if err = tx.QueryRow(ctx, `UPDATE user_role_assignments SET active=FALSE WHERE user_id=$1 AND role_id=$2 AND institution_id=$3 AND active RETURNING id`, userID, cmd.RoleID, a.principal.InstitutionID).Scan(&changed); errors.Is(err, pgx.ErrNoRows) {
+		return User{}, ErrInvalidRequest
+	}
+	if err != nil {
+		return User{}, err
+	}
+	if err = auditTx(ctx, tx, a, "role.revoke", "user", cmd.UserPublicID, `["role"]`); err != nil {
+		return User{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return User{}, err
+	}
+	if err = s.loadUserDetails(ctx, a, &u); err != nil {
+		return User{}, err
+	}
+	return u, nil
 }
 func (s *Service) Contexts(ctx context.Context, a Authorization) (Contexts, error) {
 	var out Contexts

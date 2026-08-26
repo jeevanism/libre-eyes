@@ -17,15 +17,38 @@ var (
 )
 
 type User struct {
-	ID          string      `json:"id"`
-	Username    string      `json:"username"`
-	DisplayName string      `json:"displayName"`
-	Role        string      `json:"role"`
-	Active      bool        `json:"active"`
-	Version     int64       `json:"version"`
-	Permissions []string    `json:"permissions"`
-	Sites       []Reference `json:"sites"`
-	Firms       []Reference `json:"firms"`
+	ID          string           `json:"id"`
+	Username    string           `json:"username"`
+	DisplayName string           `json:"displayName"`
+	Role        string           `json:"role"`
+	Active      bool             `json:"active"`
+	Version     int64            `json:"version"`
+	Permissions []string         `json:"permissions"`
+	Sites       []Reference      `json:"sites"`
+	Firms       []Reference      `json:"firms"`
+	Roles       []RoleAssignment `json:"roles"`
+}
+
+type Role struct {
+	ID          int64    `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Scope       string   `json:"scope"`
+	Permissions []string `json:"permissions"`
+}
+
+type RoleAssignment struct {
+	ID            int64  `json:"id"`
+	RoleID        int64  `json:"roleId"`
+	RoleName      string `json:"roleName"`
+	Scope         string `json:"scope"`
+	InstitutionID int64  `json:"institutionId"`
+	Active        bool   `json:"active"`
+}
+
+type RoleCommand struct {
+	UserPublicID string
+	RoleID       int64
 }
 
 type Contexts struct {

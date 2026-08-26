@@ -176,7 +176,9 @@ export type DevelopmentReferralAppointment = {
   version: number
   retentionKind?: 'autosave' | 'manual'
 }
-export type AdminUser = { id: string; username: string; displayName: string; role: string; active: boolean; version: number; permissions: string[]; sites: AdminReference[]; firms: AdminReference[] }
+export type AdminRoleAssignment = { id: number; roleId: number; roleName: string; scope: string; institutionId: number; active: boolean }
+export type AdminUser = { id: string; username: string; displayName: string; role: string; active: boolean; version: number; permissions: string[]; sites: AdminReference[]; firms: AdminReference[]; roles: AdminRoleAssignment[] }
+export type AdminRole = { id: number; name: string; description: string; scope: string; permissions: string[] }
 export type AdminReference = { id: number; name: string; active?: boolean; version?: number }
 export type AdminCatalogueItem = { id: number; category: 'medication' | 'route' | 'frequency' | 'duration' | 'laterality' | 'procedure' | 'biometry' | 'laser' | 'intravitreal' | 'lab' | 'genetics' | 'dna' | 'consent' | 'examination'; code: string; displayName: string; active: boolean; displayOrder: number; version: number }
 export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
@@ -285,6 +287,9 @@ export const authAPI = {
 
 export const adminAPI = {
   users: () => request<AdminUser[]>('/admin/users'),
+  roles: () => request<AdminRole[]>('/admin/roles'),
+  assignRole: (userId: string, roleId: number, csrfToken: string) => request<AdminUser>(`/admin/users/${userId}/roles`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ roleId }) }),
+  revokeRole: (userId: string, roleId: number, csrfToken: string) => request<AdminUser>(`/admin/users/${userId}/roles/${roleId}/revoke`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: '{}' }),
   contexts: () => request<AdminContexts>('/admin/contexts'),
   settings: () => request<AdminSetting[]>('/admin/settings'),
   audit: () => request<AdminAuditEvent[]>('/admin/audit'),

@@ -19,6 +19,9 @@ import (
 type Service interface {
 	Authorize(context.Context, string, string, auth.RequestMetadata, bool) (admin.Authorization, error)
 	Users(context.Context, admin.Authorization) ([]admin.User, error)
+	Roles(context.Context, admin.Authorization) ([]admin.Role, error)
+	AssignRole(context.Context, admin.Authorization, admin.RoleCommand) (admin.User, error)
+	RevokeRole(context.Context, admin.Authorization, admin.RoleCommand) (admin.User, error)
 	CreateUser(context.Context, admin.Authorization, admin.UserUpsert) (admin.User, error)
 	UpdateUser(context.Context, admin.Authorization, admin.UserUpsert) (admin.User, error)
 	Contexts(context.Context, admin.Authorization) (admin.Contexts, error)
@@ -52,6 +55,9 @@ func NewHandler(s Service, secure bool, loggers ...*slog.Logger) *Handler {
 }
 func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/admin/users", h.users)
+	m.HandleFunc("GET /api/v1/admin/roles", h.roles)
+	m.HandleFunc("POST /api/v1/admin/users/{userId}/roles", h.assignRole)
+	m.HandleFunc("POST /api/v1/admin/users/{userId}/roles/{roleId}/revoke", h.revokeRole)
 	m.HandleFunc("POST /api/v1/admin/users", h.createUser)
 	m.HandleFunc("PATCH /api/v1/admin/users/{userId}", h.updateUser)
 	m.HandleFunc("GET /api/v1/admin/contexts", h.contexts)
@@ -80,6 +86,58 @@ func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/admin/catalogues/clinical", h.createClinicalReferenceCatalogue)
 	m.HandleFunc("PATCH /api/v1/admin/catalogues/clinical/{itemId}", h.updateClinicalReferenceCatalogue)
 }
+
+func (h *Handler) roles(w http.ResponseWriter, r *http.Request) {
+	a, ok := h.auth(w, r, false)
+	if !ok {
+		return
+	}
+	out, err := h.service.Roles(r.Context(), a)
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, out)
+}
+
+func (h *Handler) roleCommand(w http.ResponseWriter, r *http.Request, revoke bool) {
+	a, ok := h.auth(w, r, true)
+	if !ok {
+		return
+	}
+	roleValue := r.PathValue("roleId")
+	if !revoke {
+		var body struct{ RoleID int64 `json:"roleId"` }
+		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&body) != nil {
+			h.writeProblem(w, r, http.StatusBadRequest, "Review the role assignment.", "invalid_request", admin.ErrInvalidRequest)
+			return
+		}
+		roleValue = strconv.FormatInt(body.RoleID, 10)
+	}
+	id, err := strconv.ParseInt(roleValue, 10, 64)
+	if err != nil || id < 1 {
+		h.writeProblem(w, r, http.StatusBadRequest, "The role identifier is invalid.", "invalid_request", admin.ErrInvalidRequest)
+		return
+	}
+	cmd := admin.RoleCommand{UserPublicID: r.PathValue("userId"), RoleID: id}
+	var out admin.User
+	if revoke {
+		out, err = h.service.RevokeRole(r.Context(), a, cmd)
+	} else {
+		out, err = h.service.AssignRole(r.Context(), a, cmd)
+	}
+	if err == admin.ErrConflict {
+		h.writeProblem(w, r, http.StatusConflict, "The role assignment changed by someone else. Reload and try again.", "conflict", err)
+		return
+	}
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, out)
+}
+func (h *Handler) assignRole(w http.ResponseWriter, r *http.Request) { h.roleCommand(w, r, false) }
+func (h *Handler) revokeRole(w http.ResponseWriter, r *http.Request) { h.roleCommand(w, r, true) }
 
 type userBody struct {
 	Username        string  `json:"username"`
