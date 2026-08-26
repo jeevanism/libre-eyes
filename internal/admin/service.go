@@ -181,7 +181,49 @@ func (s *Service) Settings(ctx context.Context, a Authorization) ([]Setting, err
 		if err := rows.Scan(&v.Key, &v.Value, &v.Version); err != nil {
 			return nil, err
 		}
+		v.Scope = ScopeInstitution
+		v.Source = string(ScopeInstitution)
 		out = append(out, v)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	// Overrides are additive. Resolve each known setting against the current
+	// site/firm context and replace the institution default when applicable.
+	overrideRows, err := s.pool.Query(ctx, `
+		SELECT key,value,version,institution_id,site_id,firm_id
+		FROM development_admin_setting_overrides
+		WHERE institution_id=$1 AND active
+		  AND (site_id IS NULL OR site_id=$2)
+		  AND (firm_id IS NULL OR firm_id=$3)`, a.principal.InstitutionID, a.principal.SiteID, a.principal.FirmID)
+	if err != nil {
+		return nil, err
+	}
+	defer overrideRows.Close()
+	byKey := make(map[string][]SettingCandidate)
+	for overrideRows.Next() {
+		var c SettingCandidate
+		if err := overrideRows.Scan(&c.Key, &c.Value, &c.Version, &c.InstitutionID, &c.SiteID, &c.FirmID); err != nil {
+			return nil, err
+		}
+		if c.SiteID != 0 {
+			c.Scope = ScopeSite
+		} else {
+			c.Scope = ScopeFirm
+		}
+		byKey[c.Key] = append(byKey[c.Key], c)
+	}
+	if err := overrideRows.Err(); err != nil {
+		return nil, err
+	}
+	for i := range out {
+		candidates := []SettingCandidate{{Key: out[i].Key, Value: out[i].Value, Version: out[i].Version, Scope: ScopeInstitution, InstitutionID: a.principal.InstitutionID}}
+		candidates = append(candidates, byKey[out[i].Key]...)
+		effective, err := ResolveSetting(candidates, out[i].Key, a.principal.InstitutionID, a.principal.SiteID, a.principal.FirmID)
+		if err != nil {
+			return nil, err
+		}
+		out[i].Value, out[i].Version, out[i].Scope, out[i].Source = effective.Value, effective.Version, effective.Scope, string(effective.Scope)
 	}
 	return out, rows.Err()
 }

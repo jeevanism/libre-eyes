@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS development_admin_setting_overrides_lookup;
+DROP INDEX IF EXISTS development_admin_setting_overrides_scope_key;
+DROP TABLE IF EXISTS development_admin_setting_overrides;

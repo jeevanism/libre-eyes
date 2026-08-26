@@ -41,9 +41,11 @@ type Reference struct {
 	Version int64  `json:"version,omitempty"`
 }
 type Setting struct {
-	Key     string `json:"key"`
-	Value   string `json:"value"`
-	Version int64  `json:"version"`
+	Key     string       `json:"key"`
+	Value   string       `json:"value"`
+	Version int64        `json:"version"`
+	Scope   SettingScope `json:"scope"`
+	Source  string       `json:"source"`
 }
 type AuditEvent struct {
 	ActorUserID       int64     `json:"actorUserId"`

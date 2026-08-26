@@ -180,7 +180,7 @@ export type AdminUser = { id: string; username: string; displayName: string; rol
 export type AdminReference = { id: number; name: string; active?: boolean; version?: number }
 export type AdminCatalogueItem = { id: number; category: 'medication' | 'route' | 'frequency' | 'duration' | 'laterality' | 'procedure' | 'biometry' | 'laser' | 'intravitreal' | 'lab' | 'genetics' | 'dna' | 'consent' | 'examination'; code: string; displayName: string; active: boolean; displayOrder: number; version: number }
 export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
-export type AdminSetting = { key: string; value: string; version: number }
+export type AdminSetting = { key: string; value: string; version: number; scope: 'system' | 'institution' | 'site' | 'firm'; source: string }
 export type AdminAuditEvent = { actorUserId: number; actorDisplayName: string; command: string; targetType: string; targetPublicId?: string; targetKey?: string; targetDisplayName?: string; changedFields: string[]; outcome: string; correlationId: string; createdAt: string }
 export type PatientSummaryHeader = {
   patientId: string
