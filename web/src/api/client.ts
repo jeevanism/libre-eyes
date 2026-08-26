@@ -17,7 +17,7 @@ import type {
 } from './theatre-booking-schema'
 
 export type LoginOptions = components['schemas']['LoginOptions']
-export type Session = components['schemas']['SessionRepresentation']
+export type Session = components['schemas']['SessionRepresentation'] & { capabilities?: string[] }
 export type LoginRequest = components['schemas']['LoginRequest']
 export type Problem = components['schemas']['Problem']
 export type ReplaceContextRequest = components['schemas']['ReplaceContextRequest']
@@ -181,6 +181,7 @@ export type AdminReference = { id: number; name: string; active?: boolean; versi
 export type AdminCatalogueItem = { id: number; category: 'medication' | 'route' | 'frequency' | 'duration' | 'laterality' | 'procedure' | 'biometry' | 'laser' | 'intravitreal' | 'lab' | 'genetics' | 'dna' | 'consent' | 'examination'; code: string; displayName: string; active: boolean; displayOrder: number; version: number }
 export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
 export type AdminSetting = { key: string; value: string; version: number; scope: 'system' | 'institution' | 'site' | 'firm'; source: string }
+export type AdminCapability = { key: string; displayName: string; description: string; enabled: boolean; version: number }
 export type AdminAuditEvent = { actorUserId: number; actorDisplayName: string; command: string; targetType: string; targetPublicId?: string; targetKey?: string; targetDisplayName?: string; changedFields: string[]; outcome: string; correlationId: string; createdAt: string }
 export type PatientSummaryHeader = {
   patientId: string
@@ -287,6 +288,8 @@ export const adminAPI = {
   contexts: () => request<AdminContexts>('/admin/contexts'),
   settings: () => request<AdminSetting[]>('/admin/settings'),
   audit: () => request<AdminAuditEvent[]>('/admin/audit'),
+  capabilities: () => request<AdminCapability[]>('/admin/capabilities'),
+  setCapability: (key: string, enabled: boolean, expectedVersion: number, csrfToken: string) => request<AdminCapability>(`/admin/capabilities/${key}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ enabled, expectedVersion }) }),
   prescriptionCatalogue: () => request<AdminCatalogueItem[]>('/admin/catalogues/prescription'),
   createPrescriptionCatalogue: (body: Omit<AdminCatalogueItem, 'id' | 'version'>, csrfToken: string) => request<AdminCatalogueItem>('/admin/catalogues/prescription', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
   updatePrescriptionCatalogue: (id: number, body: Omit<AdminCatalogueItem, 'id' | 'version'> & { expectedVersion: number }, csrfToken: string) => request<AdminCatalogueItem>(`/admin/catalogues/prescription/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),

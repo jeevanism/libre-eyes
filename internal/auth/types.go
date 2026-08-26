@@ -58,6 +58,7 @@ type OperationAuthorizationRequest struct {
 	Token           string
 	CSRFToken       string
 	Permission      string
+	Capability      string
 	DeniedEventType string
 	Metadata        RequestMetadata
 }
@@ -99,6 +100,7 @@ type Session struct {
 	User              User
 	Context           UserContext
 	Permissions       []string
+	Capabilities      []string
 	CSRFToken         string
 	IdleExpiresAt     time.Time
 	AbsoluteExpiresAt time.Time

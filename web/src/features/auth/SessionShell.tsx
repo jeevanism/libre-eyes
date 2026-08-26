@@ -13,6 +13,7 @@ interface SessionShellProps {
 }
 
 export function SessionShell({ session, children }: SessionShellProps) {
+  const capabilityEnabled = (key: string) => session.capabilities?.includes(key) ?? true
   const queryClient = useQueryClient()
   const logout = useMutation({
     mutationFn: () => authAPI.logout(session.csrfToken),
@@ -48,10 +49,10 @@ export function SessionShell({ session, children }: SessionShellProps) {
       </header>
       <nav className="app-nav" aria-label="Primary navigation">
         <Link to="/" activeOptions={{ exact: true }}>Home</Link>
-        <Link to="/patients/search"><Search size={16} aria-hidden="true" />Patient search</Link>
-        <Link to="/clinic-flow"><ClipboardList size={16} aria-hidden="true" />Clinic flow</Link>
-        <Link to="/theatre-booking"><CalendarDays size={16} aria-hidden="true" />Theatre schedule</Link>
-        <Link to="/referral-appointments"><CalendarPlus size={16} aria-hidden="true" />Referrals</Link>
+        {capabilityEnabled('patient_search') && <Link to="/patients/search"><Search size={16} aria-hidden="true" />Patient search</Link>}
+        {capabilityEnabled('clinic_flow') && <Link to="/clinic-flow"><ClipboardList size={16} aria-hidden="true" />Clinic flow</Link>}
+        {capabilityEnabled('theatre_booking') && <Link to="/theatre-booking"><CalendarDays size={16} aria-hidden="true" />Theatre schedule</Link>}
+        {capabilityEnabled('referrals') && <Link to="/referral-appointments"><CalendarPlus size={16} aria-hidden="true" />Referrals</Link>}
         {session.permissions.includes('admin.development.read') && <Link to="/admin"><ShieldCheck size={16} aria-hidden="true" />Admin</Link>}
       </nav>
       <main className="workspace">{children}</main>

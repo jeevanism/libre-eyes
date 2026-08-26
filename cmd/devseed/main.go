@@ -369,7 +369,7 @@ func run(ctx context.Context) error {
 	if err := seedDevelopmentReferralAppointments(ctx, tx, institutionID, siteID, firmID, userID); err != nil {
 		return err
 	}
-	if err := seedDevelopmentAdmin(ctx, tx, institutionID, userID); err != nil {
+	if err := seedDevelopmentAdmin(ctx, tx, institutionID, userID, profileID, passwordHash); err != nil {
 		return err
 	}
 	if err := seedDemoLoginUsers(ctx, tx, institutionID, siteID, firmID, profileID, passwordHash); err != nil {
@@ -431,7 +431,7 @@ func seedDemoLoginUsers(ctx context.Context, tx pgx.Tx, institutionID, siteID, f
 	return nil
 }
 
-func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID int64) error {
+func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID, profileID int64, passwordHash string) error {
 	clinicalUserID, err := findOrInsert(ctx, tx,
 		"SELECT id FROM users WHERE display_name = $1 ORDER BY id LIMIT 1",
 		"INSERT INTO users (display_name) VALUES ($1) RETURNING id",
@@ -458,6 +458,27 @@ func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID
 		 ('90000000-0000-4000-8000-000000000002',$1,$3,'clinical.demo','Demo Clinical User','clinical_user')
 		ON CONFLICT (public_id) DO UPDATE SET institution_id=EXCLUDED.institution_id,user_id=EXCLUDED.user_id,display_name=EXCLUDED.display_name,active=TRUE,version=development_admin_users.version+1,updated_at=now()`, institutionID, actorID, clinicalUserID); err != nil {
 		return fmt.Errorf("seed development admin users: %w", err)
+	}
+	// Admin profiles are also login accounts. Keep their credentials aligned
+	// with the password supplied for the current development seed.
+	for _, account := range []struct {
+		userID   int64
+		username string
+	}{
+		{actorID, "admin.demo"},
+		{clinicalUserID, "clinical.demo"},
+	} {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO user_credentials (user_id,authentication_profile_id,canonical_username,password_hash,hash_scheme,hash_version,state,active)
+			VALUES ($1,$2,$3,$4,'argon2id',19,'active',TRUE)
+			ON CONFLICT (canonical_username) DO UPDATE SET
+				user_id=EXCLUDED.user_id,
+				authentication_profile_id=EXCLUDED.authentication_profile_id,
+				password_hash=EXCLUDED.password_hash,
+				hash_scheme='argon2id',hash_version=19,state='active',active=TRUE,
+				failed_attempts=0,soft_locked_until=NULL,version=user_credentials.version+1,updated_at=now()`, account.userID, profileID, account.username, passwordHash); err != nil {
+			return fmt.Errorf("seed %s credential: %w", account.username, err)
+		}
 	}
 	for key, value := range map[string]string{
 		"default_site": "Development Eye Clinic", "default_firm": "Development Ophthalmology",

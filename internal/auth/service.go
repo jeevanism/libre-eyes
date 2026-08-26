@@ -235,6 +235,10 @@ func (s *Service) Login(ctx context.Context, request LoginRequest, metadata Requ
 	if err != nil {
 		return CreatedSession{}, err
 	}
+	capabilities, err := loadCapabilities(ctx, tx, request.InstitutionID)
+	if err != nil {
+		return CreatedSession{}, err
+	}
 	idleExpiresAt := now.Add(s.config.SessionIdleTimeout)
 	absoluteExpiresAt := now.Add(s.config.SessionAbsoluteTimeout)
 	var sessionID int64
@@ -273,7 +277,7 @@ func (s *Service) Login(ctx context.Context, request LoginRequest, metadata Requ
 		Token: token,
 		Session: Session{
 			User:    User{ID: credential.userID, DisplayName: credential.displayName},
-			Context: contextValue, Permissions: permissions, CSRFToken: csrf,
+			Context: contextValue, Permissions: permissions, Capabilities: capabilities, CSRFToken: csrf,
 			IdleExpiresAt: idleExpiresAt, AbsoluteExpiresAt: absoluteExpiresAt, ContextVersion: 1,
 		},
 	}, nil
@@ -297,6 +301,10 @@ func (s *Service) CurrentSession(ctx context.Context, token string, metadata Req
 		return Session{}, err
 	}
 	permissions, err := loadPermissions(ctx, tx, record.user.ID, record.context.Institution.ID)
+	if err != nil {
+		return Session{}, err
+	}
+	capabilities, err := loadCapabilities(ctx, tx, record.context.Institution.ID)
 	if err != nil {
 		return Session{}, err
 	}
@@ -324,7 +332,7 @@ func (s *Service) CurrentSession(ctx context.Context, token string, metadata Req
 	if err := tx.Commit(ctx); err != nil {
 		return Session{}, fmt.Errorf("commit session refresh: %w", err)
 	}
-	return record.representation(token, s.config.CSRFKey, permissions, idleExpiry), nil
+	return record.representation(token, s.config.CSRFKey, permissions, capabilities, idleExpiry), nil
 }
 
 // AuthorizeOperation validates a session, CSRF token, live context, and permission.
@@ -378,6 +386,20 @@ func (s *Service) AuthorizeOperation(ctx context.Context, request OperationAutho
 	if !slices.Contains(permissions, request.Permission) {
 		s.bestEffortOperationDenial(ctx, tx, record, request, "permission_denied")
 		return OperationPrincipal{}, ErrForbidden
+	}
+	if request.Capability != "" {
+		var enabled bool
+		if err := tx.QueryRow(ctx, `SELECT enabled FROM development_admin_capabilities WHERE institution_id=$1 AND capability_key=$2`, validatedContext.Institution.ID, request.Capability).Scan(&enabled); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				s.bestEffortOperationDenial(ctx, tx, record, request, "capability_disabled")
+				return OperationPrincipal{}, ErrForbidden
+			}
+			return OperationPrincipal{}, fmt.Errorf("check capability: %w", err)
+		}
+		if !enabled {
+			s.bestEffortOperationDenial(ctx, tx, record, request, "capability_disabled")
+			return OperationPrincipal{}, ErrForbidden
+		}
 	}
 
 	now := s.now().UTC()
@@ -603,13 +625,17 @@ func (s *Service) ReplaceContext(ctx context.Context, token, csrf string, reques
 	if err != nil {
 		return Session{}, err
 	}
+	capabilities, err := loadCapabilities(ctx, tx, newContext.Institution.ID)
+	if err != nil {
+		return Session{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return Session{}, fmt.Errorf("commit context replacement: %w", err)
 	}
 
 	record.context = newContext
 	record.contextVersion = newVersion
-	return record.representation(token, s.config.CSRFKey, permissions, record.idleExpiresAt), nil
+	return record.representation(token, s.config.CSRFKey, permissions, capabilities, record.idleExpiresAt), nil
 }
 
 type loginCredential struct {
@@ -728,6 +754,26 @@ func loadPermissions(ctx context.Context, tx pgx.Tx, userID, institutionID int64
 	return permissions, nil
 }
 
+func loadCapabilities(ctx context.Context, tx pgx.Tx, institutionID int64) ([]string, error) {
+	rows, err := tx.Query(ctx, `SELECT capability_key FROM development_admin_capabilities WHERE institution_id=$1 AND enabled ORDER BY capability_key`, institutionID)
+	if err != nil {
+		return nil, fmt.Errorf("load capabilities: %w", err)
+	}
+	defer rows.Close()
+	capabilities := make([]string, 0)
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, fmt.Errorf("scan capability: %w", err)
+		}
+		capabilities = append(capabilities, key)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate capabilities: %w", err)
+	}
+	return capabilities, nil
+}
+
 type sessionRecord struct {
 	id                   int64
 	user                 User
@@ -814,9 +860,9 @@ func (s *Service) loadActiveSession(ctx context.Context, tx pgx.Tx, token string
 	return value, nil
 }
 
-func (r sessionRecord) representation(token string, key []byte, permissions []string, idleExpiry time.Time) Session {
+func (r sessionRecord) representation(token string, key []byte, permissions, capabilities []string, idleExpiry time.Time) Session {
 	return Session{
-		User: r.user, Context: r.context, Permissions: permissions,
+		User: r.user, Context: r.context, Permissions: permissions, Capabilities: capabilities,
 		CSRFToken: csrfToken(key, token), IdleExpiresAt: idleExpiry,
 		AbsoluteExpiresAt: r.absoluteExpiresAt, ContextVersion: r.contextVersion,
 	}

@@ -257,6 +257,49 @@ func (s *Service) Audit(ctx context.Context, a Authorization) ([]AuditEvent, err
 	return out, rows.Err()
 }
 
+func (s *Service) Capabilities(ctx context.Context, a Authorization) ([]Capability, error) {
+	rows, err := s.pool.Query(ctx, `SELECT capability_key,display_name,description,enabled,version FROM development_admin_capabilities WHERE institution_id=$1 ORDER BY capability_key`, a.principal.InstitutionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []Capability{}
+	for rows.Next() {
+		var v Capability
+		if err := rows.Scan(&v.Key, &v.DisplayName, &v.Description, &v.Enabled, &v.Version); err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+func (s *Service) SetCapability(ctx context.Context, a Authorization, in CapabilityUpdate) (Capability, error) {
+	if in.Key == "" || in.ExpectedVersion < 1 {
+		return Capability{}, ErrInvalidRequest
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return Capability{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var out Capability
+	err = tx.QueryRow(ctx, `UPDATE development_admin_capabilities SET enabled=$1,version=version+1,updated_at=now() WHERE institution_id=$2 AND capability_key=$3 AND version=$4 RETURNING capability_key,display_name,description,enabled,version`, in.Enabled, a.principal.InstitutionID, in.Key, in.ExpectedVersion).Scan(&out.Key, &out.DisplayName, &out.Description, &out.Enabled, &out.Version)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Capability{}, ErrConflict
+	}
+	if err != nil {
+		return Capability{}, err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_key,changed_fields,outcome,correlation_id) VALUES($1,$2,'capability.update','capability',$3,'["enabled"]'::jsonb,'success',$4)`, a.principal.UserID, a.principal.InstitutionID, in.Key, a.metadata.CorrelationID); err != nil {
+		return Capability{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return Capability{}, err
+	}
+	return out, nil
+}
+
 func (s *Service) SetUserActive(ctx context.Context, a Authorization, cmd UserCommand) (User, error) {
 	if cmd.PublicID == "" || cmd.ExpectedVersion < 1 {
 		return User{}, ErrInvalidRequest

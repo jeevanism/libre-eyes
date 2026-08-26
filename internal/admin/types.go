@@ -81,6 +81,20 @@ type SettingUpdate struct {
 	ExpectedVersion int64
 }
 
+type Capability struct {
+	Key         string `json:"key"`
+	DisplayName string `json:"displayName"`
+	Description string `json:"description"`
+	Enabled     bool   `json:"enabled"`
+	Version     int64  `json:"version"`
+}
+
+type CapabilityUpdate struct {
+	Key             string
+	Enabled         bool
+	ExpectedVersion int64
+}
+
 type ContextUpsert struct {
 	ID              int64
 	Name            string

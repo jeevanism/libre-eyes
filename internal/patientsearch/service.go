@@ -78,6 +78,7 @@ func (s *Service) Authorize(
 	}
 	principal, err := s.authorizer.AuthorizeOperation(ctx, auth.OperationAuthorizationRequest{
 		Token: token, CSRFToken: csrf, Permission: permission,
+		Capability:      "patient_search",
 		DeniedEventType: deniedEvent, Metadata: metadata,
 	})
 	if err != nil {

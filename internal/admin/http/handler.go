@@ -24,6 +24,8 @@ type Service interface {
 	Contexts(context.Context, admin.Authorization) (admin.Contexts, error)
 	Settings(context.Context, admin.Authorization) ([]admin.Setting, error)
 	Audit(context.Context, admin.Authorization) ([]admin.AuditEvent, error)
+	Capabilities(context.Context, admin.Authorization) ([]admin.Capability, error)
+	SetCapability(context.Context, admin.Authorization, admin.CapabilityUpdate) (admin.Capability, error)
 	SetUserActive(context.Context, admin.Authorization, admin.UserCommand) (admin.User, error)
 	UpdateSetting(context.Context, admin.Authorization, admin.SettingUpdate) (admin.Setting, error)
 	UpsertSite(context.Context, admin.Authorization, admin.ContextUpsert) (admin.Reference, error)
@@ -55,6 +57,8 @@ func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/admin/contexts", h.contexts)
 	m.HandleFunc("GET /api/v1/admin/settings", h.settings)
 	m.HandleFunc("GET /api/v1/admin/audit", h.audit)
+	m.HandleFunc("GET /api/v1/admin/capabilities", h.capabilities)
+	m.HandleFunc("PATCH /api/v1/admin/capabilities/{key}", h.updateCapability)
 	m.HandleFunc("POST /api/v1/admin/users/{userId}/deactivate", h.userCommand(false))
 	m.HandleFunc("POST /api/v1/admin/users/{userId}/reactivate", h.userCommand(true))
 	m.HandleFunc("PATCH /api/v1/admin/settings", h.updateSetting)
@@ -225,6 +229,44 @@ func (h *Handler) updateSetting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, v)
+}
+
+func (h *Handler) capabilities(w http.ResponseWriter, r *http.Request) {
+	a, ok := h.auth(w, r, false)
+	if !ok {
+		return
+	}
+	out, err := h.service.Capabilities(r.Context(), a)
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, out)
+}
+
+func (h *Handler) updateCapability(w http.ResponseWriter, r *http.Request) {
+	a, ok := h.auth(w, r, true)
+	if !ok {
+		return
+	}
+	var b struct {
+		Enabled         bool  `json:"enabled"`
+		ExpectedVersion int64 `json:"expectedVersion"`
+	}
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&b) != nil {
+		h.writeProblem(w, r, http.StatusBadRequest, "Review the capability update and try again.", "invalid_request", admin.ErrInvalidRequest)
+		return
+	}
+	out, err := h.service.SetCapability(r.Context(), a, admin.CapabilityUpdate{Key: r.PathValue("key"), Enabled: b.Enabled, ExpectedVersion: b.ExpectedVersion})
+	if err == admin.ErrConflict {
+		h.writeProblem(w, r, http.StatusConflict, "The capability was changed by someone else. Reload and try again.", "conflict", err)
+		return
+	}
+	if err != nil {
+		h.writeProblem(w, r, adminStatus(err), adminMessage(err), adminCode(err), err)
+		return
+	}
+	writeJSON(w, out)
 }
 
 type contextBody struct {
