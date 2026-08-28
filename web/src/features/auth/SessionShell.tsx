@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { CalendarDays, ClipboardList, LogOut, Search, CalendarPlus, ShieldCheck } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 import { authAPI, type Session } from '../../api/client'
 import { ThemeControl } from '../theme/ThemeControl'
 import { authKeys } from './queries'
+import { useBranding } from '../branding/BrandingProvider'
 
 interface SessionShellProps {
   session: Session
@@ -13,6 +14,7 @@ interface SessionShellProps {
 }
 
 export function SessionShell({ session, children }: SessionShellProps) {
+  const { profile, selectInstitution } = useBranding()
   const capabilityEnabled = (key: string) => session.capabilities?.includes(key) ?? true
   const queryClient = useQueryClient()
   const logout = useMutation({
@@ -23,10 +25,14 @@ export function SessionShell({ session, children }: SessionShellProps) {
     },
   })
 
+  useEffect(() => {
+    selectInstitution(session.context.institution.id)
+  }, [selectInstitution, session.context.institution.id])
+
   return (
     <div className="app-shell">
       <header className="app-header">
-        <Link className="app-brand" to="/" aria-label="VisionOpus home">VisionOpus</Link>
+        <Link className="app-brand" to="/" aria-label={`${profile.shortName} home`}>{profile.shortName}</Link>
         <div className="header-context" aria-label="Current clinical context">
           <strong title={session.context.institution.name}>{session.context.institution.name}</strong>
           <span title={session.context.site.name}>{session.context.site.name}</span>

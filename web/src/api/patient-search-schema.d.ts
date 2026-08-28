@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/patients/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List an explicitly requested capped set of recent patients
+         * @description Institution/site-scoped minimum-disclosure view. This endpoint is opt-in, capped at 50 records, and audited.
+         */
+        get: operations["listRecentPatients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/searches": {
         parameters: {
             query?: never;
@@ -253,6 +273,35 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listRecentPatients: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header: {
+                /** @description Session-bound anti-CSRF token from the current session representation */
+                "X-CSRF-Token": components["parameters"]["CsrfToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recent patient result page */
+            200: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientSearchPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     searchPatients: {
         parameters: {
             query?: never;

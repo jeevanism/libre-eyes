@@ -86,6 +86,7 @@ body {
 .admin-view-audit .admin-grid > :nth-child(5),
 .admin-view-integrations .admin-grid > :nth-child(6),
 .admin-view-capabilities .admin-grid > :nth-child(7) { display: block; grid-column: 1 / -1; }
+.admin-view-branding .admin-grid > :nth-child(10) { display: block; grid-column: 1 / -1; }
 .admin-view-catalogues .admin-grid > :nth-child(4),
 .admin-view-catalogues .admin-grid > :nth-child(8),
 .admin-view-catalogues .admin-grid > :nth-child(9) { display: block; }
@@ -124,6 +125,33 @@ body {
   .admin-context-form strong, .admin-context-form input { grid-column: 1 / -1; }
 }
 @media (max-width: 800px) { .admin-workspace { padding: 18px; } .admin-grid { grid-template-columns: 1fr; } }
+
+.branding-admin-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.branding-admin-heading h2 { margin-bottom: 6px; }
+.branding-admin-heading p { margin: 0; }
+.branding-status { width: fit-content; padding: 3px 7px; border-radius: 4px; background: var(--surface-subtle); color: var(--text-secondary); font-size: 12px; font-weight: 700; text-transform: capitalize; white-space: nowrap; }
+.branding-status-published { background: var(--surface-success); color: var(--success); }
+.branding-status-draft { background: var(--surface-warning); color: var(--warning); }
+.branding-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-top: 22px; }
+.branding-form fieldset { min-width: 0; display: grid; align-content: start; gap: 12px; margin: 0; padding: 14px; border: 1px solid var(--border-subtle); border-radius: 6px; }
+.branding-form legend { padding: 0 5px; color: var(--text-primary); font-size: 13px; font-weight: 700; }
+.branding-form label { display: grid; gap: 5px; color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.branding-form input:not([type="color"]) { width: 100%; min-width: 0; min-height: 38px; padding: 7px 9px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); }
+.branding-color-field { grid-template-columns: minmax(0, 1fr) 48px; align-items: center; min-height: 44px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle); }
+.branding-color-field span { min-width: 0; }
+.branding-color-field small { display: block; margin-top: 2px; color: var(--text-subtle); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 500; }
+.branding-color-field input[type="color"] { width: 46px; height: 34px; padding: 2px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); }
+.branding-form-actions, .branding-publish-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.branding-form-actions button, .branding-publish-actions button, .branding-history-row button { display: inline-flex; align-items: center; gap: 6px; }
+.branding-publish-actions { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
+.branding-history { display: grid; gap: 0; margin-top: 24px; border-top: 1px solid var(--border-subtle); }
+.branding-history h3 { display: flex; align-items: center; gap: 7px; margin: 16px 0 8px; font-size: 14px; }
+.branding-history-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(96px, auto); align-items: center; gap: 12px; min-height: 52px; padding: 8px 0; border-top: 1px solid var(--border-subtle); }
+.branding-history-row small, .branding-audit small { display: block; margin-top: 3px; color: var(--text-subtle); font-size: 11px; }
+.branding-audit { margin-top: 18px; }
+.branding-audit summary { cursor: pointer; color: var(--text-primary); font-weight: 700; }
+.branding-audit p { padding: 8px 0; border-bottom: 1px solid var(--border-subtle); }
+@media (max-width: 800px) { .branding-form { grid-template-columns: 1fr; } .branding-admin-heading { display: grid; } .branding-history-row { grid-template-columns: minmax(0, 1fr) auto; } .branding-history-row button, .branding-history-row > span:last-child { grid-column: 1 / -1; justify-self: start; } }
 
 button,
 input,

@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 
 import { routeTree } from './routeTree.gen'
 import { ThemeProvider } from './features/theme/ThemeProvider'
+import { BrandingProvider } from './features/branding/BrandingProvider'
 import './styles.css'
 
 export const queryClient = new QueryClient({
@@ -37,7 +38,9 @@ createRoot(root).render(
   <StrictMode>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <BrandingProvider>
+          <RouterProvider router={router} />
+        </BrandingProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,

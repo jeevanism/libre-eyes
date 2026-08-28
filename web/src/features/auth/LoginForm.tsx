@@ -1,8 +1,9 @@
 import { Eye, LoaderCircle, LockKeyhole } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import type { LoginOptions, LoginRequest } from '../../api/client'
 import { ThemeControl } from '../theme/ThemeControl'
+import { useBranding } from '../branding/BrandingProvider'
 
 interface LoginFormProps {
   options: LoginOptions
@@ -12,6 +13,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ options, pending, errorMessage, onSubmit }: LoginFormProps) {
+  const { profile, selectInstitution } = useBranding()
   const firstInstitution = options.institutions[0]
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -22,8 +24,13 @@ export function LoginForm({ options, pending, errorMessage, onSubmit }: LoginFor
   )
   const [siteID, setSiteID] = useState(firstInstitution?.sites[0]?.id ?? '')
 
+  useEffect(() => {
+    selectInstitution(firstInstitution?.id)
+  }, [firstInstitution?.id, selectInstitution])
+
   function changeInstitution(value: string) {
     setInstitutionID(value)
+    selectInstitution(value)
     const institution = options.institutions.find((candidate) => candidate.id === value)
     setSiteID(institution?.sites[0]?.id ?? '')
   }
@@ -42,7 +49,7 @@ export function LoginForm({ options, pending, errorMessage, onSubmit }: LoginFor
         <header className="brand-lockup">
           <div className="brand-identity">
             <span className="brand-mark" aria-hidden="true"><Eye size={27} strokeWidth={2} /></span>
-            <span className="brand-name">VisionOpus</span>
+            <span className="brand-name">{profile.shortName}</span>
           </div>
           <ThemeControl />
         </header>

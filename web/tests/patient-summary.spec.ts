@@ -20,6 +20,11 @@ const session = {
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/presentation/branding**', (route) => route.fulfill({ json: {
+    profileVersion: 1, rowVersion: 1, status: 'published', source: 'institution',
+    institutionId: 1, organizationName: 'VisionOpus Development Hospital', shortName: 'VisionOpus', browserTitle: 'VisionOpus',
+    colors: { primary: '#116466', primaryHover: '#0c5355', selectedSurface: '#deefee', focus: '#0b6fcc' },
+  } }))
   await page.route('**/api/v1/auth/session', (route) => route.fulfill({ json: session }))
   await page.route('**/api/v1/patients/11111111-1111-4111-8111-111111111111/summary-header', async (route) => {
     expect(route.request().headers()['x-csrf-token']).toBe('synthetic-csrf-token')
@@ -160,8 +165,8 @@ test('keeps development examination demonstrations in a focused workspace', asyn
 
   await page.getByRole('button', { name: 'Intraocular pressure' }).click()
   const iopForm = page.locator('.iop-draft-demo-form')
-  await iopForm.getByLabel('Right eye development IOP value').selectOption('development_iop_14')
-  await iopForm.getByLabel('Left eye development IOP value').selectOption('development_iop_18')
+  await iopForm.getByLabel('Right eye demo IOP value').selectOption('development_iop_14')
+  await iopForm.getByLabel('Left eye demo IOP value').selectOption('development_iop_18')
   await iopForm.getByRole('button', { name: 'Save demo draft' }).click()
   await expect(iopForm.getByRole('status')).toHaveText('Demo draft saved. It remains uncommitted.')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)

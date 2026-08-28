@@ -15,6 +15,7 @@ import type {
   components as theatreBookingComponents,
   paths as theatreBookingPaths,
 } from './theatre-booking-schema'
+import type { components as brandingComponents } from './branding-schema'
 
 export type LoginOptions = components['schemas']['LoginOptions']
 export type Session = components['schemas']['SessionRepresentation'] & { capabilities?: string[] }
@@ -186,6 +187,9 @@ export type AdminSetting = { key: string; value: string; version: number; scope:
 export type AdminCapability = { key: string; displayName: string; description: string; enabled: boolean; version: number }
 export type AdminAuditEvent = { actorUserId: number; actorDisplayName: string; command: string; targetType: string; targetPublicId?: string; targetKey?: string; targetDisplayName?: string; changedFields: string[]; before?: Record<string, unknown>; after?: Record<string, unknown>; scope: string; outcome: string; correlationId: string; createdAt: string }
 export type AdminIntegration = { key: string; displayName: string; description: string; status: string; readOnly: boolean }
+export type BrandingProfile = brandingComponents['schemas']['BrandingProfile']
+export type BrandingState = brandingComponents['schemas']['BrandingState']
+export type BrandingDraft = brandingComponents['schemas']['BrandingDraft']
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null
@@ -316,6 +320,29 @@ export const adminAPI = {
   createFirm: (name: string, csrfToken: string) => request<AdminReference>('/admin/firms', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, active: true }) }),
   updateFirm: (id: number, name: string, active: boolean, version: number, csrfToken: string) => request<AdminReference>(`/admin/firms/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, active, expectedVersion: version }) }),
   setFirmActive: (id: number, name: string, version: number, active: boolean, csrfToken: string) => request<AdminReference>(`/admin/firms/${id}/${active ? 'reactivate' : 'deactivate'}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ name, expectedVersion: version }) }),
+}
+
+export const brandingAPI = {
+  publicProfile: (institutionId?: string) => {
+    const query = institutionId ? `?institutionId=${encodeURIComponent(institutionId)}` : ''
+    return request<BrandingProfile>(`/presentation/branding${query}`)
+  },
+  state: () => request<BrandingState>('/admin/branding'),
+  saveDraft: (body: BrandingDraft, csrfToken: string) => request<BrandingState>('/admin/branding/draft', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify(body),
+  }),
+  publish: (expectedVersion: number, csrfToken: string) => request<BrandingState>('/admin/branding/publish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify({ expectedVersion }),
+  }),
+  rollback: (targetProfileVersion: number, expectedVersion: number, csrfToken: string) => request<BrandingState>('/admin/branding/rollback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify({ targetProfileVersion, expectedVersion }),
+  }),
 }
 
 export const patientSearchAPI = {
