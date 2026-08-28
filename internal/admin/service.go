@@ -345,19 +345,33 @@ func (s *Service) Settings(ctx context.Context, a Authorization) ([]Setting, err
 	}
 	return out, rows.Err()
 }
-func (s *Service) Audit(ctx context.Context, a Authorization) ([]AuditEvent, error) {
-	rows, err := s.pool.Query(ctx, `
+func (s *Service) Audit(ctx context.Context, a Authorization, filter AuditFilter) ([]AuditEvent, error) {
+	query := `
 		SELECT a.actor_user_id, u.display_name, a.command, a.target_type,
 		       a.target_public_id::text, a.target_key, target_user.display_name,
-		       a.changed_fields, a.outcome,
+		       a.changed_fields, a.before_values, a.after_values, a.scope, a.outcome,
 		       a.correlation_id, a.created_at
 		FROM development_admin_audit a
 		JOIN users u ON u.id=a.actor_user_id
 		LEFT JOIN development_admin_users target_admin ON target_admin.public_id=a.target_public_id
 		LEFT JOIN users target_user ON target_user.id=target_admin.user_id
-		WHERE a.institution_id=$1
-		ORDER BY a.created_at DESC,a.id DESC
-		LIMIT 100`, a.principal.InstitutionID)
+		WHERE a.institution_id=$1`
+	args := []any{a.principal.InstitutionID}
+	add := func(clause string, value string) {
+		if value != "" {
+			args = append(args, value)
+			query += " AND " + clause + "$" + fmt.Sprint(len(args))
+		}
+	}
+	add("a.command=", filter.Command)
+	add("a.outcome=", filter.Outcome)
+	add("a.target_type=", filter.TargetType)
+	if filter.Actor != "" {
+		args = append(args, "%"+filter.Actor+"%")
+		query += " AND u.display_name ILIKE $" + fmt.Sprint(len(args))
+	}
+	query += ` ORDER BY a.created_at DESC,a.id DESC LIMIT 100`
+	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -365,14 +379,28 @@ func (s *Service) Audit(ctx context.Context, a Authorization) ([]AuditEvent, err
 	out := []AuditEvent{}
 	for rows.Next() {
 		var v AuditEvent
-		var raw []byte
-		if err := rows.Scan(&v.ActorUserID, &v.ActorDisplayName, &v.Command, &v.TargetType, &v.TargetPublicID, &v.TargetKey, &v.TargetDisplayName, &raw, &v.Outcome, &v.CorrelationID, &v.CreatedAt); err != nil {
+		var raw, before, after []byte
+		if err := rows.Scan(&v.ActorUserID, &v.ActorDisplayName, &v.Command, &v.TargetType, &v.TargetPublicID, &v.TargetKey, &v.TargetDisplayName, &raw, &before, &after, &v.Scope, &v.Outcome, &v.CorrelationID, &v.CreatedAt); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal(raw, &v.ChangedFields)
+		_ = json.Unmarshal(before, &v.Before)
+		_ = json.Unmarshal(after, &v.After)
 		out = append(out, v)
 	}
 	return out, rows.Err()
+}
+
+func (s *Service) Integrations(ctx context.Context, a Authorization) ([]Integration, error) {
+	_ = ctx
+	_ = a
+	return []Integration{
+		{Key: "pas", DisplayName: "Patient administration system (PAS)", Description: "Connection placeholder for a clinic PAS/PDS.", Status: "Not configured", ReadOnly: true},
+		{Key: "lims", DisplayName: "Laboratory information system (LIMS)", Description: "Connection placeholder for laboratory/device feeds.", Status: "Not configured", ReadOnly: true},
+		{Key: "fhir", DisplayName: "FHIR", Description: "Read-only interoperability configuration placeholder.", Status: "Not configured", ReadOnly: true},
+		{Key: "email", DisplayName: "Email", Description: "Outbound email configuration placeholder; no delivery is enabled.", Status: "Not configured", ReadOnly: true},
+		{Key: "nhs_ers", DisplayName: "NHS e-RS", Description: "Referral-service integration placeholder; no external delivery is enabled.", Status: "Not configured", ReadOnly: true},
+	}, nil
 }
 
 func (s *Service) Capabilities(ctx context.Context, a Authorization) ([]Capability, error) {
@@ -458,7 +486,8 @@ func (s *Service) SetUserActive(ctx context.Context, a Authorization, cmd UserCo
 		WHERE user_id=$1 AND revoked_at IS NULL AND NOT $2`, userID, cmd.Active); err != nil {
 		return User{}, fmt.Errorf("revoke disabled-user sessions: %w", err)
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_public_id,changed_fields,outcome,correlation_id) VALUES($1,$2,$3,'user',$4::uuid,'["active"]'::jsonb,'success',$5)`, a.principal.UserID, a.principal.InstitutionID, "user.active", cmd.PublicID, a.metadata.CorrelationID); err != nil {
+	beforeActive := !cmd.Active
+	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_public_id,changed_fields,before_values,after_values,scope,outcome,correlation_id) VALUES($1,$2,$3,'user',$4::uuid,'["active"]'::jsonb,jsonb_build_object('active',$6),jsonb_build_object('active',$7),'institution','success',$5)`, a.principal.UserID, a.principal.InstitutionID, "user.active", cmd.PublicID, a.metadata.CorrelationID, beforeActive, cmd.Active); err != nil {
 		return User{}, err
 	}
 	if err = tx.Commit(ctx); err != nil {
@@ -668,6 +697,13 @@ func (s *Service) UpdateSetting(ctx context.Context, a Authorization, in Setting
 	if err := validateDefaultContext(ctx, tx, a.principal.InstitutionID, in.Key, in.Value); err != nil {
 		return Setting{}, err
 	}
+	var previousValue string
+	if err := tx.QueryRow(ctx, `SELECT value FROM development_admin_settings WHERE key=$1 AND institution_id=$2 AND version=$3`, in.Key, a.principal.InstitutionID, in.ExpectedVersion).Scan(&previousValue); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Setting{}, ErrConflict
+		}
+		return Setting{}, err
+	}
 	var out Setting
 	err = tx.QueryRow(ctx, `UPDATE development_admin_settings SET value=$1,version=version+1,updated_at=now() WHERE key=$2 AND institution_id=$3 AND version=$4 RETURNING key,value,version`, in.Value, in.Key, a.principal.InstitutionID, in.ExpectedVersion).Scan(&out.Key, &out.Value, &out.Version)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -676,7 +712,7 @@ func (s *Service) UpdateSetting(ctx context.Context, a Authorization, in Setting
 	if err != nil {
 		return Setting{}, err
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_key,changed_fields,outcome,correlation_id) VALUES($1,$2,'setting.update','setting',$3,'["value"]'::jsonb,'success',$4)`, a.principal.UserID, a.principal.InstitutionID, in.Key, a.metadata.CorrelationID); err != nil {
+	if _, err = tx.Exec(ctx, `INSERT INTO development_admin_audit(actor_user_id,institution_id,command,target_type,target_key,changed_fields,before_values,after_values,scope,outcome,correlation_id) VALUES($1,$2,'setting.update','setting',$3,'["value"]'::jsonb,jsonb_build_object('value',$5),jsonb_build_object('value',$6),'institution','success',$4)`, a.principal.UserID, a.principal.InstitutionID, in.Key, a.metadata.CorrelationID, previousValue, in.Value); err != nil {
 		return Setting{}, err
 	}
 	if err = tx.Commit(ctx); err != nil {

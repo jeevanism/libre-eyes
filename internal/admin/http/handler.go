@@ -26,7 +26,8 @@ type Service interface {
 	UpdateUser(context.Context, admin.Authorization, admin.UserUpsert) (admin.User, error)
 	Contexts(context.Context, admin.Authorization) (admin.Contexts, error)
 	Settings(context.Context, admin.Authorization) ([]admin.Setting, error)
-	Audit(context.Context, admin.Authorization) ([]admin.AuditEvent, error)
+	Audit(context.Context, admin.Authorization, admin.AuditFilter) ([]admin.AuditEvent, error)
+	Integrations(context.Context, admin.Authorization) ([]admin.Integration, error)
 	Capabilities(context.Context, admin.Authorization) ([]admin.Capability, error)
 	SetCapability(context.Context, admin.Authorization, admin.CapabilityUpdate) (admin.Capability, error)
 	SetUserActive(context.Context, admin.Authorization, admin.UserCommand) (admin.User, error)
@@ -63,6 +64,7 @@ func (h *Handler) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/admin/contexts", h.contexts)
 	m.HandleFunc("GET /api/v1/admin/settings", h.settings)
 	m.HandleFunc("GET /api/v1/admin/audit", h.audit)
+	m.HandleFunc("GET /api/v1/admin/integrations", h.integrations)
 	m.HandleFunc("GET /api/v1/admin/capabilities", h.capabilities)
 	m.HandleFunc("PATCH /api/v1/admin/capabilities/{key}", h.updateCapability)
 	m.HandleFunc("POST /api/v1/admin/users/{userId}/deactivate", h.userCommand(false))
@@ -107,7 +109,9 @@ func (h *Handler) roleCommand(w http.ResponseWriter, r *http.Request, revoke boo
 	}
 	roleValue := r.PathValue("roleId")
 	if !revoke {
-		var body struct{ RoleID int64 `json:"roleId"` }
+		var body struct {
+			RoleID int64 `json:"roleId"`
+		}
 		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&body) != nil {
 			h.writeProblem(w, r, http.StatusBadRequest, "Review the role assignment.", "invalid_request", admin.ErrInvalidRequest)
 			return
@@ -590,7 +594,13 @@ func (h *Handler) settings(w http.ResponseWriter, r *http.Request) {
 	h.read(w, r, func(ctx context.Context, a admin.Authorization) (any, error) { return h.service.Settings(ctx, a) })
 }
 func (h *Handler) audit(w http.ResponseWriter, r *http.Request) {
-	h.read(w, r, func(ctx context.Context, a admin.Authorization) (any, error) { return h.service.Audit(ctx, a) })
+	h.read(w, r, func(ctx context.Context, a admin.Authorization) (any, error) {
+		q := r.URL.Query()
+		return h.service.Audit(ctx, a, admin.AuditFilter{Command: q.Get("command"), Outcome: q.Get("outcome"), TargetType: q.Get("targetType"), Actor: q.Get("actor")})
+	})
+}
+func (h *Handler) integrations(w http.ResponseWriter, r *http.Request) {
+	h.read(w, r, func(ctx context.Context, a admin.Authorization) (any, error) { return h.service.Integrations(ctx, a) })
 }
 func (h *Handler) read(w http.ResponseWriter, r *http.Request, fn func(context.Context, admin.Authorization) (any, error)) {
 	w.Header().Set("Cache-Control", "no-store")

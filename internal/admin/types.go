@@ -71,17 +71,32 @@ type Setting struct {
 	Source  string       `json:"source"`
 }
 type AuditEvent struct {
-	ActorUserID       int64     `json:"actorUserId"`
-	ActorDisplayName  string    `json:"actorDisplayName"`
-	Command           string    `json:"command"`
-	TargetType        string    `json:"targetType"`
-	TargetPublicID    *string   `json:"targetPublicId,omitempty"`
-	TargetKey         *string   `json:"targetKey,omitempty"`
-	TargetDisplayName *string   `json:"targetDisplayName,omitempty"`
-	ChangedFields     []string  `json:"changedFields"`
-	Outcome           string    `json:"outcome"`
-	CorrelationID     string    `json:"correlationId"`
-	CreatedAt         time.Time `json:"createdAt"`
+	ActorUserID       int64          `json:"actorUserId"`
+	ActorDisplayName  string         `json:"actorDisplayName"`
+	Command           string         `json:"command"`
+	TargetType        string         `json:"targetType"`
+	TargetPublicID    *string        `json:"targetPublicId,omitempty"`
+	TargetKey         *string        `json:"targetKey,omitempty"`
+	TargetDisplayName *string        `json:"targetDisplayName,omitempty"`
+	ChangedFields     []string       `json:"changedFields"`
+	Before            map[string]any `json:"before,omitempty"`
+	After             map[string]any `json:"after,omitempty"`
+	Scope             string         `json:"scope"`
+	Outcome           string         `json:"outcome"`
+	CorrelationID     string         `json:"correlationId"`
+	CreatedAt         time.Time      `json:"createdAt"`
+}
+
+type AuditFilter struct {
+	Command, Outcome, TargetType, Actor string
+}
+
+type Integration struct {
+	Key         string `json:"key"`
+	DisplayName string `json:"displayName"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+	ReadOnly    bool   `json:"readOnly"`
 }
 
 type UserCommand struct {

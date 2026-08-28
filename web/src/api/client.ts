@@ -184,7 +184,8 @@ export type AdminCatalogueItem = { id: number; category: 'medication' | 'route' 
 export type AdminContexts = { institution: AdminReference; sites: AdminReference[]; firms: AdminReference[] }
 export type AdminSetting = { key: string; value: string; version: number; scope: 'system' | 'institution' | 'site' | 'firm'; source: string }
 export type AdminCapability = { key: string; displayName: string; description: string; enabled: boolean; version: number }
-export type AdminAuditEvent = { actorUserId: number; actorDisplayName: string; command: string; targetType: string; targetPublicId?: string; targetKey?: string; targetDisplayName?: string; changedFields: string[]; outcome: string; correlationId: string; createdAt: string }
+export type AdminAuditEvent = { actorUserId: number; actorDisplayName: string; command: string; targetType: string; targetPublicId?: string; targetKey?: string; targetDisplayName?: string; changedFields: string[]; before?: Record<string, unknown>; after?: Record<string, unknown>; scope: string; outcome: string; correlationId: string; createdAt: string }
+export type AdminIntegration = { key: string; displayName: string; description: string; status: string; readOnly: boolean }
 export type PatientSummaryHeader = {
   patientId: string
   givenName: string | null
@@ -292,7 +293,8 @@ export const adminAPI = {
   revokeRole: (userId: string, roleId: number, csrfToken: string) => request<AdminUser>(`/admin/users/${userId}/roles/${roleId}/revoke`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: '{}' }),
   contexts: () => request<AdminContexts>('/admin/contexts'),
   settings: () => request<AdminSetting[]>('/admin/settings'),
-  audit: () => request<AdminAuditEvent[]>('/admin/audit'),
+  audit: (filter?: { command?: string; outcome?: string; targetType?: string; actor?: string }) => { const query = new URLSearchParams(); Object.entries(filter ?? {}).forEach(([key, value]) => { if (value) query.set(key, value) }); return request<AdminAuditEvent[]>(`/admin/audit${query.toString() ? `?${query}` : ''}`) },
+  integrations: () => request<AdminIntegration[]>('/admin/integrations'),
   capabilities: () => request<AdminCapability[]>('/admin/capabilities'),
   setCapability: (key: string, enabled: boolean, expectedVersion: number, csrfToken: string) => request<AdminCapability>(`/admin/capabilities/${key}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ enabled, expectedVersion }) }),
   prescriptionCatalogue: () => request<AdminCatalogueItem[]>('/admin/catalogues/prescription'),
