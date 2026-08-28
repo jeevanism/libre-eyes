@@ -33,6 +33,7 @@ const (
 type Service interface {
 	Authorize(context.Context, string, string, patientsearch.Operation, auth.RequestMetadata) (patientsearch.Authorization, error)
 	Search(context.Context, patientsearch.Authorization, patientsearch.SearchRequest) (patientsearch.SearchPage, error)
+	Recent(context.Context, patientsearch.Authorization, int) (patientsearch.SearchPage, error)
 	FindDuplicates(context.Context, patientsearch.Authorization, patientsearch.DuplicateRequest) (patientsearch.DuplicateResult, error)
 }
 
@@ -57,7 +58,34 @@ func NewHandler(service Service, cookieSecure bool) *Handler {
 // Register adds patient-search routes to mux.
 func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/patients/searches", h.search)
+	mux.HandleFunc("GET /api/v1/patients/recent", h.recent)
 	mux.HandleFunc("POST /api/v1/patients/duplicate-candidates", h.findDuplicates)
+}
+
+func (h *Handler) recent(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	ctx, cancel := context.WithTimeout(r.Context(), requestTimeout)
+	defer cancel()
+	r = r.WithContext(ctx)
+	authorized, ok := h.authorize(w, r, patientsearch.OperationRecent)
+	if !ok {
+		return
+	}
+	limit := 25
+	if value := r.URL.Query().Get("limit"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 || parsed > 50 {
+			h.writeDecodeError(w, r, patientsearch.ErrInvalidRequest)
+			return
+		}
+		limit = parsed
+	}
+	result, err := h.service.Recent(ctx, authorized, limit)
+	if err != nil {
+		h.writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, mapSearchPage(result))
 }
 
 func (h *Handler) search(w http.ResponseWriter, r *http.Request) {

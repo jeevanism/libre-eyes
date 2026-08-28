@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
   ArrowRight,
@@ -54,6 +54,8 @@ const initialForm: FormState = {
 export function PatientSearchPage({ session }: { session: Session }) {
   const queryClient = useQueryClient()
   const [operation, setOperation] = useState<Operation>('search')
+  const [showRecent, setShowRecent] = useState(false)
+  const recent = useQuery({ queryKey: ['patients', 'recent'], queryFn: () => patientSearchAPI.recent(25, session.csrfToken), enabled: showRecent })
   const [criteriaMode, setCriteriaMode] = useState<CriteriaMode>('demographic')
   const [form, setForm] = useState<FormState>(initialForm)
   const [criteriaVersion, setCriteriaVersion] = useState(0)
@@ -251,6 +253,11 @@ export function PatientSearchPage({ session }: { session: Session }) {
           </button>
         </div>
       ) : null}
+
+      <section className="recent-patients-panel" aria-labelledby="recent-patients-heading">
+        <div className="recent-patients-header"><div><h2 id="recent-patients-heading">Recent patients</h2><p>Optional, minimum-disclosure list from the current institution.</p></div><button type="button" className="secondary-button" onClick={() => setShowRecent(value => !value)}>{showRecent ? 'Hide recent patients' : 'Show recent patients'}</button></div>
+        {showRecent && (recent.isLoading ? <p className="muted">Loading recent patients…</p> : recent.isError ? <p className="inline-error" role="alert">Recent patients could not be loaded. Use search instead.</p> : recent.data?.items.length ? <ul className="recent-patients-list">{recent.data.items.map(patient => <li key={patient.patientId}><a href={`/patients/${patient.patientId}`}>{patient.fullName ?? 'Unnamed patient'}</a><span>{patient.dateOfBirth}</span></li>)}</ul> : <p className="muted">No recent patients in this context.</p>)}
+      </section>
 
       <section className="search-workbench" aria-labelledby="criteria-heading">
         <form className="patient-search-form" onSubmit={submit} noValidate autoComplete="off">

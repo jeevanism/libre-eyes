@@ -26,6 +26,7 @@ type Operation string
 const (
 	OperationSearch         Operation = "search"
 	OperationDuplicateCheck Operation = "duplicate_check"
+	OperationRecent         Operation = "recent"
 )
 
 // RateLimitError reports a bounded retry delay without exposing internal state.

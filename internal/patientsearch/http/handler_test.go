@@ -45,6 +45,9 @@ func (f *fakeService) FindDuplicates(_ context.Context, _ patientsearch.Authoriz
 	f.duplicateCalls++
 	return f.duplicateResult, f.duplicateErr
 }
+func (f *fakeService) Recent(_ context.Context, _ patientsearch.Authorization, _ int) (patientsearch.SearchPage, error) {
+	return f.searchResult, f.searchErr
+}
 
 func TestSearchAuthorizesBeforeParsingBody(t *testing.T) {
 	service := &fakeService{}

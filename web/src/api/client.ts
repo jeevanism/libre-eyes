@@ -319,6 +319,7 @@ export const adminAPI = {
 }
 
 export const patientSearchAPI = {
+  recent: (limit = 25, csrfToken = '') => request<PatientSearchResponse>(`/patients/recent?limit=${limit}`, { headers: { 'X-CSRF-Token': csrfToken } }),
   search: (body: PatientSearchRequest, csrfToken: string) =>
     request<PatientSearchResponse>('/patients/searches', {
       method: 'POST',

@@ -162,6 +162,33 @@ func (s *Service) Search(ctx context.Context, authorization Authorization, reque
 	return result, nil
 }
 
+// Recent returns a deliberately opt-in, capped recent-patient list.
+func (s *Service) Recent(ctx context.Context, authorization Authorization, limit int) (SearchPage, error) {
+	if !s.validAuthorization(authorization, OperationRecent) || limit < 1 || limit > 50 {
+		return SearchPage{}, ErrInvalidRequest
+	}
+	tx, repository, err := s.begin(ctx)
+	if err != nil {
+		return SearchPage{}, err
+	}
+	defer rollback(tx)
+	page, err := repository.Recent(ctx, authorization.principal.InstitutionID, authorization.principal.SiteID, limit)
+	if err != nil {
+		return SearchPage{}, classifyInfrastructureError(err)
+	}
+	results, err := mapPatients(page.Items)
+	if err != nil {
+		return SearchPage{}, ErrUnavailable
+	}
+	if err := appendExecutedAudit(ctx, tx, authorization, "patient_recent.opened", "recent_patients", "recent_patients", len(results), 0); err != nil {
+		return SearchPage{}, ErrUnavailable
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return SearchPage{}, classifyInfrastructureError(err)
+	}
+	return SearchPage{Items: results, HasMore: page.HasMore}, nil
+}
+
 // FindDuplicates executes an authorized, exact-only duplicate candidate check.
 func (s *Service) FindDuplicates(ctx context.Context, authorization Authorization, request DuplicateRequest) (DuplicateResult, error) {
 	if !s.validAuthorization(authorization, OperationDuplicateCheck) {
@@ -380,6 +407,8 @@ func operationPolicy(operation Operation) (string, string, bool) {
 		return "patient.search", "patient_search.denied", true
 	case OperationDuplicateCheck:
 		return "patient.duplicate_check", "patient_duplicate_check.denied", true
+	case OperationRecent:
+		return "patient.search", "patient_recent.denied", true
 	default:
 		return "", "", false
 	}

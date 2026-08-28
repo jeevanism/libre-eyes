@@ -261,6 +261,14 @@ func (r *Repository) FindIdentifierDuplicates(
 	return duplicateCandidates(page, DuplicateReasonIdentifier, len(page.Items) > 0), nil
 }
 
+// Recent returns a small, institution-scoped set for an explicitly requested recent-patients view.
+func (r *Repository) Recent(ctx context.Context, institutionID, siteID int64, limit int) (PatientPage, error) {
+	if institutionID < 1 || siteID < 1 || limit < 1 || limit > 50 {
+		return PatientPage{}, ErrInvalidRepositoryRequest
+	}
+	return r.queryPatientPage(ctx, recentPatientsQuery, limit, institutionID, siteID, limit+1)
+}
+
 // FindDemographicDuplicates returns bounded exact current-institution candidates.
 func (r *Repository) FindDemographicDuplicates(
 	ctx context.Context,
@@ -540,3 +548,11 @@ const demographicDuplicateQuery = `
 		AND p.date_of_birth = $5
 	` + patientStableOrder + `
 	LIMIT $6`
+
+const recentPatientsQuery = `
+	SELECT ` + patientResultColumns + `
+	FROM patients p
+	` + patientScopeAndDisplayJoin + `
+	WHERE p.active
+	ORDER BY p.updated_at DESC, p.public_id DESC
+	LIMIT $3`
