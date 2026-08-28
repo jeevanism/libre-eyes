@@ -1,6 +1,7 @@
 package branding
 
 import (
+	"fmt"
 	"math"
 	"regexp"
 	"strconv"
@@ -50,8 +51,55 @@ func validateInput(in DraftInput) error {
 			return ErrInvalidRequest
 		}
 	}
-	if contrastRatio(in.Colors.Primary, "#ffffff") < 4.5 || contrastRatio(in.Colors.PrimaryHover, "#ffffff") < 4.5 || contrastRatio(in.Colors.SelectedSurface, "#172124") < 4.5 || contrastRatio(in.Colors.Focus, "#ffffff") < 3 {
-		return ErrInvalidRequest
+	checks := []struct {
+		field      string
+		label      string
+		color      string
+		background string
+		against    string
+		minimum    float64
+	}{
+		{
+			field: "colors.primary", label: "Primary action", color: in.Colors.Primary,
+			background: "#ffffff", against: "white text", minimum: 4.5,
+		},
+		{
+			field: "colors.primaryHover", label: "Primary hover", color: in.Colors.PrimaryHover,
+			background: "#ffffff", against: "white text", minimum: 4.5,
+		},
+		{
+			field: "colors.selectedSurface", label: "Selected surface", color: in.Colors.SelectedSurface,
+			background: "#172124", against: "interface text", minimum: 4.5,
+		},
+		{
+			field: "colors.focus", label: "Focus indicator", color: in.Colors.Focus,
+			background: "#ffffff", against: "white surface", minimum: 3,
+		},
+	}
+	issues := make([]ContrastIssue, 0, len(checks))
+	for _, check := range checks {
+		ratio := contrastRatio(check.color, check.background)
+		if ratio >= check.minimum {
+			continue
+		}
+		message := fmt.Sprintf(
+			"%s colour has %.2f:1 contrast against %s; at least %.1f:1 is required.",
+			check.label,
+			ratio,
+			check.against,
+			check.minimum,
+		)
+		issues = append(issues, ContrastIssue{
+			Field:           check.field,
+			Label:           check.label,
+			Against:         check.against,
+			Message:         message,
+			ContrastRatio:   ratio,
+			MinimumContrast: check.minimum,
+		})
+	}
+	if len(issues) > 0 {
+		return &ContrastValidationError{Issues: issues}
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package branding
 
 import (
 	"errors"
+	"math"
 	"testing"
 )
 
@@ -36,6 +37,38 @@ func TestValidateInputRejectsUnsafeOrInaccessibleValues(t *testing.T) {
 				t.Fatalf("validateInput() error = %v, want ErrInvalidRequest", err)
 			}
 		})
+	}
+}
+
+func TestValidateInputReportsEveryInaccessibleColour(t *testing.T) {
+	input := DraftInput{
+		OrganizationName: "Velox Group EyeCare",
+		ShortName:        "Velox EyeCare",
+		BrowserTitle:     "Velox EyeCare",
+		Colors: Colors{
+			Primary:         "#e4e651",
+			PrimaryHover:    "#f03891",
+			SelectedSurface: "#c953ea",
+			Focus:           "#927595",
+		},
+	}
+
+	err := validateInput(input)
+	var contrastError *ContrastValidationError
+	if !errors.As(err, &contrastError) {
+		t.Fatalf("validateInput() error = %v, want ContrastValidationError", err)
+	}
+	if !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("validateInput() error does not wrap ErrInvalidRequest")
+	}
+	if len(contrastError.Issues) != 2 {
+		t.Fatalf("issues = %#v, want primary and primary hover failures", contrastError.Issues)
+	}
+	if contrastError.Issues[0].Field != "colors.primary" || math.Abs(contrastError.Issues[0].ContrastRatio-1.33) > 0.01 {
+		t.Fatalf("primary issue = %#v", contrastError.Issues[0])
+	}
+	if contrastError.Issues[1].Field != "colors.primaryHover" || math.Abs(contrastError.Issues[1].ContrastRatio-3.70) > 0.01 {
+		t.Fatalf("hover issue = %#v", contrastError.Issues[1])
 	}
 }
 

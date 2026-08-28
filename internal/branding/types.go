@@ -83,3 +83,27 @@ type VersionCommand struct {
 	ExpectedVersion      int64 `json:"expectedVersion"`
 	TargetProfileVersion int64 `json:"targetProfileVersion,omitempty"`
 }
+
+// ContrastIssue explains one semantic colour that failed accessibility validation.
+type ContrastIssue struct {
+	Field           string  `json:"field"`
+	Label           string  `json:"label"`
+	Against         string  `json:"against"`
+	Message         string  `json:"message"`
+	ContrastRatio   float64 `json:"contrastRatio"`
+	MinimumContrast float64 `json:"minimumContrast"`
+}
+
+// ContrastValidationError retains all failing semantic colour checks.
+type ContrastValidationError struct {
+	Issues []ContrastIssue
+}
+
+func (e *ContrastValidationError) Error() string {
+	return "branding colours do not meet accessibility contrast requirements"
+}
+
+// Unwrap preserves ErrInvalidRequest matching at service and HTTP boundaries.
+func (e *ContrastValidationError) Unwrap() error {
+	return ErrInvalidRequest
+}

@@ -291,6 +291,18 @@ export interface components {
             status: number;
             code: string;
             correlationId?: string;
+            fieldErrors?: components["schemas"]["BrandingFieldError"][];
+        };
+        BrandingFieldError: {
+            /** @enum {string} */
+            field: "colors.primary" | "colors.primaryHover" | "colors.selectedSurface" | "colors.focus";
+            label: string;
+            against: string;
+            message: string;
+            /** Format: double */
+            contrastRatio: number;
+            /** Format: double */
+            minimumContrast: number;
         };
     };
     responses: {

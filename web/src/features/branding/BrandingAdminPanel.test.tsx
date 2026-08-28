@@ -56,4 +56,24 @@ describe('BrandingAdminPanel', () => {
     const results = await axe(container)
     expect(results.violations).toEqual([])
   })
+
+  it('identifies every inaccessible colour before submitting', async () => {
+    vi.spyOn(brandingAPI, 'publicProfile').mockResolvedValue(profile)
+    vi.spyOn(brandingAPI, 'state').mockResolvedValue(state)
+    const save = vi.spyOn(brandingAPI, 'saveDraft')
+    renderPanel()
+
+    fireEvent.change(await screen.findByLabelText('Primary action colour'), { target: { value: '#e4e651' } })
+    fireEvent.change(screen.getByLabelText('Primary hover colour'), { target: { value: '#f03891' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+
+    expect(save).not.toHaveBeenCalled()
+    expect(document.documentElement).not.toHaveAttribute('data-branding-source', 'preview')
+    expect(screen.getByLabelText('Primary action colour')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Primary hover colour')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText('Contrast 1.33:1 against white text; minimum 4.5:1.')).toBeVisible()
+    expect(screen.getByText('Contrast 3.70:1 against white text; minimum 4.5:1.')).toBeVisible()
+    expect(screen.getByRole('alert')).toHaveTextContent('Primary action is 1.33:1 and requires 4.5:1; Primary hover is 3.70:1 and requires 4.5:1.')
+  })
 })

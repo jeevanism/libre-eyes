@@ -3,6 +3,7 @@ import { Eye, History, Palette, RotateCcw, Save, Send } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import { brandingAPI, type BrandingDraft, type BrandingProfile } from '../../api/client'
+import { evaluateBrandingContrast, type BrandingContrastCheck } from './contrast'
 import { useBranding } from './BrandingProvider'
 
 interface BrandingAdminPanelProps {
@@ -137,6 +138,14 @@ function BrandingEditor({ profile, expectedVersion, pending, onSave, onPreview }
   const [primaryHover, setPrimaryHover] = useState(profile.colors.primaryHover)
   const [selectedSurface, setSelectedSurface] = useState(profile.colors.selectedSurface)
   const [focus, setFocus] = useState(profile.colors.focus)
+  const [showContrastErrors, setShowContrastErrors] = useState(false)
+  const contrastChecks = {
+    primary: evaluateBrandingContrast('primary', primary),
+    primaryHover: evaluateBrandingContrast('primaryHover', primaryHover),
+    selectedSurface: evaluateBrandingContrast('selectedSurface', selectedSurface),
+    focus: evaluateBrandingContrast('focus', focus),
+  }
+  const invalidContrastChecks = Object.values(contrastChecks).filter((check) => !check.valid)
 
   function values(): BrandingDraft {
     return {
@@ -150,10 +159,12 @@ function BrandingEditor({ profile, expectedVersion, pending, onSave, onPreview }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!contrastActionsAllowed()) return
     onSave(values())
   }
 
   function showPreview() {
+    if (!contrastActionsAllowed()) return
     onPreview({
       ...profile,
       status: 'draft',
@@ -163,6 +174,12 @@ function BrandingEditor({ profile, expectedVersion, pending, onSave, onPreview }
       browserTitle,
       colors: { primary, primaryHover, selectedSurface, focus },
     })
+  }
+
+  function contrastActionsAllowed() {
+    const valid = invalidContrastChecks.length === 0
+    setShowContrastErrors(!valid)
+    return valid
   }
 
   return (
@@ -175,11 +192,16 @@ function BrandingEditor({ profile, expectedVersion, pending, onSave, onPreview }
       </fieldset>
       <fieldset>
         <legend>Accessible presentation colours</legend>
-        <ColorField label="Primary action" value={primary} onChange={setPrimary} />
-        <ColorField label="Primary hover" value={primaryHover} onChange={setPrimaryHover} />
-        <ColorField label="Selected surface" value={selectedSurface} onChange={setSelectedSurface} />
-        <ColorField label="Focus indicator" value={focus} onChange={setFocus} />
+        <ColorField check={contrastChecks.primary} value={primary} onChange={setPrimary} />
+        <ColorField check={contrastChecks.primaryHover} value={primaryHover} onChange={setPrimaryHover} />
+        <ColorField check={contrastChecks.selectedSurface} value={selectedSurface} onChange={setSelectedSurface} />
+        <ColorField check={contrastChecks.focus} value={focus} onChange={setFocus} />
       </fieldset>
+      {showContrastErrors && invalidContrastChecks.length > 0 && (
+        <p className="branding-contrast-summary inline-error" role="alert">
+          {formatInvalidContrastSummary(invalidContrastChecks)} Correct the highlighted colours before saving this draft.
+        </p>
+      )}
       <div className="branding-form-actions">
         <button className="secondary-button" type="button" onClick={showPreview}><Eye size={16} aria-hidden="true" /> Preview</button>
         <button className="primary-button" type="submit" disabled={pending}><Save size={16} aria-hidden="true" /> {pending ? 'Saving draft' : 'Save draft'}</button>
@@ -188,6 +210,30 @@ function BrandingEditor({ profile, expectedVersion, pending, onSave, onPreview }
   )
 }
 
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <label className="branding-color-field"><span>{label}<small>{value}</small></span><input aria-label={`${label} colour`} type="color" value={value} onChange={(event) => onChange(event.target.value)} /></label>
+function ColorField({ check, value, onChange }: { check: BrandingContrastCheck; value: string; onChange: (value: string) => void }) {
+  const descriptionID = `branding-${check.field}-contrast`
+  return (
+    <label className={`branding-color-field ${check.valid ? '' : 'branding-color-field-invalid'}`}>
+      <span>
+        {check.label}
+        <small>{value}</small>
+        <small id={descriptionID} className={check.valid ? 'branding-contrast-valid' : 'branding-contrast-invalid'}>
+          Contrast {check.ratio.toFixed(2)}:1 against {check.against}; minimum {check.minimum.toFixed(1)}:1.
+        </small>
+      </span>
+      <input
+        aria-describedby={descriptionID}
+        aria-invalid={!check.valid}
+        aria-label={`${check.label} colour`}
+        type="color"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  )
+}
+
+function formatInvalidContrastSummary(checks: BrandingContrastCheck[]) {
+  const details = checks.map((check) => `${check.label} is ${check.ratio.toFixed(2)}:1 and requires ${check.minimum.toFixed(1)}:1`)
+  return details.join('; ') + '.'
 }

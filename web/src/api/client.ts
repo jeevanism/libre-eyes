@@ -20,7 +20,8 @@ import type { components as brandingComponents } from './branding-schema'
 export type LoginOptions = components['schemas']['LoginOptions']
 export type Session = components['schemas']['SessionRepresentation'] & { capabilities?: string[] }
 export type LoginRequest = components['schemas']['LoginRequest']
-export type Problem = components['schemas']['Problem']
+export type BrandingFieldError = brandingComponents['schemas']['BrandingFieldError']
+export type Problem = components['schemas']['Problem'] & { fieldErrors?: BrandingFieldError[] }
 export type ReplaceContextRequest = components['schemas']['ReplaceContextRequest']
 export type PatientSearchRequest = patientSearchComponents['schemas']['PatientSearchRequest']
 export type PatientSearchPage = patientSearchComponents['schemas']['PatientSearchPage']

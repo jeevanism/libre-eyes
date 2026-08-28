@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jeevanism/visionopus/internal/auth"
@@ -150,7 +151,18 @@ func (h *Handler) authorize(w http.ResponseWriter, r *http.Request, write bool) 
 }
 
 func (h *Handler) writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
+	var contrastError *branding.ContrastValidationError
 	switch {
+	case errors.As(err, &contrastError):
+		h.writeProblemWithFields(
+			w,
+			r,
+			http.StatusBadRequest,
+			"branding_contrast_invalid",
+			contrastProblemTitle(contrastError.Issues),
+			err,
+			contrastError.Issues,
+		)
 	case errors.Is(err, branding.ErrInvalidRequest):
 		h.writeProblem(w, r, http.StatusBadRequest, "invalid_branding", "Use valid names and accessible six-digit colour values. Action colours must remain readable with white text.", err)
 	case errors.Is(err, branding.ErrConflict):
@@ -167,14 +179,54 @@ func (h *Handler) writeServiceError(w http.ResponseWriter, r *http.Request, err 
 }
 
 func (h *Handler) writeProblem(w http.ResponseWriter, r *http.Request, status int, code, title string, err error) {
-	h.logger.ErrorContext(r.Context(), "branding operation failed", "operation", r.Method+" "+r.URL.Path, "status", status, "code", code, "error", err, "correlation_id", httpx.CorrelationID(r.Context()))
+	h.writeProblemWithFields(w, r, status, code, title, err, nil)
+}
+
+func (h *Handler) writeProblemWithFields(
+	w http.ResponseWriter,
+	r *http.Request,
+	status int,
+	code string,
+	title string,
+	err error,
+	fieldErrors []branding.ContrastIssue,
+) {
+	h.logger.ErrorContext(
+		r.Context(),
+		"branding operation failed",
+		"operation", r.Method+" "+r.URL.Path,
+		"status", status,
+		"code", code,
+		"error", err,
+		"correlation_id", httpx.CorrelationID(r.Context()),
+	)
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]any{
+	problem := map[string]any{
 		"type": "about:blank", "title": title, "status": status, "code": code,
 		"correlationId": httpx.CorrelationID(r.Context()),
-	})
+	}
+	if len(fieldErrors) > 0 {
+		problem["fieldErrors"] = fieldErrors
+	}
+	_ = json.NewEncoder(w).Encode(problem)
+}
+
+func contrastProblemTitle(issues []branding.ContrastIssue) string {
+	labels := make([]string, 0, len(issues))
+	for _, issue := range issues {
+		labels = append(labels, issue.Label)
+	}
+	if len(labels) == 1 {
+		return labels[0] + " colour does not meet its accessibility contrast requirement."
+	}
+	if len(labels) > 1 {
+		prefix := strings.Join(labels[:len(labels)-1], ", ")
+		return prefix + " and " + labels[len(labels)-1] +
+			" colours do not meet their accessibility contrast requirements."
+	}
+	return "The branding colours do not meet accessibility contrast requirements."
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, target any) error {

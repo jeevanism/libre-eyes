@@ -2,6 +2,7 @@ package brandinghttp
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -18,6 +19,7 @@ type fakeService struct {
 	publicProfile     branding.Profile
 	authorizeWrite    bool
 	draft             branding.DraftInput
+	saveErr           error
 }
 
 func (f *fakeService) PublicProfile(_ context.Context, institutionID int64) (branding.Profile, error) {
@@ -35,6 +37,9 @@ func (f *fakeService) State(context.Context, branding.Authorization) (branding.S
 }
 
 func (f *fakeService) SaveDraft(_ context.Context, _ branding.Authorization, input branding.DraftInput) (branding.State, error) {
+	if f.saveErr != nil {
+		return branding.State{}, f.saveErr
+	}
 	f.draft = input
 	return branding.State{Effective: f.publicProfile}, nil
 }
@@ -116,5 +121,52 @@ func TestSaveDraftRejectsTrailingContent(t *testing.T) {
 
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("response status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}
+
+func TestSaveDraftReportsEveryContrastFailure(t *testing.T) {
+	service := &fakeService{
+		publicProfile: branding.DefaultProfile(),
+		saveErr: &branding.ContrastValidationError{Issues: []branding.ContrastIssue{
+			{
+				Field: "colors.primary", Label: "Primary action", Against: "white text",
+				Message: "Primary action colour has 1.33:1 contrast against white text; " +
+					"at least 4.5:1 is required.",
+				ContrastRatio: 1.33, MinimumContrast: 4.5,
+			},
+			{
+				Field: "colors.primaryHover", Label: "Primary hover", Against: "white text",
+				Message: "Primary hover colour has 3.70:1 contrast against white text; " +
+					"at least 4.5:1 is required.",
+				ContrastRatio: 3.70, MinimumContrast: 4.5,
+			},
+		}},
+	}
+	handler := NewHandler(service, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	mux := http.NewServeMux()
+	handler.Register(mux)
+	body := `{"organizationName":"Velox Group EyeCare","shortName":"Velox","browserTitle":"Velox","colors":{"primary":"#e4e651","primaryHover":"#f03891","selectedSurface":"#deefee","focus":"#0b6fcc"},"expectedVersion":0}`
+	request := httptest.NewRequest(http.MethodPut, "/api/v1/admin/branding/draft", strings.NewReader(body))
+	request.AddCookie(&http.Cookie{Name: "visionopus_session", Value: "opaque"})
+	response := httptest.NewRecorder()
+
+	mux.ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("response status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+	var problem struct {
+		Title       string                   `json:"title"`
+		Code        string                   `json:"code"`
+		FieldErrors []branding.ContrastIssue `json:"fieldErrors"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&problem); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if problem.Code != "branding_contrast_invalid" || !strings.Contains(problem.Title, "Primary action and Primary hover") {
+		t.Fatalf("problem = %#v", problem)
+	}
+	if len(problem.FieldErrors) != 2 || problem.FieldErrors[0].ContrastRatio != 1.33 {
+		t.Fatalf("field errors = %#v", problem.FieldErrors)
 	}
 }

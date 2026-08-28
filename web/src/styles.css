@@ -140,7 +140,11 @@ body {
 .branding-color-field { grid-template-columns: minmax(0, 1fr) 48px; align-items: center; min-height: 44px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle); }
 .branding-color-field span { min-width: 0; }
 .branding-color-field small { display: block; margin-top: 2px; color: var(--text-subtle); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 500; }
+.branding-color-field small.branding-contrast-valid { color: var(--success); font-family: inherit; }
+.branding-color-field small.branding-contrast-invalid { color: var(--danger); font-family: inherit; font-weight: 700; }
 .branding-color-field input[type="color"] { width: 46px; height: 34px; padding: 2px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); }
+.branding-color-field-invalid input[type="color"] { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
+.branding-contrast-summary { grid-column: 1 / -1; margin: 0; }
 .branding-form-actions, .branding-publish-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .branding-form-actions button, .branding-publish-actions button, .branding-history-row button { display: inline-flex; align-items: center; gap: 6px; }
 .branding-publish-actions { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
