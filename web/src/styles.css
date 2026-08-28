@@ -80,8 +80,15 @@ body {
 .admin-section-nav button:hover, .admin-section-nav button.active { color: var(--accent); background: var(--surface); border-bottom-color: var(--accent); }
 .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
 .admin-grid > .admin-panel { display: none; }
-.admin-view-users .admin-grid > :nth-child(1), .admin-view-organization .admin-grid > :nth-child(2), .admin-view-settings .admin-grid > :nth-child(3), .admin-view-audit .admin-grid > :nth-child(5), .admin-view-capabilities .admin-grid > :nth-child(6) { display: block; grid-column: 1 / -1; }
-.admin-view-catalogues .admin-grid > :nth-child(4), .admin-view-catalogues .admin-grid > :nth-child(7), .admin-view-catalogues .admin-grid > :nth-child(8) { display: block; }
+.admin-view-users .admin-grid > :nth-child(1),
+.admin-view-organization .admin-grid > :nth-child(2),
+.admin-view-settings .admin-grid > :nth-child(3),
+.admin-view-audit .admin-grid > :nth-child(5),
+.admin-view-integrations .admin-grid > :nth-child(6),
+.admin-view-capabilities .admin-grid > :nth-child(7) { display: block; grid-column: 1 / -1; }
+.admin-view-catalogues .admin-grid > :nth-child(4),
+.admin-view-catalogues .admin-grid > :nth-child(8),
+.admin-view-catalogues .admin-grid > :nth-child(9) { display: block; }
 .admin-view-catalogues .admin-grid { grid-template-columns: minmax(0, 1fr); }
 .admin-panel { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 18px; }
 .admin-panel h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; }
