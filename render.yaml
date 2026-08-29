@@ -6,7 +6,7 @@ services:
     branch: visionopus
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    plan: starter
+    plan: free
     numInstances: 1
     healthCheckPath: /health/live
     preDeployCommand: /app/visionopus-migrate up
@@ -29,6 +29,6 @@ services:
 databases:
   - name: visionopus-demo-db
     region: frankfurt
-    plan: basic-256mb
+    plan: free
     databaseName: visionopus
     user: visionopus
