@@ -9,7 +9,6 @@ services:
     plan: free
     numInstances: 1
     healthCheckPath: /health/live
-    preDeployCommand: /app/visionopus-migrate up
     envVars:
       - key: VISIONOPUS_ENV
         value: development
