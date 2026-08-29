@@ -99,8 +99,8 @@ function QuickPatientLookup({ session }: { session: Session }) {
     <div className="home-section-heading"><div><p className="page-eyebrow">Patient access</p><h2 id="home-lookup-heading">Quick patient lookup</h2></div><Search size={19} aria-hidden="true" /></div>
     <p className="home-section-note">Exact demographic lookup within the current institution. Identifier search is available in Patient search.</p>
     <form className="home-lookup-form" onSubmit={submit} noValidate>
-      <label>Family name<input value={familyName} onChange={event => setFamilyName(event.target.value)} autoComplete="off" /></label>
       <label>Given name <span>(optional)</span><input value={givenName} onChange={event => setGivenName(event.target.value)} autoComplete="off" /></label>
+      <label>Family name<input value={familyName} onChange={event => setFamilyName(event.target.value)} autoComplete="off" /></label>
       <label>Date of birth<input type="date" value={dateOfBirth} onChange={event => setDateOfBirth(event.target.value)} /></label>
       <label>Gender<select value={gender} onChange={event => setGender(event.target.value as typeof gender)}><option value="unknown">Unknown</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option></select></label>
       <button className="primary-button" type="submit" disabled={loading}>{loading ? 'Looking up…' : 'Find patient'}</button>
