@@ -39,7 +39,12 @@ function PatientSummaryRoute() {
     <section className="patient-summary-page" aria-labelledby="patient-summary-title">
       <div className="workspace-title patient-summary-title">
         <div><p>Selected patient</p><h1 id="patient-summary-title">{name}</h1></div>
-        <Link className="primary-button" params={{ patientId }} to="/patients/$patientId/examination"><Stethoscope size={16} aria-hidden="true" />Open examination workspace</Link>
+        <div className="patient-summary-title-actions">
+          {session.permissions.includes('episode.create') && <button className="primary-button" type="button" onClick={() => { createEpisode.mutate() }} disabled={createEpisode.isPending}>
+            {createEpisode.isPending ? 'Creating episode…' : 'Create active episode'}
+          </button>}
+          <Link className="primary-button" params={{ patientId }} to="/patients/$patientId/examination"><Stethoscope size={16} aria-hidden="true" />Open examination workspace</Link>
+        </div>
       </div>
       <div className="patient-summary-grid">
         <section className="summary-panel" aria-labelledby="identity-title">
@@ -59,13 +64,7 @@ function PatientSummaryRoute() {
           {canReadWarnings && warnings.data && <WarningList details={warnings.data} />}
         </section>
       </div>
-      <div className="summary-panel episode-actions" aria-labelledby="episode-actions-title">
-        <div className="summary-panel-heading">
-          <div><h2 id="episode-actions-title">Care episode</h2><p className="summary-muted">Start an active episode before recording examination drafts.</p></div>
-          {session.permissions.includes('episode.create') && <button className="primary-button" type="button" onClick={() => { createEpisode.mutate() }} disabled={createEpisode.isPending}>
-            {createEpisode.isPending ? 'Creating episode…' : 'Create active episode'}
-          </button>}
-        </div>
+      <div className="episode-action-feedback" aria-live="polite">
         {createEpisode.isSuccess && <p className="inline-success" role="status">Active care episode created.</p>}
         {createEpisode.isError && <p className="inline-error" role="alert">{episodeCreateError(createEpisode.error)}</p>}
         {!session.permissions.includes('episode.create') && <p className="summary-muted">Episode creation is unavailable for this session.</p>}

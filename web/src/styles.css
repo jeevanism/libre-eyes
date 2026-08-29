@@ -349,6 +349,9 @@ a:focus-visible {
   flex: 0 0 auto;
   text-decoration: none;
 }
+.patient-summary-title-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.patient-summary-title-actions .primary-button { display: inline-flex; align-items: center; gap: 7px; }
+.episode-action-feedback { min-height: 0; }
 
 .patient-examination-page,
 .clinic-flow-page {
