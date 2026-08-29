@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: visionopus-demo
+    runtime: docker
+    region: frankfurt
+    branch: visionopus
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    numInstances: 1
+    healthCheckPath: /health/live
+    preDeployCommand: /app/visionopus-migrate up
+    envVars:
+      - key: VISIONOPUS_ENV
+        value: development
+      - key: VISIONOPUS_HTTP_ADDR
+        value: :10000
+      - key: VISIONOPUS_STATIC_DIR
+        value: /app/web
+      - key: VISIONOPUS_COOKIE_SECURE
+        value: "true"
+      - key: VISIONOPUS_DATABASE_URL
+        fromDatabase:
+          name: visionopus-demo-db
+          property: connectionString
+      - key: VISIONOPUS_CSRF_KEY
+        sync: false
+
+databases:
+  - name: visionopus-demo-db
+    region: frankfurt
+    plan: basic-256mb
+    databaseName: visionopus
+    user: visionopus

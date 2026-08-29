@@ -1,0 +1,12 @@
+.git
+.github
+.agent-work
+agent-work
+.tmp
+tmp
+.env
+web/node_modules
+web/dist
+web/test-results
+web/playwright-report
+**/*_test.go

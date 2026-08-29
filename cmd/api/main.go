@@ -110,7 +110,7 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	brandingHTTP := brandinghttp.NewHandler(brandingService, logger)
-	server := httpserver.New(cfg.HTTPAddr, logger, database, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP, developmentFlowHTTP, developmentTheatreBookingHTTP, developmentReferralHTTP, adminHTTP, brandingHTTP)
+	server := httpserver.New(cfg.HTTPAddr, logger, database, cfg.StaticDir, authenticationHTTP, patientSearchHTTP, patientSummaryHTTP, episodesHTTP, developmentFlowHTTP, developmentTheatreBookingHTTP, developmentReferralHTTP, adminHTTP, brandingHTTP)
 	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("api listening", "address", cfg.HTTPAddr, "environment", cfg.Environment)

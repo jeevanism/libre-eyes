@@ -24,6 +24,7 @@ const (
 type Config struct {
 	Environment            string
 	HTTPAddr               string
+	StaticDir              string
 	DatabaseURL            string
 	CookieSecure           bool
 	CSRFKey                []byte
@@ -39,6 +40,7 @@ func Load() (Config, error) {
 	cfg := Config{
 		Environment:            valueOrDefault("VISIONOPUS_ENV", "development"),
 		HTTPAddr:               valueOrDefault("VISIONOPUS_HTTP_ADDR", defaultHTTPAddr),
+		StaticDir:              os.Getenv("VISIONOPUS_STATIC_DIR"),
 		DatabaseURL:            valueOrDefault("VISIONOPUS_DATABASE_URL", defaultDatabaseURL),
 		SessionIdleTimeout:     defaultSessionIdleTimeout,
 		SessionAbsoluteTimeout: defaultSessionAbsoluteTimeout,

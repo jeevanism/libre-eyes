@@ -22,6 +22,9 @@ validation results, current gates, and next steps.
 For a repeatable clinic walkthrough, reset the synthetic database and follow
 the [demo walkthrough](doc/demo-walkthrough.md).
 
+For the Render-hosted synthetic demonstration, follow the [Render deployment
+guide](doc/deployment-render-demo.md).
+
 The first planned walking skeleton is:
 
 ```text
