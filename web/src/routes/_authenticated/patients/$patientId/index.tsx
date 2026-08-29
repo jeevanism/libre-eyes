@@ -46,6 +46,18 @@ function PatientSummaryRoute() {
           <Link className="primary-button" params={{ patientId }} to="/patients/$patientId/examination"><Stethoscope size={16} aria-hidden="true" />Open examination workspace</Link>
         </div>
       </div>
+      <div className="episode-action-feedback" aria-live="polite">
+        {createEpisode.isSuccess && <p className="inline-success" role="status">Active care episode created.</p>}
+        {createEpisode.isError && <p className="inline-error" role="alert">{episodeCreateError(createEpisode.error)}</p>}
+        {!session.permissions.includes('episode.create') && <p className="summary-muted">Episode creation is unavailable for this session.</p>}
+      </div>
+      <EpisodeTimeline
+        patientId={patientId}
+        csrfToken={session.csrfToken}
+        contextVersion={session.contextVersion}
+        allowed={session.permissions.includes('episode.read')}
+        canCreateExaminationDraft={false}
+      />
       <div className="patient-summary-grid">
         <section className="summary-panel" aria-labelledby="identity-title">
           <div className="summary-panel-heading"><h2 id="identity-title">Identity</h2><span className="status-badge status-current">Verified context</span></div>
@@ -64,18 +76,6 @@ function PatientSummaryRoute() {
           {canReadWarnings && warnings.data && <WarningList details={warnings.data} />}
         </section>
       </div>
-      <div className="episode-action-feedback" aria-live="polite">
-        {createEpisode.isSuccess && <p className="inline-success" role="status">Active care episode created.</p>}
-        {createEpisode.isError && <p className="inline-error" role="alert">{episodeCreateError(createEpisode.error)}</p>}
-        {!session.permissions.includes('episode.create') && <p className="summary-muted">Episode creation is unavailable for this session.</p>}
-      </div>
-      <EpisodeTimeline
-        patientId={patientId}
-        csrfToken={session.csrfToken}
-        contextVersion={session.contextVersion}
-        allowed={session.permissions.includes('episode.read')}
-        canCreateExaminationDraft={false}
-      />
     </section>
   )
 }
