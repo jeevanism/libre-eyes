@@ -61,3 +61,23 @@ func TestDevelopmentDiagnosisSelectionsAreDeterministic(t *testing.T) {
 		t.Fatalf("development diagnosis selections = %#v, want %#v", got, want)
 	}
 }
+
+func TestDemoPatientSeedsAreDeterministicAndSynthetic(t *testing.T) {
+	first := demoPatientSeeds()
+	second := demoPatientSeeds()
+	if len(first) != 49 {
+		t.Fatalf("demo patient seed count = %d, want 49 additional patients", len(first))
+	}
+	if !reflect.DeepEqual(first, second) {
+		t.Fatal("demo patient seeds changed between calls")
+	}
+	for offset, patient := range first {
+		wantIndex := offset + 2
+		if patient.index != wantIndex {
+			t.Fatalf("seed %d index = %d, want %d", offset, patient.index, wantIndex)
+		}
+		if patient.given == "" || patient.family == "" || patient.dob == "" {
+			t.Fatalf("seed %d has incomplete demographic data: %#v", patient.index, patient)
+		}
+	}
+}

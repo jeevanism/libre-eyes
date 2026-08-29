@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -289,6 +290,9 @@ func run(ctx context.Context) error {
 		VALUES ($1, 'allergy', 'peanuts', 'Peanut allergy', 'Urticaria', 0, 'visionopus-dev-1')`, patientID); err != nil {
 		return fmt.Errorf("insert synthetic warning item: %w", err)
 	}
+	if err := seedDemoPatients(ctx, tx, institutionID, userID); err != nil {
+		return err
+	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO episodes (
 			public_id, patient_id, institution_id, patient_institution_id, site_id, firm_id, status,
@@ -380,6 +384,79 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("commit development seed: %w", err)
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "seeded synthetic user %q for institution %d, site %d, firm %d\n", username, institutionID, siteID, firmID)
+	return nil
+}
+
+type demoPatientSeed struct {
+	index  int
+	given  string
+	family string
+	gender string
+	dob    string
+}
+
+// demoPatientSeeds returns patients 002-050. Patient 001 is the focused
+// patient above, retained for existing browser fixtures and deep-link tests.
+// Every record is unmistakably synthetic and scoped to the development seed.
+func demoPatientSeeds() []demoPatientSeed {
+	givenNames := []string{"Amina", "Ben", "Chloe", "Dylan", "Elena", "Farah", "Grace", "Hassan", "Ivy", "Jonah"}
+	familyNames := []string{"Demo", "Example", "Test", "Sample", "Training", "Fixture", "Synthetic", "Preview", "Showcase", "Prototype"}
+	genders := []string{"female", "male", "other", "unknown"}
+	seeds := make([]demoPatientSeed, 0, 49)
+	for index := 2; index <= 50; index++ {
+		month := (index-2)%12 + 1
+		day := (index-2)%28 + 1
+		year := 1945 + (index-2)%61
+		seeds = append(seeds, demoPatientSeed{
+			index:  index,
+			given:  givenNames[(index-2)%len(givenNames)],
+			family: familyNames[(index-2)/len(givenNames)%len(familyNames)],
+			gender: genders[(index-2)%len(genders)],
+			dob:    time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC).Format("2006-01-02"),
+		})
+	}
+	return seeds
+}
+
+func seedDemoPatients(ctx context.Context, tx pgx.Tx, institutionID, userID int64) error {
+	for _, patient := range demoPatientSeeds() {
+		publicID := fmt.Sprintf("aaaaaaaa-aaaa-4aaa-8aaa-%012d", patient.index)
+		sourceRecordID := fmt.Sprintf("demo-patient-%03d", patient.index)
+		givenNormalized := strings.ToLower(patient.given)
+		familyNormalized := strings.ToLower(patient.family)
+		var patientID int64
+		if err := tx.QueryRow(ctx, `
+			INSERT INTO patients (
+				public_id, given_name, given_name_normalized, family_name,
+				family_name_normalized, date_of_birth, gender, source_system,
+				source_record_id, created_by_user_id, updated_by_user_id
+			) VALUES ($1::uuid, $2, $3, $4, $5, $6::date, $7::patient_gender,
+				'visionopus-demo', $8, $9, $9)
+			ON CONFLICT (source_system, source_record_id) DO UPDATE SET
+				given_name = EXCLUDED.given_name,
+				given_name_normalized = EXCLUDED.given_name_normalized,
+				family_name = EXCLUDED.family_name,
+				family_name_normalized = EXCLUDED.family_name_normalized,
+				date_of_birth = EXCLUDED.date_of_birth,
+				gender = EXCLUDED.gender,
+				active = TRUE, deleted_at = NULL,
+				updated_at = now(), updated_by_user_id = EXCLUDED.updated_by_user_id
+			RETURNING id`, publicID, patient.given, givenNormalized, patient.family,
+			familyNormalized, patient.dob, patient.gender, sourceRecordID, userID).Scan(&patientID); err != nil {
+			return fmt.Errorf("upsert demo patient %03d: %w", patient.index, err)
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO patient_institutions (
+				patient_id, institution_id, primary_association, association_source,
+				created_by_user_id, updated_by_user_id
+			) VALUES ($1, $2, TRUE, 'approved_deployment_default', $3, $3)
+			ON CONFLICT (patient_id, institution_id) WHERE active DO UPDATE SET
+				active = TRUE, primary_association = TRUE, effective_to = NULL,
+				updated_at = now(), updated_by_user_id = EXCLUDED.updated_by_user_id`,
+			patientID, institutionID, userID); err != nil {
+			return fmt.Errorf("associate demo patient %03d: %w", patient.index, err)
+		}
+	}
 	return nil
 }
 
