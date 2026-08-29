@@ -62,6 +62,9 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if err := seedDevelopmentCapabilities(ctx, tx, institutionID); err != nil {
+		return err
+	}
 	// Integration tests intentionally create isolated institutions in the shared
 	// development database. Keep the interactive demo focused on its one
 	// synthetic context without deleting those test records.
@@ -384,6 +387,37 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("commit development seed: %w", err)
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "seeded synthetic user %q for institution %d, site %d, firm %d\n", username, institutionID, siteID, firmID)
+	return nil
+}
+
+func seedDevelopmentCapabilities(ctx context.Context, tx pgx.Tx, institutionID int64) error {
+	capabilities := []struct {
+		key, displayName, description string
+	}{
+		{"patient_search", "Patient search", "Search and open synthetic patient summaries."},
+		{"examination", "Examination tools", "Visual acuity, pressure, fields, and examination drafts."},
+		{"clinic_flow", "Clinic flow", "Synthetic clinic queue and ticket movement."},
+		{"theatre_booking", "Theatre schedule", "Synthetic theatre booking board."},
+		{"referrals", "Referrals and appointments", "Synthetic referral and appointment queue."},
+		{"prescribing", "Medication orders", "Synthetic medication-order drafts and catalogue."},
+		{"correspondence", "Correspondence and messaging", "Synthetic correspondence and internal messaging drafts."},
+		{"consent", "Consent forms", "Synthetic consent-form drafts."},
+		{"laboratory", "Laboratory and genetics", "Synthetic laboratory and genetic-result drafts."},
+		{"administration", "Administration", "Synthetic users, contexts, settings, and catalogues."},
+	}
+	for _, capability := range capabilities {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO development_admin_capabilities (institution_id, capability_key, display_name, description, enabled)
+			VALUES ($1, $2, $3, $4, TRUE)
+			ON CONFLICT (institution_id, capability_key) DO UPDATE SET
+				display_name = EXCLUDED.display_name,
+				description = EXCLUDED.description,
+				enabled = TRUE,
+				version = development_admin_capabilities.version + 1,
+				updated_at = now()`, institutionID, capability.key, capability.displayName, capability.description); err != nil {
+			return fmt.Errorf("seed development capability %s: %w", capability.key, err)
+		}
+	}
 	return nil
 }
 
