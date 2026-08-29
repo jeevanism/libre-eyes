@@ -838,6 +838,38 @@ a:focus-visible {
 .recent-patients-list li { display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: .5rem; }
 .recent-patients-list a { font-weight: 600; }
 
+.home-dashboard { max-width: 1280px; margin: 0 auto; padding: 28px; }
+.home-dashboard-header { align-items: end; margin-bottom: 22px; }
+.home-dashboard-intro, .home-section-note { margin: 6px 0 0; color: var(--text-secondary); }
+.home-context-summary { display: grid; gap: 3px; text-align: right; color: var(--text-secondary); font-size: 0.82rem; }
+.home-context-summary strong { color: var(--text-primary); font-size: 0.95rem; }
+.home-lookup, .home-dashboard-section { border: 1px solid var(--border-subtle); background: var(--surface); padding: 18px; }
+.home-lookup { margin-bottom: 16px; }
+.home-dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.home-section-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.home-section-heading h2 { margin: 0; font-size: 17px; }
+.home-lookup-form { display: grid; grid-template-columns: 1.1fr 1.1fr 1fr .8fr auto; gap: 10px; align-items: end; margin-top: 16px; }
+.home-lookup-form label { display: grid; gap: 5px; color: var(--text-secondary); font-size: .78rem; font-weight: 700; }
+.home-lookup-form label span { font-weight: 400; }
+.home-lookup-form input, .home-lookup-form select { min-height: 38px; padding: 7px 9px; border: 1px solid var(--border-default); border-radius: 4px; background: var(--surface); color: var(--text-primary); font: inherit; }
+.home-lookup-form .primary-button { min-height: 38px; white-space: nowrap; }
+.home-lookup-results { display: grid; gap: 7px; margin-top: 14px; }
+.home-lookup-results a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-top: 1px solid var(--border-subtle); color: var(--text-primary); text-decoration: none; }
+.home-lookup-results a span { font-weight: 700; }
+.home-lookup-results a small { color: var(--text-secondary); margin-right: auto; }
+.home-list { display: grid; gap: 0; list-style: none; margin: 16px 0 8px; padding: 0; }
+.home-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--border-subtle); padding: 11px 0; }
+.home-list li > div { display: grid; gap: 3px; }
+.home-list li > div span, .home-list li > span:last-child { color: var(--text-secondary); font-size: .82rem; }
+.home-list a { color: var(--text-primary); font-weight: 700; }
+.home-status { border-radius: 4px; padding: 3px 7px; font-size: .76rem; font-weight: 700; }
+.home-status-waiting { background: var(--surface-warning); color: var(--warning); }
+.home-status-arrived, .home-status-in_progress { background: var(--surface-selected); color: var(--action-primary); }
+.home-status-completed { background: var(--surface-success); color: var(--success); }
+.home-section-link { display: inline-flex; align-items: center; gap: 6px; color: var(--action-primary); font-size: .84rem; font-weight: 700; text-decoration: none; }
+@media (max-width: 900px) { .home-lookup-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .home-lookup-form .primary-button { grid-column: 1 / -1; } }
+@media (max-width: 680px) { .home-dashboard { padding: 20px 16px; } .home-dashboard-header { align-items: start; gap: 12px; } .home-context-summary { text-align: left; } .home-dashboard-grid { grid-template-columns: 1fr; } .home-lookup-form { grid-template-columns: 1fr; } .home-lookup-form .primary-button { grid-column: auto; } }
+
 .patient-search-form {
   gap: 16px;
 }
