@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { AlertTriangle, ShieldAlert, Stethoscope } from 'lucide-react'
 
-import { ApiError, patientSummaryAPI } from '../../../../api/client'
+import { ApiError, episodesAPI, patientSummaryAPI } from '../../../../api/client'
 import { EpisodeTimeline } from '../../../../features/episodes/EpisodeTimeline'
 
 export const Route = createFileRoute('/_authenticated/patients/$patientId/')({
@@ -12,6 +12,7 @@ export const Route = createFileRoute('/_authenticated/patients/$patientId/')({
 function PatientSummaryRoute() {
   const { patientId } = Route.useParams()
   const { session } = Route.useRouteContext()
+  const queryClient = useQueryClient()
   const header = useQuery({
     queryKey: ['patient-summary-header', patientId, session.contextVersion],
     queryFn: () => patientSummaryAPI.header(patientId, session.csrfToken, session.contextVersion),
@@ -21,6 +22,12 @@ function PatientSummaryRoute() {
     queryKey: ['patient-summary-warnings', patientId, session.contextVersion],
     queryFn: () => patientSummaryAPI.warnings(patientId, session.csrfToken, session.contextVersion),
     enabled: canReadWarnings && header.isSuccess,
+  })
+  const createEpisode = useMutation({
+    mutationFn: () => episodesAPI.create(patientId, session.csrfToken),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['episodes', 'timeline', patientId, session.contextVersion] })
+    },
   })
 
   if (header.isPending) return <div className="route-status">Loading patient summary…</div>
@@ -52,6 +59,17 @@ function PatientSummaryRoute() {
           {canReadWarnings && warnings.data && <WarningList details={warnings.data} />}
         </section>
       </div>
+      <div className="summary-panel episode-actions" aria-labelledby="episode-actions-title">
+        <div className="summary-panel-heading">
+          <div><h2 id="episode-actions-title">Care episode</h2><p className="summary-muted">Start an active episode before recording examination drafts.</p></div>
+          {session.permissions.includes('episode.create') && <button className="primary-button" type="button" onClick={() => { createEpisode.mutate() }} disabled={createEpisode.isPending}>
+            {createEpisode.isPending ? 'Creating episode…' : 'Create active episode'}
+          </button>}
+        </div>
+        {createEpisode.isSuccess && <p className="inline-success" role="status">Active care episode created.</p>}
+        {createEpisode.isError && <p className="inline-error" role="alert">{episodeCreateError(createEpisode.error)}</p>}
+        {!session.permissions.includes('episode.create') && <p className="summary-muted">Episode creation is unavailable for this session.</p>}
+      </div>
       <EpisodeTimeline
         patientId={patientId}
         csrfToken={session.csrfToken}
@@ -61,6 +79,12 @@ function PatientSummaryRoute() {
       />
     </section>
   )
+}
+
+function episodeCreateError(error: Error): string {
+  if (error instanceof ApiError && error.status === 403) return 'You are not authorised to create an episode in this clinical context.'
+  if (error instanceof ApiError && error.status === 409) return 'The episode could not be created because the patient context changed. Refresh and try again.'
+  return 'The care episode could not be created. Please try again.'
 }
 
 function formatDate(value: string): string {

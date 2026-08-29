@@ -219,6 +219,7 @@ type LoginResponse = paths['/auth/sessions']['post']['responses']['200']['conten
 type PatientSearchResponse = patientSearchPaths['/patients/searches']['post']['responses']['200']['content']['application/json']
 type DuplicateCandidatesResponse = patientSearchPaths['/patients/duplicate-candidates']['post']['responses']['200']['content']['application/json']
 type EpisodeListResponse = episodePaths['/patients/{patientId}/episodes']['get']['responses']['200']['content']['application/json']
+type EpisodeResponse = episodePaths['/patients/{patientId}/episodes']['post']['responses']['201']['content']['application/json']
 type EventListResponse = episodePaths['/episodes/{episodeId}/events']['get']['responses']['200']['content']['application/json']
 type DevelopmentFlowTicketPage = worklistPaths['/api/v1/development/clinic-flow/tickets']['get']['responses']['200']['content']['application/json']
 type DevelopmentTheatreBoardResponse = theatreBookingPaths['/api/v1/development/theatre-booking/board']['get']['responses']['200']['content']['application/json']
@@ -388,6 +389,12 @@ export const episodesAPI = {
       headers: { 'X-CSRF-Token': csrfToken },
     })
   },
+  create: (patientId: string, csrfToken: string, status: 'open' | 'active' = 'active') =>
+    request<EpisodeResponse>(`/patients/${encodeURIComponent(patientId)}/episodes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify({ status }),
+    }),
   listEvents: (episodeId: string, csrfToken: string, cursor?: string) => {
     const parameters = new URLSearchParams()
     if (cursor) parameters.set('cursor', cursor)
