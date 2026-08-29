@@ -1,9 +1,9 @@
 # Build the React static bundle separately from the Go runtime.
-FROM node:24-alpine AS web-build
+FROM oven/bun:1.3.14-alpine AS web-build
 WORKDIR /src
 COPY . .
-RUN npm --prefix web ci \
-    && npm --prefix web run build
+RUN bun install --cwd web --frozen-lockfile --ignore-scripts \
+    && bun run --cwd web build
 
 FROM golang:1.25-alpine AS api-build
 WORKDIR /src
