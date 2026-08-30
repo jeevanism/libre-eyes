@@ -46,20 +46,36 @@ Build the demonstration container with:
 docker build --tag libre-eyes-demo .
 ```
 
-For the simplest local demonstration, install Docker with Compose, then run:
+## Quick start for demonstrators
+
+Non-technical users only need Docker Desktop (which includes Docker Compose).
+No Go, Bun, Node.js, or source checkout is required. Run this single command:
 
 ```bash
-docker compose up
+mkdir libreeyes-demo && cd libreeyes-demo && curl -fsSL https://raw.githubusercontent.com/jeevanism/libre-eyes/main/compose.yaml -o compose.yaml && docker compose up
 ```
 
-Compose pulls the published LibreEyes image, starts PostgreSQL, applies
-migrations, seeds the `clinician` account, and launches the application. Open
-`http://localhost:10000/login` and use `clinician` / `123456`. This fixed
-synthetic password is for demonstration only. Press Ctrl-C to stop the
-containers; restart or remove them with `docker compose down`.
+Compose downloads the configuration and published LibreEyes image, starts
+PostgreSQL, applies migrations, seeds the synthetic account, and launches the
+application. Open `http://localhost:10000/login` and use `clinician` / `123456`.
+This fixed password is for demonstration only. Press Ctrl-C to stop the
+containers; remove them with `docker compose down`.
 
-For development from source with Go and Bun installed, `./demo.sh` remains
-available as an alternative launcher.
+## Run from source
+
+Developers who want to inspect or modify the source can clone the repository.
+Install Docker, Go, and Bun, then run:
+
+```bash
+git clone https://github.com/jeevanism/libre-eyes.git
+cd libre-eyes
+./demo.sh
+```
+
+The source launcher starts PostgreSQL, applies migrations, seeds the synthetic
+clinician, and runs the Go API and Bun-powered React development server. Open
+`http://localhost:5173/login`. Set `LIBREEYES_DEV_PASSWORD` before running it
+to choose a different local password.
 
 The public Render deployment configuration is in `Dockerfile` and
 `render.yaml`. Never commit secrets; use `.env.example` only as a template.
