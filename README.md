@@ -22,6 +22,14 @@ do not use this repository for clinical care or production NHS deployment.
 - Bun for the frontend build
 - Docker and Render deployment configuration
 
+## Backend persistence
+
+The Go backend uses `pgx/v5` directly. Repositories execute explicit,
+parameterised SQL and scan results into Go types; no ORM or query-generation
+framework is used. This keeps transactions, tenant-isolation predicates,
+audit-sensitive writes, and PostgreSQL behaviour visible in the application
+code.
+
 ## Local verification
 
 ```bash
@@ -55,6 +63,13 @@ available as an alternative launcher.
 
 The public Render deployment configuration is in `Dockerfile` and
 `render.yaml`. Never commit secrets; use `.env.example` only as a template.
+
+## Licence
+
+LibreEyes is distributed under the GNU Affero General Public License version 3
+only (AGPLv3-only). The EyeDraw-derived files under
+`web/public/vendor/eyedraw/` retain their upstream attribution and licence
+notices; see `NOTICE` and that directory's `ATTRIBUTION.md`.
 
 ## Upstream notices
 
