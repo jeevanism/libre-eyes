@@ -15,5 +15,42 @@ services:
     volumes:
       - libre-eyes-postgres-18:/var/lib/postgresql
 
+  migrate:
+    image: codewasher/libre-eyes:1.0.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: &libreeyes-environment
+      LIBREEYES_ENV: development
+      LIBREEYES_DATABASE_URL: postgres://libreeyes:libreeyes_dev@postgres:5432/libreeyes?sslmode=disable
+      LIBREEYES_CSRF_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    entrypoint: ["/app/libreeyes-migrate"]
+    command: ["up"]
+
+  seed:
+    image: codewasher/libre-eyes:1.0.0
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *libreeyes-environment
+      LIBREEYES_DEV_USERNAME: clinician
+      LIBREEYES_DEV_DISPLAY_NAME: Synthetic Clinician
+      LIBREEYES_DEV_PASSWORD: "123456"
+    entrypoint: ["/app/libreeyes-devseed"]
+
+  libreeyes:
+    image: codewasher/libre-eyes:1.0.0
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    environment:
+      <<: *libreeyes-environment
+      LIBREEYES_HTTP_ADDR: :10000
+      LIBREEYES_STATIC_DIR: /app/web
+      LIBREEYES_COOKIE_SECURE: "false"
+    ports:
+      - "10000:10000"
+
 volumes:
   libre-eyes-postgres-18:

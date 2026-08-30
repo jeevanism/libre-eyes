@@ -38,17 +38,20 @@ Build the demonstration container with:
 docker build --tag libre-eyes-demo .
 ```
 
-For the simplest local demonstration, install Docker, Go, and Bun, then run:
+For the simplest local demonstration, install Docker with Compose, then run:
 
 ```bash
-./demo.sh
+docker compose up
 ```
 
-This starts the synthetic PostgreSQL database, applies migrations, seeds the
-`clinician` account, and launches the API and frontend. Set
-`LIBREEYES_DEV_PASSWORD` before running it to choose a different demo password.
-Press Ctrl-C to stop the API and frontend; PostgreSQL remains available for the
-next run and can be stopped with `docker compose down`.
+Compose pulls the published LibreEyes image, starts PostgreSQL, applies
+migrations, seeds the `clinician` account, and launches the application. Open
+`http://localhost:10000/login` and use `clinician` / `123456`. This fixed
+synthetic password is for demonstration only. Press Ctrl-C to stop the
+containers; restart or remove them with `docker compose down`.
+
+For development from source with Go and Bun installed, `./demo.sh` remains
+available as an alternative launcher.
 
 The public Render deployment configuration is in `Dockerfile` and
 `render.yaml`. Never commit secrets; use `.env.example` only as a template.
