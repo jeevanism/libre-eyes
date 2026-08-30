@@ -22,21 +22,21 @@ jobs:
       postgres:
         image: postgres:18.4-alpine
         env:
-          POSTGRES_DB: visionopus
-          POSTGRES_USER: visionopus
+          POSTGRES_DB: libreeyes
+          POSTGRES_USER: libreeyes
           POSTGRES_PASSWORD: synthetic-ci-password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U visionopus -d visionopus"
+          --health-cmd "pg_isready -U libreeyes -d libreeyes"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 15
     env:
-      VISIONOPUS_ENV: development
-      VISIONOPUS_DATABASE_URL: postgres://visionopus:synthetic-ci-password@localhost:5432/visionopus?sslmode=disable
-      VISIONOPUS_TEST_DATABASE_URL: postgres://visionopus:synthetic-ci-password@localhost:5432/visionopus?sslmode=disable
-      VISIONOPUS_CSRF_KEY: Jk4j37boZHsZUX1pMXgbIJ67VvHZTQCJE8ziNdJHh9E
+      LIBREEYES_ENV: development
+      LIBREEYES_DATABASE_URL: postgres://libreeyes:synthetic-ci-password@localhost:5432/libreeyes?sslmode=disable
+      LIBREEYES_TEST_DATABASE_URL: postgres://libreeyes:synthetic-ci-password@localhost:5432/libreeyes?sslmode=disable
+      LIBREEYES_CSRF_KEY: Jk4j37boZHsZUX1pMXgbIJ67VvHZTQCJE8ziNdJHh9E
 
     steps:
       - name: Check out repository
@@ -126,22 +126,22 @@ jobs:
       postgres:
         image: postgres:18.4-alpine
         env:
-          POSTGRES_DB: visionopus
-          POSTGRES_USER: visionopus
+          POSTGRES_DB: libreeyes
+          POSTGRES_USER: libreeyes
           POSTGRES_PASSWORD: synthetic-ci-password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U visionopus -d visionopus"
+          --health-cmd "pg_isready -U libreeyes -d libreeyes"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 15
     env:
-      VISIONOPUS_ENV: development
-      VISIONOPUS_DATABASE_URL: postgres://visionopus:synthetic-ci-password@localhost:5432/visionopus?sslmode=disable
-      VISIONOPUS_CSRF_KEY: Jk4j37boZHsZUX1pMXgbIJ67VvHZTQCJE8ziNdJHh9E
-      VISIONOPUS_DEV_PASSWORD: synthetic-e2e-password
-      VISIONOPUS_LIVE_E2E: "true"
+      LIBREEYES_ENV: development
+      LIBREEYES_DATABASE_URL: postgres://libreeyes:synthetic-ci-password@localhost:5432/libreeyes?sslmode=disable
+      LIBREEYES_CSRF_KEY: Jk4j37boZHsZUX1pMXgbIJ67VvHZTQCJE8ziNdJHh9E
+      LIBREEYES_DEV_PASSWORD: synthetic-e2e-password
+      LIBREEYES_LIVE_E2E: "true"
 
     steps:
       - name: Check out repository
@@ -171,9 +171,9 @@ jobs:
 
       - name: Run live desktop and tablet authentication
         run: |
-          go run ./cmd/api >/tmp/visionopus-api.log 2>&1 &
+          go run ./cmd/api >/tmp/libreeyes-api.log 2>&1 &
           api_pid=$!
-          npm --prefix web run dev -- --host 127.0.0.1 --port 4173 >/tmp/visionopus-web.log 2>&1 &
+          npm --prefix web run dev -- --host 127.0.0.1 --port 4173 >/tmp/libreeyes-web.log 2>&1 &
           web_pid=$!
           trap 'kill "$api_pid" "$web_pid"' EXIT
           for attempt in {1..30}; do

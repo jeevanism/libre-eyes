@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jeevanism/visionopus/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/auth"
 )
 
 var (

@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/config"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/config"
 )
 
 func main() {
@@ -31,11 +31,11 @@ func run(ctx context.Context) error {
 	if err := requireDevelopmentEnvironment(cfg.Environment); err != nil {
 		return err
 	}
-	username := strings.ToLower(strings.TrimSpace(valueOrDefault("VISIONOPUS_DEV_USERNAME", "clinician")))
-	displayName := strings.TrimSpace(valueOrDefault("VISIONOPUS_DEV_DISPLAY_NAME", "Synthetic Clinician"))
-	password := os.Getenv("VISIONOPUS_DEV_PASSWORD")
+	username := strings.ToLower(strings.TrimSpace(valueOrDefault("LIBREEYES_DEV_USERNAME", "clinician")))
+	displayName := strings.TrimSpace(valueOrDefault("LIBREEYES_DEV_DISPLAY_NAME", "Synthetic Clinician"))
+	password := os.Getenv("LIBREEYES_DEV_PASSWORD")
 	if username == "" || displayName == "" || password == "" {
-		return errors.New("development username, display name, and VISIONOPUS_DEV_PASSWORD are required")
+		return errors.New("development username, display name, and LIBREEYES_DEV_PASSWORD are required")
 	}
 
 	passwordHash, err := (auth.PasswordManager{}).Hash(password)
@@ -57,7 +57,7 @@ func run(ctx context.Context) error {
 	institutionID, err := findOrInsert(ctx, tx,
 		"SELECT id FROM institutions WHERE name = $1 ORDER BY id LIMIT 1",
 		"INSERT INTO institutions (name) VALUES ($1) RETURNING id",
-		"VisionOpus Development Hospital",
+		"LibreEyes Development Hospital",
 	)
 	if err != nil {
 		return err
@@ -209,7 +209,7 @@ func run(ctx context.Context) error {
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO user_role_assignments (user_id, role_id, role_scope, institution_id)
 		SELECT $1, id, scope, $2 FROM roles
-		WHERE name IN ('VisionOpus User', 'Development Patient Search Tester', 'Institution Administrator')
+		WHERE name IN ('LibreEyes User', 'Development Patient Search Tester', 'Institution Administrator')
 		ON CONFLICT (user_id, role_id, institution_id) DO UPDATE SET active = TRUE`, userID, institutionID); err != nil {
 		return fmt.Errorf("upsert development roles: %w", err)
 	}
@@ -221,7 +221,7 @@ func run(ctx context.Context) error {
 			family_name_normalized, date_of_birth, gender, source_system,
 			source_record_id, created_by_user_id, updated_by_user_id
 		) VALUES ('11111111-1111-4111-8111-111111111111', 'Alice', 'alice',
-			'Patient', 'patient', '1985-04-12', 'female', 'visionopus-dev',
+			'Patient', 'patient', '1985-04-12', 'female', 'libreeyes-dev',
 			'patient-001', $1, $1)
 		ON CONFLICT (public_id) DO UPDATE SET
 			given_name = EXCLUDED.given_name,
@@ -269,19 +269,19 @@ func run(ctx context.Context) error {
 	identifierTypeID, err := findOrInsert(ctx, tx,
 		"SELECT id FROM patient_identifier_types WHERE institution_id = $1 AND site_id IS NULL AND stable_code = $2",
 		`INSERT INTO patient_identifier_types (stable_code, institution_id, display_label, normalization_kind, maximum_canonical_length, validation_state, display_order, source_system, source_record_id)
-		 VALUES ($2, $1, 'NHS number', 'nhs_number_v1', 10, 'validated', 0, 'visionopus-dev', 'identifier-type-nhs') RETURNING id`, institutionID, "nhs_number")
+		 VALUES ($2, $1, 'NHS number', 'nhs_number_v1', 10, 'validated', 0, 'libreeyes-dev', 'identifier-type-nhs') RETURNING id`, institutionID, "nhs_number")
 	if err != nil {
 		return fmt.Errorf("upsert synthetic identifier type: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO patient_identifiers (patient_id, identifier_type_id, original_value, canonical_value, source_marker, source_system, source_record_id)
-		VALUES ($1, $2, '9434765919', '9434765919', 'visionopus-dev', 'visionopus-dev', 'patient-identifier-001')
+		VALUES ($1, $2, '9434765919', '9434765919', 'libreeyes-dev', 'libreeyes-dev', 'patient-identifier-001')
 		ON CONFLICT (source_system, source_record_id) DO UPDATE SET active = TRUE, lifecycle = 'active', deleted_at = NULL, updated_at = now()`, patientID, identifierTypeID); err != nil {
 		return fmt.Errorf("upsert synthetic patient identifier: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO patient_summary_warning_projections (patient_id, allergy_status, alert_status, source_revision, source_checksum, projection_state)
-		VALUES ($1, 'present', 'none_known', 'visionopus-dev-1', 'synthetic-checksum-001', 'verified')
+		VALUES ($1, 'present', 'none_known', 'libreeyes-dev-1', 'synthetic-checksum-001', 'verified')
 		ON CONFLICT (patient_id) DO UPDATE SET allergy_status = EXCLUDED.allergy_status, alert_status = EXCLUDED.alert_status, source_revision = EXCLUDED.source_revision, source_checksum = EXCLUDED.source_checksum, projection_state = EXCLUDED.projection_state, warning_version = patient_summary_warning_projections.warning_version + 1, updated_at = now()`, patientID); err != nil {
 		return fmt.Errorf("upsert synthetic warning projection: %w", err)
 	}
@@ -290,7 +290,7 @@ func run(ctx context.Context) error {
 	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO patient_summary_warning_items (patient_id, warning_kind, code, label, reaction, item_order, source_revision)
-		VALUES ($1, 'allergy', 'peanuts', 'Peanut allergy', 'Urticaria', 0, 'visionopus-dev-1')`, patientID); err != nil {
+		VALUES ($1, 'allergy', 'peanuts', 'Peanut allergy', 'Urticaria', 0, 'libreeyes-dev-1')`, patientID); err != nil {
 		return fmt.Errorf("insert synthetic warning item: %w", err)
 	}
 	if err := seedDemoPatients(ctx, tx, institutionID, userID); err != nil {
@@ -465,7 +465,7 @@ func seedDemoPatients(ctx context.Context, tx pgx.Tx, institutionID, userID int6
 				family_name_normalized, date_of_birth, gender, source_system,
 				source_record_id, created_by_user_id, updated_by_user_id
 			) VALUES ($1::uuid, $2, $3, $4, $5, $6::date, $7::patient_gender,
-				'visionopus-demo', $8, $9, $9)
+				'libre-eyes-demo', $8, $9, $9)
 			ON CONFLICT (source_system, source_record_id) DO UPDATE SET
 				given_name = EXCLUDED.given_name,
 				given_name_normalized = EXCLUDED.given_name_normalized,
@@ -519,7 +519,7 @@ func seedDemoLoginUsers(ctx context.Context, tx pgx.Tx, institutionID, siteID, f
 		if _, err := tx.Exec(ctx, `INSERT INTO user_firm_memberships (user_id,firm_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, userID, firmID); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(ctx, `INSERT INTO user_role_assignments (user_id,role_id,role_scope,institution_id) SELECT $1,id,scope,$2 FROM roles WHERE name IN ('VisionOpus User','Development Patient Search Tester') ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE`, userID, institutionID); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO user_role_assignments (user_id,role_id,role_scope,institution_id) SELECT $1,id,scope,$2 FROM roles WHERE name IN ('LibreEyes User','Development Patient Search Tester') ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE`, userID, institutionID); err != nil {
 			return fmt.Errorf("seed %s roles: %w", username, err)
 		}
 		// Keep demo login accounts clinical-only even when an older seed assigned
@@ -597,7 +597,7 @@ func seedDevelopmentAdmin(ctx context.Context, tx pgx.Tx, institutionID, actorID
 		"clinic_flow_queue_name": "Demo clinic flow", "clinic_flow_priorities": "routine,urgent",
 		"theatre_default_room": "Demo theatre room", "theatre_session_minutes": "60", "theatre_capacity_minutes": "240",
 		"referral_default_recipient": "demo_gp", "referral_default_priority": "routine",
-		"correspondence_default_template": "demo_clinic_update", "correspondence_footer": "VisionOpus demonstration clinic",
+		"correspondence_default_template": "demo_clinic_update", "correspondence_footer": "LibreEyes demonstration clinic",
 		"messaging_default_type": "demo_internal_message", "messaging_mailbox": "Demo clinical mailbox",
 	} {
 		if _, err := tx.Exec(ctx, `INSERT INTO development_admin_settings (key,institution_id,value) VALUES ($1,$2,$3) ON CONFLICT (institution_id,key) DO UPDATE SET value=EXCLUDED.value,updated_at=now()`, key, institutionID, value); err != nil {
@@ -699,7 +699,7 @@ func seedDevelopmentConsentCatalogue(ctx context.Context, tx pgx.Tx, userID int6
 
 func requireDevelopmentEnvironment(environment string) error {
 	if environment != "development" {
-		return errors.New("devseed may run only when VISIONOPUS_ENV=development")
+		return errors.New("devseed may run only when LIBREEYES_ENV=development")
 	}
 	return nil
 }

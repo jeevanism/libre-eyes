@@ -10,20 +10,20 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/visionopus-api ./cmd/api \
-    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/visionopus-migrate ./cmd/migrate \
-    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/visionopus-devseed ./cmd/devseed
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/libreeyes-api ./cmd/api \
+    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/libreeyes-migrate ./cmd/migrate \
+    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/libreeyes-devseed ./cmd/devseed
 
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
-COPY --from=api-build /out/visionopus-api /app/visionopus-api
-COPY --from=api-build /out/visionopus-migrate /app/visionopus-migrate
-COPY --from=api-build /out/visionopus-devseed /app/visionopus-devseed
+COPY --from=api-build /out/libreeyes-api /app/libreeyes-api
+COPY --from=api-build /out/libreeyes-migrate /app/libreeyes-migrate
+COPY --from=api-build /out/libreeyes-devseed /app/libreeyes-devseed
 COPY --from=web-build /src/web/dist /app/web
 
-ENV VISIONOPUS_ENV=production \
-    VISIONOPUS_HTTP_ADDR=:10000 \
-    VISIONOPUS_STATIC_DIR=/app/web
+ENV LIBREEYES_ENV=production \
+    LIBREEYES_HTTP_ADDR=:10000 \
+    LIBREEYES_STATIC_DIR=/app/web
 EXPOSE 10000
 USER nonroot:nonroot
-ENTRYPOINT ["/app/visionopus-api"]
+ENTRYPOINT ["/app/libreeyes-api"]

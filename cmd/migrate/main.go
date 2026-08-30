@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jeevanism/visionopus/db/migrations"
-	"github.com/jeevanism/visionopus/internal/config"
-	"github.com/jeevanism/visionopus/internal/platform/database"
+	"github.com/jeevanism/libre-eyes/db/migrations"
+	"github.com/jeevanism/libre-eyes/internal/config"
+	"github.com/jeevanism/libre-eyes/internal/platform/database"
 )
 
 func main() {

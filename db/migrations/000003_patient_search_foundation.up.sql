@@ -69,7 +69,7 @@ CREATE TABLE patient_institutions (
             'legacy_primary',
             'approved_deployment_default',
             'verified_legacy_association',
-            'visionopus'
+            'libreeyes'
         )
     ),
     effective_from TIMESTAMPTZ NOT NULL DEFAULT now(),

@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/patientsummary"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/patientsummary"
 )
 
-const sessionCookieName = "visionopus_session"
+const sessionCookieName = "libreeyes_session"
 
 type Service interface {
 	Authorize(context.Context, string, string, auth.RequestMetadata) (patientsummary.Authorization, error)

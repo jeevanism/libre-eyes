@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/branding"
-	"github.com/jeevanism/visionopus/internal/platform/httpx"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/branding"
+	"github.com/jeevanism/libre-eyes/internal/platform/httpx"
 )
 
 const maximumBodyBytes = 8 * 1024
@@ -66,7 +66,7 @@ func (h *Handler) publicProfile(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	profile, err := h.service.PublicProfile(ctx, institutionID)
 	if err != nil {
-		h.writeProblem(w, r, http.StatusInternalServerError, "branding_unavailable", "The presentation profile is temporarily unavailable. VisionOpus defaults remain available.", err)
+		h.writeProblem(w, r, http.StatusInternalServerError, "branding_unavailable", "The presentation profile is temporarily unavailable. LibreEyes defaults remain available.", err)
 		return
 	}
 	w.Header().Set("Cache-Control", "public, max-age=300")
@@ -133,7 +133,7 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request, command func(c
 }
 
 func (h *Handler) authorize(w http.ResponseWriter, r *http.Request, write bool) (branding.Authorization, bool) {
-	cookie, err := r.Cookie("visionopus_session")
+	cookie, err := r.Cookie("libreeyes_session")
 	if err != nil {
 		h.writeProblem(w, r, http.StatusUnauthorized, "unauthenticated", "Sign in before opening branding administration.", err)
 		return branding.Authorization{}, false

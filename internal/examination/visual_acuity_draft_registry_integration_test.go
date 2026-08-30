@@ -11,12 +11,12 @@ import (
 )
 
 func TestPostgresCatalogueDetectsDevelopmentFixture(t *testing.T) {
-	if os.Getenv("VISIONOPUS_TEST_DEVELOPMENT_FIXTURE") != "true" {
-		t.Skip("VISIONOPUS_TEST_DEVELOPMENT_FIXTURE is not true")
+	if os.Getenv("LIBREEYES_TEST_DEVELOPMENT_FIXTURE") != "true" {
+		t.Skip("LIBREEYES_TEST_DEVELOPMENT_FIXTURE is not true")
 	}
-	databaseURL := os.Getenv("VISIONOPUS_TEST_DATABASE_URL")
+	databaseURL := os.Getenv("LIBREEYES_TEST_DATABASE_URL")
 	if databaseURL == "" {
-		t.Skip("VISIONOPUS_TEST_DATABASE_URL is not set")
+		t.Skip("LIBREEYES_TEST_DATABASE_URL is not set")
 	}
 	pool, err := pgxpool.New(context.Background(), databaseURL)
 	if err != nil {

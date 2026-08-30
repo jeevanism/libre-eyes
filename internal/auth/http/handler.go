@@ -14,12 +14,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/platform/httpx"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/platform/httpx"
 )
 
 const (
-	sessionCookieName          = "visionopus_session"
+	sessionCookieName          = "libreeyes_session"
 	maximumBodyBytes           = 16 * 1024
 	loginLimitPerClient        = 10
 	loginLimitGlobal           = 500

@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jeevanism/visionopus/internal/admin"
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/platform/httpx"
+	"github.com/jeevanism/libre-eyes/internal/admin"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/platform/httpx"
 )
 
 type Service interface {
@@ -568,7 +568,7 @@ func writeJSON(w http.ResponseWriter, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 func (h *Handler) auth(w http.ResponseWriter, r *http.Request, write bool) (admin.Authorization, bool) {
-	c, err := r.Cookie("visionopus_session")
+	c, err := r.Cookie("libreeyes_session")
 	if err != nil {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return admin.Authorization{}, false

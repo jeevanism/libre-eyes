@@ -9,7 +9,7 @@ const loginOptions = {
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/v1/presentation/branding**', (route) => route.fulfill({ json: {
     profileVersion: 1, rowVersion: 1, status: 'published', source: 'institution',
-    institutionId: 1, organizationName: 'Vision Hospital', shortName: 'VisionOpus', browserTitle: 'VisionOpus',
+    institutionId: 1, organizationName: 'Vision Hospital', shortName: 'LibreEyes', browserTitle: 'LibreEyes',
     colors: { primary: '#116466', primaryHover: '#0c5355', selectedSurface: '#deefee', focus: '#0b6fcc' },
   } }))
   await page.route('**/api/v1/auth/login-options', (route) => route.fulfill({ json: loginOptions }))
@@ -27,7 +27,7 @@ test('renders an operable login form without console errors', async ({ page }, t
   })
 
   await page.goto('/login')
-  await expect(page.getByText('VisionOpus')).toBeVisible()
+  await expect(page.getByText('LibreEyes')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
   await expect(page.getByLabel('Institution')).toHaveValue('1')
   await expect(page.getByLabel('Site')).toHaveValue('2')

@@ -12,7 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jeevanism/visionopus/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/auth"
 )
 
 type integrationAuthorizer struct{ principal auth.OperationPrincipal }
@@ -58,9 +58,9 @@ func TestCommandIntegrationPreservesCapacityAndAudit(t *testing.T) {
 
 func theatreTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	url := os.Getenv("VISIONOPUS_TEST_DATABASE_URL")
+	url := os.Getenv("LIBREEYES_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("VISIONOPUS_TEST_DATABASE_URL is not set")
+		t.Skip("LIBREEYES_TEST_DATABASE_URL is not set")
 	}
 	pool, err := pgxpool.New(context.Background(), url)
 	if err != nil {

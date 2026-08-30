@@ -1,6 +1,6 @@
 (() => {
   try {
-    const stored = globalThis.localStorage.getItem('visionopus-theme')
+    const stored = globalThis.localStorage.getItem('libreeyes-theme')
     const preference = stored === 'light' || stored === 'dark' ? stored : 'system'
     const resolved = preference === 'system' && globalThis.matchMedia('(prefers-color-scheme: dark)').matches
       ? 'dark'

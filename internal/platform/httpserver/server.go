@@ -1,4 +1,4 @@
-// Package httpserver constructs the VisionOpus HTTP server.
+// Package httpserver constructs the LibreEyes HTTP server.
 package httpserver
 
 import (
@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/platform/health"
-	"github.com/jeevanism/visionopus/internal/platform/httpx"
+	"github.com/jeevanism/libre-eyes/internal/platform/health"
+	"github.com/jeevanism/libre-eyes/internal/platform/httpx"
 )
 
 // Registrar adds one bounded set of routes to the application mux.

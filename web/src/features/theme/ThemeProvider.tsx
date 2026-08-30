@@ -9,7 +9,7 @@ interface ThemeContextValue {
   setPreference: (preference: ThemePreference) => void
 }
 
-const storageKey = 'visionopus-theme'
+const storageKey = 'libreeyes-theme'
 const darkMediaQuery = '(prefers-color-scheme: dark)'
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 

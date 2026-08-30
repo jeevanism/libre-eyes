@@ -334,9 +334,9 @@ type repositoryPatient struct {
 
 func repositoryTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	databaseURL := os.Getenv("VISIONOPUS_TEST_DATABASE_URL")
+	databaseURL := os.Getenv("LIBREEYES_TEST_DATABASE_URL")
 	if databaseURL == "" {
-		t.Skip("VISIONOPUS_TEST_DATABASE_URL is not set")
+		t.Skip("LIBREEYES_TEST_DATABASE_URL is not set")
 	}
 	pool, err := pgxpool.New(context.Background(), databaseURL)
 	if err != nil {

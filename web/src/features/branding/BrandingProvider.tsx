@@ -8,9 +8,9 @@ export const defaultBrandingProfile: BrandingProfile = {
   rowVersion: 1,
   status: 'default',
   source: 'default',
-  organizationName: 'VisionOpus',
-  shortName: 'VisionOpus',
-  browserTitle: 'VisionOpus',
+  organizationName: 'LibreEyes',
+  shortName: 'LibreEyes',
+  browserTitle: 'LibreEyes',
   colors: {
     primary: '#116466',
     primaryHover: '#0c5355',

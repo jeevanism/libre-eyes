@@ -12,13 +12,13 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/platform/httpx"
-	"github.com/jeevanism/visionopus/internal/theatrebooking"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/platform/httpx"
+	"github.com/jeevanism/libre-eyes/internal/theatrebooking"
 )
 
 const (
-	sessionCookieName = "visionopus_session"
+	sessionCookieName = "libreeyes_session"
 	maximumBodyBytes  = 2048
 	requestTimeout    = 5 * time.Second
 )

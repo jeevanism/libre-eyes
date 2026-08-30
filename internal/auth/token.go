@@ -25,7 +25,7 @@ func tokenDigest(value string) [sha256.Size]byte {
 
 func csrfToken(key []byte, sessionToken string) string {
 	mac := hmac.New(sha256.New, key)
-	_, _ = mac.Write([]byte("visionopus.csrf.v1\x00"))
+	_, _ = mac.Write([]byte("libreeyes.csrf.v1\x00"))
 	_, _ = mac.Write([]byte(sessionToken))
 	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
 }

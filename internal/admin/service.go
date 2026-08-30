@@ -11,7 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jeevanism/visionopus/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/auth"
 )
 
 type authorizer interface {
@@ -649,7 +649,7 @@ func assignUserContext(ctx context.Context, tx pgx.Tx, institutionID, actorID, u
 	if _, err := tx.Exec(ctx, `INSERT INTO user_institution_memberships(user_id,institution_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, userID, institutionID); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO user_role_assignments(user_id,role_id,role_scope,institution_id,assigned_by_user_id) SELECT $1,id,scope,$2,$3 FROM roles WHERE name IN ('VisionOpus User','Development Patient Search Tester') AND scope='institution' ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE`, userID, institutionID, actorID); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO user_role_assignments(user_id,role_id,role_scope,institution_id,assigned_by_user_id) SELECT $1,id,scope,$2,$3 FROM roles WHERE name IN ('LibreEyes User','Development Patient Search Tester') AND scope='institution' ON CONFLICT (user_id,role_id,institution_id) DO UPDATE SET active=TRUE`, userID, institutionID, actorID); err != nil {
 		return err
 	}
 	if role == "institution_administrator" {

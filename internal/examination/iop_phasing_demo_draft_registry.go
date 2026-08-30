@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 const iopPhasingDemoEventType = "ophthalmology.iop_phasing_demo"

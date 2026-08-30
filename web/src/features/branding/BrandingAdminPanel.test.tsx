@@ -13,9 +13,9 @@ const profile = {
   rowVersion: 1,
   status: 'published' as const,
   source: 'published' as const,
-  organizationName: 'VisionOpus Development Hospital',
-  shortName: 'VisionOpus',
-  browserTitle: 'VisionOpus',
+  organizationName: 'LibreEyes Development Hospital',
+  shortName: 'LibreEyes',
+  browserTitle: 'LibreEyes',
   colors: { primary: '#116466', primaryHover: '#0c5355', selectedSurface: '#deefee', focus: '#0b6fcc' },
 }
 

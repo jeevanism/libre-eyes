@@ -372,7 +372,7 @@ func TestRoleAssignmentScopeIsEnforced(t *testing.T) {
 
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO user_role_assignments (user_id, role_id, role_scope, institution_id)
-		SELECT $1, id, scope, NULL FROM roles WHERE name = 'VisionOpus User'`, userID); err == nil {
+		SELECT $1, id, scope, NULL FROM roles WHERE name = 'LibreEyes User'`, userID); err == nil {
 		t.Fatal("institution-scoped role assignment without institution succeeded")
 	}
 	if _, err := pool.Exec(ctx, `
@@ -401,9 +401,9 @@ type integrationSeed struct {
 
 func integrationService(t *testing.T, failureLimit int) (*Service, *pgxpool.Pool) {
 	t.Helper()
-	url := os.Getenv("VISIONOPUS_TEST_DATABASE_URL")
+	url := os.Getenv("LIBREEYES_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("VISIONOPUS_TEST_DATABASE_URL is not set")
+		t.Skip("LIBREEYES_TEST_DATABASE_URL is not set")
 	}
 	pool, err := pgxpool.New(context.Background(), url)
 	if err != nil {
@@ -480,7 +480,7 @@ func seedIntegrationUser(t *testing.T, pool *pgxpool.Pool) integrationSeed {
 	for _, institutionID := range []int64{seed.institution1, seed.institution2} {
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO user_role_assignments (user_id, role_id, role_scope, institution_id)
-			SELECT $1, id, scope, $2 FROM roles WHERE name = 'VisionOpus User'`, userID, institutionID); err != nil {
+			SELECT $1, id, scope, $2 FROM roles WHERE name = 'LibreEyes User'`, userID, institutionID); err != nil {
 			t.Fatalf("insert role assignment: %v", err)
 		}
 	}

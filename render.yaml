@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: visionopus-demo
+    name: libre-eyes-demo
     runtime: docker
     region: frankfurt
     branch: visionopus
@@ -10,24 +10,24 @@ services:
     numInstances: 1
     healthCheckPath: /health/live
     envVars:
-      - key: VISIONOPUS_ENV
+      - key: LIBREEYES_ENV
         value: development
-      - key: VISIONOPUS_HTTP_ADDR
+      - key: LIBREEYES_HTTP_ADDR
         value: :10000
-      - key: VISIONOPUS_STATIC_DIR
+      - key: LIBREEYES_STATIC_DIR
         value: /app/web
-      - key: VISIONOPUS_COOKIE_SECURE
+      - key: LIBREEYES_COOKIE_SECURE
         value: "true"
-      - key: VISIONOPUS_DATABASE_URL
+      - key: LIBREEYES_DATABASE_URL
         fromDatabase:
-          name: visionopus-demo-db
+          name: libre-eyes-demo-db
           property: connectionString
-      - key: VISIONOPUS_CSRF_KEY
+      - key: LIBREEYES_CSRF_KEY
         sync: false
 
 databases:
-  - name: visionopus-demo-db
+  - name: libre-eyes-demo-db
     region: frankfurt
     plan: free
-    databaseName: visionopus
-    user: visionopus
+    databaseName: libreeyes
+    user: libreeyes

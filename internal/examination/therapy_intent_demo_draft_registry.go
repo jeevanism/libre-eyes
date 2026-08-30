@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 const therapyIntentDemoEventType = "ophthalmology.therapy_intent_demo"

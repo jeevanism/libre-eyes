@@ -1,6 +1,6 @@
-# VisionOpus
+# LibreEyes
 
-VisionOpus is a Go, React, and PostgreSQL ophthalmology application inspired by
+LibreEyes is a Go, React, and PostgreSQL ophthalmology application inspired by
 the clinical concepts and user experience of OpenEyes. This repository contains
 the frozen synthetic demonstration release.
 
@@ -35,7 +35,7 @@ bun run --cwd web build
 Build the demonstration container with:
 
 ```bash
-docker build --tag visionopus-demo .
+docker build --tag libre-eyes-demo .
 ```
 
 The public Render deployment configuration is in `Dockerfile` and

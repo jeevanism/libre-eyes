@@ -6,7 +6,7 @@ import (
 	"errors"
 )
 
-import "github.com/jeevanism/visionopus/internal/episodes"
+import "github.com/jeevanism/libre-eyes/internal/episodes"
 
 const (
 	eyeDrawDemoEventType         = "ophthalmology.eyedraw_anterior_segment_demo"

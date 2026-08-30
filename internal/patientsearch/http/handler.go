@@ -14,13 +14,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/patientsearch"
-	"github.com/jeevanism/visionopus/internal/platform/httpx"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/patientsearch"
+	"github.com/jeevanism/libre-eyes/internal/platform/httpx"
 )
 
 const (
-	defaultSessionCookieName    = "visionopus_session"
+	defaultSessionCookieName    = "libreeyes_session"
 	maximumBodyBytes            = 8 * 1024
 	requestTimeout              = 5 * time.Second
 	preAuthorizationTokenBurst  = 20.0

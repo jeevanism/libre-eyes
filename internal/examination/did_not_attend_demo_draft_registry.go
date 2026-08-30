@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 const didNotAttendDemoEventType = "ophthalmology.did_not_attend_demo"

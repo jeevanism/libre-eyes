@@ -1,6 +1,6 @@
-# VisionOpus EyeDraw Attribution
+# LibreEyes EyeDraw Attribution
 
-This is the VisionOpus anterior-segment EyeDraw adapter asset bundle. It contains
+This is the LibreEyes anterior-segment EyeDraw adapter asset bundle. It contains
 the approved upstream-derived runtime files included in this distribution.
 
 Upstream source: local `eyedraw-lib` revision

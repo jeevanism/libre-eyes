@@ -1,6 +1,6 @@
-VisionOpus public distribution
+LibreEyes public distribution
 
-VisionOpus application code is independently authored for this project.
+LibreEyes application code is independently authored for this project.
 
 The EyeDraw runtime bundle under web/public/vendor/eyedraw contains files
 derived from the Apperta Foundation EyeDraw/OpenEyes projects. Their source

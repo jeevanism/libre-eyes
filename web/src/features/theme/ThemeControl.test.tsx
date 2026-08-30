@@ -41,13 +41,13 @@ describe('ThemeControl', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use dark theme' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(localStorage.getItem('visionopus-theme')).toBe('dark')
+    expect(localStorage.getItem('libreeyes-theme')).toBe('dark')
 
     systemDark = true
     listeners.forEach((listener) => listener({ matches: true } as MediaQueryListEvent))
     fireEvent.click(screen.getByRole('button', { name: 'Use system theme' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(localStorage.getItem('visionopus-theme')).toBe('system')
+    expect(localStorage.getItem('libreeyes-theme')).toBe('system')
   })
 
   it('has no automated accessibility violations', async () => {

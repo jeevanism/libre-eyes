@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/platform/httpx"
-	"github.com/jeevanism/visionopus/internal/referralappointment"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/platform/httpx"
+	"github.com/jeevanism/libre-eyes/internal/referralappointment"
 	"io"
 	"net/http"
 	"time"
 )
 
-const cookieName = "visionopus_session"
+const cookieName = "libreeyes_session"
 
 type Service interface {
 	Authorize(context.Context, string, string, auth.RequestMetadata) (referralappointment.Authorization, error)

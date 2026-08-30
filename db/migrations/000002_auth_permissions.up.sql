@@ -11,7 +11,7 @@ INSERT INTO permissions (name, description) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO roles (name, description, scope) VALUES
-    ('VisionOpus User', 'Base authenticated-user capabilities', 'institution'),
+    ('LibreEyes User', 'Base authenticated-user capabilities', 'institution'),
     ('Clinical Viewer', 'Read-only clinical access', 'institution'),
     ('Institution Administrator', 'Institution-scoped user and role administration', 'institution'),
     ('Global Administrator', 'Explicit global user and role administration', 'global')
@@ -21,10 +21,10 @@ INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
 JOIN permissions p ON p.name = ANY (CASE r.name
-    WHEN 'VisionOpus User' THEN ARRAY['session.read_self', 'session.revoke_self', 'context.switch']
+    WHEN 'LibreEyes User' THEN ARRAY['session.read_self', 'session.revoke_self', 'context.switch']
     WHEN 'Clinical Viewer' THEN ARRAY['patient.search', 'clinical.view']
     WHEN 'Institution Administrator' THEN ARRAY['user.admin.institution', 'role.assign.institution']
     WHEN 'Global Administrator' THEN ARRAY['user.admin.global', 'role.assign.global']
 END)
-WHERE r.name IN ('VisionOpus User', 'Clinical Viewer', 'Institution Administrator', 'Global Administrator')
+WHERE r.name IN ('LibreEyes User', 'Clinical Viewer', 'Institution Administrator', 'Global Administrator')
 ON CONFLICT (role_id, permission_id) DO NOTHING;

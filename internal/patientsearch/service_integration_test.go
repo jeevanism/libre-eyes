@@ -11,7 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jeevanism/visionopus/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/auth"
 )
 
 type staticAuthorizer struct {

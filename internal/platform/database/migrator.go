@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const migrationLockName = "visionopus.schema_migrations"
+const migrationLockName = "libreeyes.schema_migrations"
 
 // Migrator executes embedded, versioned SQL migrations.
 type Migrator struct {

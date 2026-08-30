@@ -8,7 +8,7 @@ async function openExaminationTools(page: Page) {
 const session = {
   user: { id: '1', displayName: 'Synthetic Clinician' },
   context: {
-    institution: { id: '1', name: 'VisionOpus Development Hospital' },
+    institution: { id: '1', name: 'LibreEyes Development Hospital' },
     site: { id: '1', name: 'Development Eye Clinic' },
     firm: { id: '1', name: 'Development Ophthalmology' },
   },
@@ -22,7 +22,7 @@ const session = {
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/v1/presentation/branding**', (route) => route.fulfill({ json: {
     profileVersion: 1, rowVersion: 1, status: 'published', source: 'institution',
-    institutionId: 1, organizationName: 'VisionOpus Development Hospital', shortName: 'VisionOpus', browserTitle: 'VisionOpus',
+    institutionId: 1, organizationName: 'LibreEyes Development Hospital', shortName: 'LibreEyes', browserTitle: 'LibreEyes',
     colors: { primary: '#116466', primaryHover: '#0c5355', selectedSurface: '#deefee', focus: '#0b6fcc' },
   } }))
   await page.route('**/api/v1/auth/session', (route) => route.fulfill({ json: session }))

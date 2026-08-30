@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 const pgdPSDGuidanceDemoEventType = "ophthalmology.pgd_psd_guidance_demo"

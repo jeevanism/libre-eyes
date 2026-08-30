@@ -24,5 +24,5 @@ CROSS JOIN (VALUES
  ('laboratory','Laboratory and genetics','Synthetic laboratory and genetic-result drafts.'),
  ('administration','Administration','Synthetic users, contexts, settings, and catalogues.')
 ) AS v(capability_key, display_name, description)
-WHERE i.name = 'VisionOpus Development Hospital'
+WHERE i.name = 'LibreEyes Development Hospital'
 ON CONFLICT (institution_id, capability_key) DO NOTHING;

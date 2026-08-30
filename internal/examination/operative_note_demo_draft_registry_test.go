@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 type fakeOperativeNoteCatalogue struct{ active map[string]bool }

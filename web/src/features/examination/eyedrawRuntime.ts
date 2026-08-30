@@ -50,11 +50,11 @@ declare global {
 let loadPromise: Promise<void> | undefined
 
 function stylesheet() {
-  const selector = `link[data-visionopus-eyedraw-asset="${stylesheetPath}"]`
+  const selector = `link[data-libreeyes-eyedraw-asset="${stylesheetPath}"]`
   const existing = document.querySelector<HTMLLinkElement>(selector)
   if (existing) return existing
   const link = document.createElement('link')
-  link.dataset.visionopusEyedrawAsset = stylesheetPath
+  link.dataset.libreeyesEyedrawAsset = stylesheetPath
   link.href = stylesheetPath
   link.rel = 'stylesheet'
   document.head.append(link)
@@ -63,7 +63,7 @@ function stylesheet() {
 
 function script(source: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const selector = `script[data-visionopus-eyedraw-asset="${source}"]`
+    const selector = `script[data-libreeyes-eyedraw-asset="${source}"]`
     const existing = document.querySelector<HTMLScriptElement>(selector)
     if (existing?.dataset.loaded === 'true') {
       resolve()
@@ -72,7 +72,7 @@ function script(source: string): Promise<void> {
     const element = existing ?? document.createElement('script')
     if (!existing) {
       element.async = false
-      element.dataset.visionopusEyedrawAsset = source
+      element.dataset.libreeyesEyedrawAsset = source
       element.src = source
       document.body.append(element)
     }
@@ -104,7 +104,7 @@ export function eyeDrawPayloadObjects(serialized: string): Array<Record<string, 
       ? runtimeDoodle.className
       : runtimeDoodle.subclass
     if (typeof className !== 'string' || !(allowedEyeDrawDoodleClasses as readonly string[]).includes(className)) return []
-    // EyeDraw uses `subclass`; VisionOpus persists the explicit allow-listed
+    // EyeDraw uses `subclass`; LibreEyes persists the explicit allow-listed
     // `className` alongside it so the server can validate and reload safely.
     return [{ ...runtimeDoodle, className, subclass: className }]
   })

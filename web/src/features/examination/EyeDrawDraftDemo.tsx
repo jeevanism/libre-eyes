@@ -25,7 +25,7 @@ const canvasCode = 'development_exam_ant_seg_v1' as const
 export function EyeDrawDraftDemo({ csrfToken, episodeId }: EyeDrawDraftDemoProps) {
   const reactId = useId().replace(/[:]/g, '')
   const [canvasGeneration, setCanvasGeneration] = useState(0)
-  const canvasId = `visionopus-eyedraw-${reactId}-${canvasGeneration}`
+  const canvasId = `libreeyes-eyedraw-${reactId}-${canvasGeneration}`
   const inputId = `${canvasId}-data`
   const drawingRef = useRef<EyeDrawDrawing | null>(null)
   const [laterality, setLaterality] = useState<EyeDrawDemoDraftPayload['laterality']>('right')

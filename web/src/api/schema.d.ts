@@ -226,7 +226,7 @@ export interface operations {
             /** @description Authenticated session created */
             200: {
                 headers: {
-                    /** @description Opaque visionopus_session cookie with Secure, HttpOnly, SameSite=Lax, and Path=/ attributes. */
+                    /** @description Opaque libreeyes_session cookie with Secure, HttpOnly, SameSite=Lax, and Path=/ attributes. */
                     "Set-Cookie"?: string;
                     "Cache-Control"?: "no-store";
                     [name: string]: unknown;

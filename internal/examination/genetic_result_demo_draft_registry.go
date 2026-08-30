@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 const geneticResultDemoEventType = "ophthalmology.genetic_result_demo"

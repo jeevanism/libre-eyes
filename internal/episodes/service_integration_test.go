@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jeevanism/visionopus/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/auth"
 )
 
 type integrationAuthorizer struct {
@@ -403,9 +403,9 @@ type episodesFixture struct {
 
 func episodesTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	databaseURL := os.Getenv("VISIONOPUS_TEST_DATABASE_URL")
+	databaseURL := os.Getenv("LIBREEYES_TEST_DATABASE_URL")
 	if databaseURL == "" {
-		t.Skip("VISIONOPUS_TEST_DATABASE_URL is not set")
+		t.Skip("LIBREEYES_TEST_DATABASE_URL is not set")
 	}
 	pool, err := pgxpool.New(context.Background(), databaseURL)
 	if err != nil {
@@ -458,7 +458,7 @@ func seedEpisodesFixture(t *testing.T, pool *pgxpool.Pool) episodesFixture {
 		RETURNING id`).Scan(&patientID); err != nil {
 		t.Fatalf("insert patient: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO patient_institutions (patient_id, institution_id, primary_association, association_source) VALUES ($1,$2,TRUE,'visionopus')`, patientID, institutionID); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO patient_institutions (patient_id, institution_id, primary_association, association_source) VALUES ($1,$2,TRUE,'libreeyes')`, patientID, institutionID); err != nil {
 		t.Fatalf("associate patient: %v", err)
 	}
 	var otherInstitutionID, otherSiteID, otherInstitutionFirmID int64

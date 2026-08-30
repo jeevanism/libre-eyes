@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 func TestDraftRegistryRejectsUnregisteredEventType(t *testing.T) {

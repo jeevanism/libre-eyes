@@ -5,7 +5,7 @@ import type { BrandingDraft, BrandingProfile, BrandingState } from '../src/api/c
 const session = {
   user: { id: '1', displayName: 'Demo Institution Administrator' },
   context: {
-    institution: { id: '3', name: 'VisionOpus Development Hospital' },
+    institution: { id: '3', name: 'LibreEyes Development Hospital' },
     site: { id: '3', name: 'Development Eye Clinic' },
     firm: { id: '3', name: 'Development Ophthalmology' },
   },
@@ -23,9 +23,9 @@ const baseProfile: BrandingProfile = {
   rowVersion: 1,
   status: 'published',
   source: 'published',
-  organizationName: 'VisionOpus Development Hospital',
-  shortName: 'VisionOpus',
-  browserTitle: 'VisionOpus',
+  organizationName: 'LibreEyes Development Hospital',
+  shortName: 'LibreEyes',
+  browserTitle: 'LibreEyes',
   colors: { primary: '#116466', primaryHover: '#0c5355', selectedSurface: '#deefee', focus: '#0b6fcc' },
 }
 
@@ -83,7 +83,7 @@ test('previews, saves, and publishes an institution branding profile', async ({ 
       return
     }
     if (path === '/api/v1/admin/contexts') {
-      await route.fulfill({ json: { institution: { id: 3, name: 'VisionOpus Development Hospital' }, sites: [], firms: [] } })
+      await route.fulfill({ json: { institution: { id: 3, name: 'LibreEyes Development Hospital' }, sites: [], firms: [] } })
       return
     }
     await route.fulfill({ json: [] })

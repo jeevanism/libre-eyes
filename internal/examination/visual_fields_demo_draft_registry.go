@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 const visualFieldsDemoEventType = "ophthalmology.visual_fields_demo"

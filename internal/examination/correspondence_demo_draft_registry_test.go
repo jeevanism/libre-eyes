@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 type fakeCorrespondenceCatalogue struct {
@@ -22,7 +22,7 @@ func TestCorrespondenceDemoDraftRegistryValidate(t *testing.T) {
 	r := &CorrespondenceDemoDraftRegistry{catalogue: fakeCorrespondenceCatalogue{active: map[string]bool{
 		"template:demo_clinic_update": true, "recipient_role:demo_gp": true,
 	}}}
-	valid := []byte(`{"recordMode":"demo_correspondence","templateCode":"demo_clinic_update","recipientRole":"demo_gp","subject":"Clinic update","body":"A plain text demonstration letter.\nSecond paragraph.","footer":"VisionOpus demo\nClinic team","clinicDate":"2026-08-01"}`)
+	valid := []byte(`{"recordMode":"demo_correspondence","templateCode":"demo_clinic_update","recipientRole":"demo_gp","subject":"Clinic update","body":"A plain text demonstration letter.\nSecond paragraph.","footer":"LibreEyes demo\nClinic team","clinicDate":"2026-08-01"}`)
 	if err := r.Validate(context.Background(), correspondenceDemoEventType, episodes.DraftIntentCreate, 1, valid); err != nil {
 		t.Fatalf("valid payload: %v", err)
 	}

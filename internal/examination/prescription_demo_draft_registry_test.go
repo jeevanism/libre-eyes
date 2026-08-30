@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 )
 
 type fakePrescriptionCatalogue struct {

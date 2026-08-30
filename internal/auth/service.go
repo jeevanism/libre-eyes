@@ -55,7 +55,7 @@ func NewService(pool *pgxpool.Pool, cfg ServiceConfig) (*Service, error) {
 	}
 
 	passwords := PasswordManager{}
-	dummyHash, err := passwords.Hash("visionopus timing equalization value")
+	dummyHash, err := passwords.Hash("libreeyes timing equalization value")
 	if err != nil {
 		return nil, fmt.Errorf("create authentication dummy hash: %w", err)
 	}

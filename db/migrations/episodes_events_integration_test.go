@@ -251,7 +251,7 @@ func insertEpisodeFixture(ctx context.Context, t *testing.T, tx pgx.Tx, key stri
 	}
 	if err := tx.QueryRow(ctx, `
 		INSERT INTO patient_institutions (patient_id, institution_id, association_source)
-		VALUES ($1, $2, 'visionopus')
+		VALUES ($1, $2, 'libreeyes')
 		RETURNING id`, fixture.patientID, fixture.institutionID).Scan(&fixture.patientInstitutionID); err != nil {
 		t.Fatalf("insert episode patient institution: %v", err)
 	}

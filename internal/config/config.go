@@ -12,7 +12,7 @@ import (
 
 const (
 	defaultHTTPAddr               = ":8080"
-	defaultDatabaseURL            = "postgres://visionopus:visionopus_dev@localhost:5432/visionopus?sslmode=disable"
+	defaultDatabaseURL            = "postgres://libreeyes:libreeyes_dev@localhost:5432/libreeyes?sslmode=disable"
 	defaultSessionIdleTimeout     = 15 * time.Minute
 	defaultSessionAbsoluteTimeout = 12 * time.Hour
 	defaultLoginFailureLimit      = 5
@@ -38,10 +38,10 @@ type Config struct {
 // Load reads configuration from environment variables.
 func Load() (Config, error) {
 	cfg := Config{
-		Environment:            valueOrDefault("VISIONOPUS_ENV", "development"),
-		HTTPAddr:               valueOrDefault("VISIONOPUS_HTTP_ADDR", defaultHTTPAddr),
-		StaticDir:              os.Getenv("VISIONOPUS_STATIC_DIR"),
-		DatabaseURL:            valueOrDefault("VISIONOPUS_DATABASE_URL", defaultDatabaseURL),
+		Environment:            valueOrDefault("LIBREEYES_ENV", "development"),
+		HTTPAddr:               valueOrDefault("LIBREEYES_HTTP_ADDR", defaultHTTPAddr),
+		StaticDir:              os.Getenv("LIBREEYES_STATIC_DIR"),
+		DatabaseURL:            valueOrDefault("LIBREEYES_DATABASE_URL", defaultDatabaseURL),
 		SessionIdleTimeout:     defaultSessionIdleTimeout,
 		SessionAbsoluteTimeout: defaultSessionAbsoluteTimeout,
 		LoginFailureLimit:      defaultLoginFailureLimit,
@@ -50,33 +50,33 @@ func Load() (Config, error) {
 	}
 
 	var err error
-	if cfg.CookieSecure, err = boolValue("VISIONOPUS_COOKIE_SECURE", cfg.Environment != "development"); err != nil {
+	if cfg.CookieSecure, err = boolValue("LIBREEYES_COOKIE_SECURE", cfg.Environment != "development"); err != nil {
 		return Config{}, err
 	}
-	if cfg.SessionIdleTimeout, err = durationValue("VISIONOPUS_SESSION_IDLE_TIMEOUT", defaultSessionIdleTimeout); err != nil {
+	if cfg.SessionIdleTimeout, err = durationValue("LIBREEYES_SESSION_IDLE_TIMEOUT", defaultSessionIdleTimeout); err != nil {
 		return Config{}, err
 	}
-	if cfg.SessionAbsoluteTimeout, err = durationValue("VISIONOPUS_SESSION_ABSOLUTE_TIMEOUT", defaultSessionAbsoluteTimeout); err != nil {
+	if cfg.SessionAbsoluteTimeout, err = durationValue("LIBREEYES_SESSION_ABSOLUTE_TIMEOUT", defaultSessionAbsoluteTimeout); err != nil {
 		return Config{}, err
 	}
-	if cfg.ShutdownTimeout, err = durationValue("VISIONOPUS_SHUTDOWN_TIMEOUT", defaultShutdownTimeout); err != nil {
+	if cfg.ShutdownTimeout, err = durationValue("LIBREEYES_SHUTDOWN_TIMEOUT", defaultShutdownTimeout); err != nil {
 		return Config{}, err
 	}
-	if cfg.SoftLockDuration, err = durationValue("VISIONOPUS_SOFT_LOCK_DURATION", defaultSoftLockDuration); err != nil {
+	if cfg.SoftLockDuration, err = durationValue("LIBREEYES_SOFT_LOCK_DURATION", defaultSoftLockDuration); err != nil {
 		return Config{}, err
 	}
-	if cfg.LoginFailureLimit, err = intValue("VISIONOPUS_LOGIN_FAILURE_LIMIT", defaultLoginFailureLimit); err != nil {
+	if cfg.LoginFailureLimit, err = intValue("LIBREEYES_LOGIN_FAILURE_LIMIT", defaultLoginFailureLimit); err != nil {
 		return Config{}, err
 	}
-	if cfg.CSRFKey, err = secretValue("VISIONOPUS_CSRF_KEY", 32); err != nil {
+	if cfg.CSRFKey, err = secretValue("LIBREEYES_CSRF_KEY", 32); err != nil {
 		return Config{}, err
 	}
 
 	if cfg.HTTPAddr == "" {
-		return Config{}, errors.New("VISIONOPUS_HTTP_ADDR must not be empty")
+		return Config{}, errors.New("LIBREEYES_HTTP_ADDR must not be empty")
 	}
 	if cfg.DatabaseURL == "" {
-		return Config{}, errors.New("VISIONOPUS_DATABASE_URL must not be empty")
+		return Config{}, errors.New("LIBREEYES_DATABASE_URL must not be empty")
 	}
 	if cfg.SessionIdleTimeout <= 0 || cfg.SessionAbsoluteTimeout <= 0 || cfg.SoftLockDuration <= 0 || cfg.ShutdownTimeout <= 0 {
 		return Config{}, errors.New("configured timeouts must be positive")

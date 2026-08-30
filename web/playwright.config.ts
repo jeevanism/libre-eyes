@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const liveBaseURL = process.env.VISIONOPUS_E2E_BASE_URL
+const liveBaseURL = process.env.LIBREEYES_E2E_BASE_URL
 
 export default defineConfig({
   testDir: './tests',

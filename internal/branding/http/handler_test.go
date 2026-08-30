@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/branding"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/branding"
 )
 
 type fakeService struct {
@@ -77,7 +77,7 @@ func TestSaveDraftRequiresSessionAndForwardsBoundedInput(t *testing.T) {
 	handler.Register(mux)
 	body := `{"organizationName":"Velox Group EyeCare","shortName":"Velox","browserTitle":"Velox clinical workspace","colors":{"primary":"#17543f","primaryHover":"#103d2e","selectedSurface":"#dcefe5","focus":"#005fcc"},"expectedVersion":0}`
 	request := httptest.NewRequest(http.MethodPut, "/api/v1/admin/branding/draft", strings.NewReader(body))
-	request.AddCookie(&http.Cookie{Name: "visionopus_session", Value: "opaque"})
+	request.AddCookie(&http.Cookie{Name: "libreeyes_session", Value: "opaque"})
 	request.Header.Set("X-CSRF-Token", "csrf")
 	response := httptest.NewRecorder()
 
@@ -97,7 +97,7 @@ func TestSaveDraftRejectsUnknownFields(t *testing.T) {
 	mux := http.NewServeMux()
 	handler.Register(mux)
 	request := httptest.NewRequest(http.MethodPut, "/api/v1/admin/branding/draft", strings.NewReader(`{"arbitraryCss":"body{display:none}"}`))
-	request.AddCookie(&http.Cookie{Name: "visionopus_session", Value: "opaque"})
+	request.AddCookie(&http.Cookie{Name: "libreeyes_session", Value: "opaque"})
 	response := httptest.NewRecorder()
 
 	mux.ServeHTTP(response, request)
@@ -114,7 +114,7 @@ func TestSaveDraftRejectsTrailingContent(t *testing.T) {
 	handler.Register(mux)
 	body := `{"organizationName":"Velox Group EyeCare"} trailing`
 	request := httptest.NewRequest(http.MethodPut, "/api/v1/admin/branding/draft", strings.NewReader(body))
-	request.AddCookie(&http.Cookie{Name: "visionopus_session", Value: "opaque"})
+	request.AddCookie(&http.Cookie{Name: "libreeyes_session", Value: "opaque"})
 	response := httptest.NewRecorder()
 
 	mux.ServeHTTP(response, request)
@@ -147,7 +147,7 @@ func TestSaveDraftReportsEveryContrastFailure(t *testing.T) {
 	handler.Register(mux)
 	body := `{"organizationName":"Velox Group EyeCare","shortName":"Velox","browserTitle":"Velox","colors":{"primary":"#e4e651","primaryHover":"#f03891","selectedSurface":"#deefee","focus":"#0b6fcc"},"expectedVersion":0}`
 	request := httptest.NewRequest(http.MethodPut, "/api/v1/admin/branding/draft", strings.NewReader(body))
-	request.AddCookie(&http.Cookie{Name: "visionopus_session", Value: "opaque"})
+	request.AddCookie(&http.Cookie{Name: "libreeyes_session", Value: "opaque"})
 	response := httptest.NewRecorder()
 
 	mux.ServeHTTP(response, request)

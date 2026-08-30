@@ -3,7 +3,7 @@ package examination
 import (
 	"context"
 	"encoding/json"
-	"github.com/jeevanism/visionopus/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
 	"testing"
 )
 

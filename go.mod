@@ -1,4 +1,4 @@
-module github.com/jeevanism/visionopus
+module github.com/jeevanism/libre-eyes
 
 go 1.25.0
 

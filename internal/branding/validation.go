@@ -17,9 +17,9 @@ func DefaultProfile() Profile {
 		RowVersion:       1,
 		Status:           "default",
 		Source:           "default",
-		OrganizationName: "VisionOpus",
-		ShortName:        "VisionOpus",
-		BrowserTitle:     "VisionOpus",
+		OrganizationName: "LibreEyes",
+		ShortName:        "LibreEyes",
+		BrowserTitle:     "LibreEyes",
 		Colors: Colors{
 			Primary:         "#116466",
 			PrimaryHover:    "#0c5355",

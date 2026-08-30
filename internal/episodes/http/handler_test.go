@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jeevanism/visionopus/internal/auth"
-	"github.com/jeevanism/visionopus/internal/episodes"
-	"github.com/jeevanism/visionopus/internal/platform/httpx"
+	"github.com/jeevanism/libre-eyes/internal/auth"
+	"github.com/jeevanism/libre-eyes/internal/episodes"
+	"github.com/jeevanism/libre-eyes/internal/platform/httpx"
 )
 
 type fakeService struct {

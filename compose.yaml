@@ -2,18 +2,18 @@ services:
   postgres:
     image: postgres:18.4-alpine
     environment:
-      POSTGRES_DB: visionopus
-      POSTGRES_USER: visionopus
-      POSTGRES_PASSWORD: visionopus_dev
+      POSTGRES_DB: libreeyes
+      POSTGRES_USER: libreeyes
+      POSTGRES_PASSWORD: libreeyes_dev
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U visionopus -d visionopus"]
+      test: ["CMD-SHELL", "pg_isready -U libreeyes -d libreeyes"]
       interval: 2s
       timeout: 3s
       retries: 15
     volumes:
-      - visionopus-postgres-18:/var/lib/postgresql
+      - libre-eyes-postgres-18:/var/lib/postgresql
 
 volumes:
-  visionopus-postgres-18:
+  libre-eyes-postgres-18:
