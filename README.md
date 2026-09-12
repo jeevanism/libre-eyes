@@ -14,13 +14,17 @@ tenant-scoped access controls.
 It is synthetic demonstration software only. Do not use real patient data and
 do not use this repository for clinical care or production NHS deployment.
 
+## Workflow demo screenshots
+
+For detailed clinical workflows, default login credentials (`clinician` / `123456`), custom user provisioning instructions, and step-by-step visual walk-throughs, please see the [Workflow Demonstration Guide](WORKFLOW_DEMO.md).
+
 ## Technology
 
 - Go modular monolith and REST/OpenAPI API
 - React 19, TypeScript, Vite, TanStack Router, and TanStack Query
 - PostgreSQL with versioned migrations
 - Bun for the frontend build
-- Docker and Render deployment configuration
+- Docker / Podman and Render deployment configuration
 
 ## Backend persistence
 
@@ -40,31 +44,35 @@ bun run --cwd web test -- --run
 bun run --cwd web build
 ```
 
-Build the demonstration container with:
+Build the demonstration container with Docker or Podman:
 
 ```bash
 docker build --tag libre-eyes-demo .
+# or
+podman build --tag libre-eyes-demo .
 ```
 
 ## Quick start for demonstrators
 
-Non-technical users only need Docker Desktop (which includes Docker Compose).
+Non-technical users only need Docker Desktop or Podman (with Compose support).
 No Go, Bun, Node.js, or source checkout is required. Run this single command:
 
 ```bash
 mkdir libreeyes-demo && cd libreeyes-demo && curl -fsSL https://raw.githubusercontent.com/jeevanism/libre-eyes/main/compose.yaml -o compose.yaml && docker compose up
 ```
 
+*(When using Podman, replace `docker compose` with `podman compose` or `podman-compose`)*
+
 Compose downloads the configuration and published LibreEyes image, starts
 PostgreSQL, applies migrations, seeds the synthetic account, and launches the
 application. Open `http://localhost:10000/login` and use `clinician` / `123456`.
 This fixed password is for demonstration only. Press Ctrl-C to stop the
-containers; remove them with `docker compose down`.
+containers; remove them with `docker compose down` (or `podman compose down`).
 
 ## Run from source
 
 Developers who want to inspect or modify the source can clone the repository.
-Install Docker, Go, and Bun, then run:
+Install Docker or Podman, Go, and Bun, then run:
 
 ```bash
 git clone https://github.com/jeevanism/libre-eyes.git
@@ -72,10 +80,13 @@ cd libre-eyes
 ./demo.sh
 ```
 
+`demo.sh` automatically detects either `docker` or `podman` on your PATH (you can also explicitly specify your runtime with `CONTAINER_CLI=podman ./demo.sh` or `CONTAINER_CLI=docker ./demo.sh`).
+
 The source launcher starts PostgreSQL, applies migrations, seeds the synthetic
 clinician, and runs the Go API and Bun-powered React development server. Open
-`http://localhost:5173/login`. Set `LIBREEYES_DEV_PASSWORD` before running it
-to choose a different local password.
+`http://localhost:5173/login`. You can set `LIBREEYES_DEV_USERNAME` and
+`LIBREEYES_DEV_PASSWORD` before running it to choose your own local credentials,
+or provision custom accounts directly via the in-app Admin console.
 
 The public Render deployment configuration is in `Dockerfile` and
 `render.yaml`. Never commit secrets; use `.env.example` only as a template.
