@@ -4,12 +4,49 @@ set -euo pipefail
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$ROOT_DIR"
 
-for command_name in docker go bun; do
+for command_name in go bun; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     printf 'LibreEyes demo requires %s on PATH.\n' "$command_name" >&2
     exit 1
   fi
 done
+
+if [[ -z "${CONTAINER_CLI:-}" ]]; then
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    CONTAINER_CLI="docker"
+  elif command -v podman >/dev/null 2>&1 && podman info >/dev/null 2>&1; then
+    CONTAINER_CLI="podman"
+  elif command -v podman >/dev/null 2>&1; then
+    CONTAINER_CLI="podman"
+  elif command -v docker >/dev/null 2>&1; then
+    CONTAINER_CLI="docker"
+  else
+    printf 'LibreEyes demo requires docker or podman on PATH.\n' >&2
+    exit 1
+  fi
+fi
+
+if [[ "$CONTAINER_CLI" == "podman" ]]; then
+  if command -v systemctl >/dev/null 2>&1 && ! systemctl --user is-active --quiet podman.socket 2>/dev/null; then
+    systemctl --user start podman.socket 2>/dev/null || true
+  fi
+fi
+
+if [[ -z "${COMPOSE_CLI:-}" ]]; then
+  if "$CONTAINER_CLI" compose version >/dev/null 2>&1; then
+    COMPOSE_CMD=("$CONTAINER_CLI" compose)
+  elif command -v "${CONTAINER_CLI}-compose" >/dev/null 2>&1; then
+    COMPOSE_CMD=("${CONTAINER_CLI}-compose")
+  elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_CMD=("docker-compose")
+  else
+    printf 'LibreEyes demo requires a compose command (e.g. %s compose or %s-compose).\n' "$CONTAINER_CLI" "$CONTAINER_CLI" >&2
+    exit 1
+  fi
+else
+  # If user explicitly provided COMPOSE_CLI string, split into array
+  read -r -a COMPOSE_CMD <<< "$COMPOSE_CLI"
+fi
 
 export LIBREEYES_ENV="development"
 export LIBREEYES_HTTP_ADDR="${LIBREEYES_HTTP_ADDR:-:8080}"
@@ -26,10 +63,10 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-printf 'Starting synthetic PostgreSQL...\n'
-docker compose up -d postgres
+printf 'Starting synthetic PostgreSQL using %s (%s)...\n' "$CONTAINER_CLI" "${COMPOSE_CMD[*]}"
+"${COMPOSE_CMD[@]}" up -d postgres
 printf 'Waiting for PostgreSQL...\n'
-until docker compose exec -T postgres pg_isready -U libreeyes -d libreeyes >/dev/null 2>&1; do
+until "${COMPOSE_CMD[@]}" exec -T postgres pg_isready -U libreeyes -d libreeyes >/dev/null 2>&1; do
   sleep 1
 done
 
