@@ -113,15 +113,12 @@ or provision custom accounts directly via the in-app Admin console.
 The public Render deployment configuration is in `Dockerfile` and
 `render.yaml`. Never commit secrets; use `.env.example` only as a template.
 
-## Licence
+## Licence and Attribution
 
-LibreEyes is distributed under the GNU Affero General Public License version 3
-only (AGPLv3-only). The EyeDraw-derived files under
-`web/public/vendor/eyedraw/` retain their upstream attribution and licence
-notices; see `NOTICE` and that directory's `ATTRIBUTION.md`.
+LibreEyes is distributed under the **GNU Affero General Public License version 3 only (AGPLv3-only)**; see [LICENSE](LICENSE).
 
-## Upstream notices
+### EyeDraw Upstream Attribution and Intellectual Property
 
-The EyeDraw bundle under `web/public/vendor/eyedraw/` contains files derived
-from the EyeDraw/OpenEyes projects. Preserve the included licence and
-attribution notices when redistributing this repository.
+* **Full Credit to Original Authors**: EyeDraw was originally conceived, designed, and developed for the [OpenEyes project](https://github.com/appertafoundation/openeyes) under the stewardship of the **Apperta Foundation**. Full credit for the clinical drawing concepts, symbols, and graphics engine belongs entirely to the original OpenEyes and EyeDraw contributors.
+* **Unmodified Licences & Integrity**: The upstream EyeDraw library and runtime files located under [`web/public/vendor/eyedraw/`](web/public/vendor/eyedraw/) retain their original copyright notices, upstream authorship, and licence files in full. None of the original copyright headers or licence texts have been altered, removed, or tampered with.
+* **Preservation on Redistribution**: Anyone redistributing or modifying LibreEyes must preserve all copyright headers, attribution files, and licensing notices intact; see [`NOTICE`](NOTICE) and [`web/public/vendor/eyedraw/ATTRIBUTION.md`](web/public/vendor/eyedraw/ATTRIBUTION.md).
