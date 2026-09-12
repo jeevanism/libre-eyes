@@ -3,7 +3,7 @@ services:
     name: libre-eyes-demo
     runtime: docker
     region: frankfurt
-    branch: visionopus
+    branch: main
     dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: free
@@ -23,7 +23,7 @@ services:
           name: libre-eyes-demo-db
           property: connectionString
       - key: LIBREEYES_CSRF_KEY
-        sync: false
+        value: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 databases:
   - name: libre-eyes-demo-db
