@@ -1,8 +1,30 @@
 # LibreEyes
 
-LibreEyes is a Go, React, and PostgreSQL ophthalmology application inspired by
-the clinical concepts and user experience of OpenEyes. This repository contains
-the frozen synthetic demonstration release.
+LibreEyes is an experimental, open-source proof of concept exploring a modern technology stack for ophthalmology electronic patient records (EPR). Inspired by the proven clinical workflows of the NHS classic [OpenEyes](https://github.com/appertafoundation/openeyes), it decouples the legacy monolith into a high-performance Go backend, an extensible React frontend (featuring a native wrapper for the original EyeDraw library), and a PostgreSQL data store.
+
+* **Live Demonstration**: [https://libre-eyes.onrender.com](https://libre-eyes.onrender.com/) *(Demo login: `clinician` / `123456`)*
+* **GitHub Repository**: [https://github.com/jeevanism/libre-eyes](https://github.com/jeevanism/libre-eyes)
+* **Clinical Workflow Guide**: [Workflow Demonstration & Screenshots](WORKFLOW_DEMO.md)
+
+---
+
+## Background and Motivation
+
+[OpenEyes](https://github.com/appertafoundation/openeyes) is a widely regarded open-source clinical application with extensive deployments across the UK National Health Service (NHS). While it is an elegant and clinically mature system, it is built on a traditional monolithic PHP framework, alongside the operational and maintenance challenges that legacy architectures bring over time.
+
+LibreEyes represents a developer's trial to modernise this clinical platform. Rather than attempting a feature-complete clone, LibreEyes re-engineers the core architecture from the ground up using **Go**, **React 19**, and **PostgreSQL** to address the pain points of legacy monoliths—delivering instant cold-start deployments, minimal memory footprints, clean API boundaries, and simplified long-term maintenance, all while preserving essential clinical tools like EyeDraw.
+
+None of the legacy OpenEyes backend code has been reused; however, the overall clinical workflows are heavily inspired by it. The upstream EyeDraw drawing engine has been preserved and wrapped into a dedicated React domain component inside LibreEyes, keeping all original licences intact and giving full credit to the original authors.
+
+### Core Architectural Goals
+
+LibreEyes was architected and designed from scratch around five key principles:
+
+* **High-performance backend core**: Minimal CPU and memory overhead with predictable Go concurrency and direct SQL persistence.
+* **Decoupled frontend and backend**: Clean REST/OpenAPI contracts empowering independent, modern React/TypeScript interface development.
+* **Streamlined deployment**: Near-zero external runtime dependencies, enabling instant containerised startups via Docker, Podman, or cloud hosts like Render.
+* **Configuration over customisation**: Multi-tenant institutional controls, roles, and catalogues managed via structured configuration rather than bespoke code branching.
+* **Extensible clinical tooling**: Modular examination registries making it straightforward to introduce new clinical tools while keeping the transactional persistence core rock-solid.
 
 ## Demonstration scope
 
